@@ -145,6 +145,25 @@ function buildAdaptedText(preferences: Preferences): string {
     );
   }
 
+  // Taglish: everyday Tagalog–English mix. Dates, times, roles, and the
+  // approval condition stay verbatim so Meaning Check can compare them.
+  if (detail === "key_points" && wording === "taglish") {
+    return [
+      "Kumpirmahin ang orientation seat mo by Thursday at 5 PM.",
+      "Mentors, dumating ng Friday at 8:30 AM.",
+      "Other members, dumating ng 9:00 AM.",
+      "Late confirmations, tatanggapin lang only with written approval from the program coordinator.",
+    ].join("\n");
+  }
+
+  if (detail === "full" && wording === "taglish") {
+    return (
+      "Members of the Linaw campus pilot, kumpirmahin ninyo ang orientation seat ninyo by Thursday at 5 PM. " +
+      "Mentors, dumating ng Friday at 8:30 AM. Other members, dumating ng 9:00 AM. " +
+      "Late confirmations ay tatanggapin lang only with written approval from the program coordinator."
+    );
+  }
+
   // full + original
   return CAMPUS_PILOT_SOURCE;
 }

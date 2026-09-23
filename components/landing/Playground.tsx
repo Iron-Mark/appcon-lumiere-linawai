@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 import {
   CircleCheck,
@@ -346,17 +345,6 @@ export function Playground() {
           </aside>
         </div>
 
-        <p className="font-ui mt-6 text-center text-sm text-ink-muted">
-          Demo with illustrative text. To adapt your own content,{" "}
-          <Link href="/onboarding" className="landing-inline-link">
-            open Linaw
-          </Link>{" "}
-          or visit the{" "}
-          <Link href="/read" className="landing-inline-link">
-            reading workspace
-          </Link>
-          .
-        </p>
       </div>
     </section>
   );

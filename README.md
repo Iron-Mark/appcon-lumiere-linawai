@@ -10,11 +10,11 @@ Kept literally accurate; update it when the code changes.
 
 | Part | State tonight |
 | --- | --- |
-| Reading workspace, preferences, Listen (Web Speech), PDF/text intake, saved pieces on device, share links (`/read?s=…`) | **Live**, runs in the browser, no server |
+| Reading workspace, preferences (detail · wording incl. **Taglish** · delivery), three note layouts (text · at a glance · one at a time), Listen with word tracking, PDF/text intake, saved pieces on device, share links (`/read?s=…`) | **Live** in the browser |
 | Meaning Check layers 1, 2, 4 — deterministic fact compare, actor–value relationships, critical-fact coverage (`lib/fidelity/`) | **Live** rule-based logic; tested in `evals/` |
-| Meaning Check layer 3 — semantic verification (NLI) | **Optional.** `lib/fidelity/nli.ts` calls a local DeBERTa verifier (`nli-service/`, `cross-encoder/nli-deberta-v3-base`) when `NLI_ENDPOINT` is set — today that is Node-side (evals, CI). In the browser it stays disconnected; the UI shows the layer as *Not run* and excludes it from the verdict |
-| The adaptation itself (`adapt()` in `lib/adapt/`) | **Client port posts to `/api/adapt`, then falls back to the offline sample adapter** (`http.ts` → `fixture.ts`). The route is not in the tree yet, so every call currently falls back. The fixture adapts the built-in campus-pilot example and its seeded failure case only; for any other input the UI shows a notice that the note was not produced from that text |
-| Live model path (Gemini behind `/api/adapt`) | **In progress** — `spec/spec-02-gemini-adapt/`. Needs the route, a key (`.env.example`), and an on-screen notice that text is being sent to a model (see `SECURITY.md`) |
+| Meaning Check layer 3 — semantic verification (NLI) | **Live when the local verifier is running.** `/api/adapt` calls `lib/fidelity/nli.ts`, which posts to the DeBERTa service in `nli-service/` (`cross-encoder/nli-deberta-v3-base`) via `NLI_ENDPOINT`. When the service is down or the env var is unset, the layer reports *Not run* and is excluded from the verdict |
+| The adaptation itself (`adapt()` in `lib/adapt/`) | **Client port posts to `/api/adapt`; the route runs the same offline sample adapter server-side** (`http.ts` → `app/api/adapt` → `fixture.ts`), with an in-browser fixture fallback if the route fails. **No model calls yet.** The fixture adapts the built-in campus-pilot example (in original, plain, or Taglish wording) and its seeded failure case; for any other input the UI shows a notice that the note was not produced from that text |
+| Live model path (Gemini inside `/api/adapt`) | **Not started** — `spec/spec-02-gemini-adapt/`; prompts are ready in `lib/adapt/prompts.ts` (incl. the Taglish rule). Needs a key (`.env.example`) and an on-screen notice that text is being sent to a model (see `SECURITY.md`) |
 | Chrome extension (`extension/`) | Builds (`node extension/build.mjs`); MV3 side panel + content script calling the same `adapt()` port. Load unpacked from `extension/` |
 
 Run: `npm install && npm run dev` → http://localhost:3000. Check: `npm run typecheck && npm test`. CI runs both plus `next build` on every push.

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Sindi } from "@/components/sindi";
 import { Reveal } from "./Reveal";
 import { HeroDemoCard } from "./HeroDemoCard";
@@ -74,13 +73,6 @@ export function Hero() {
 
         <Reveal delay={200} className="w-full min-w-0">
           <HeroDemoCard />
-          <p className="font-ui mt-3 text-center text-sm leading-relaxed text-ink-muted md:text-left">
-            Illustrative example —{" "}
-            <Link href="/onboarding" className="landing-inline-link">
-              open Linaw
-            </Link>{" "}
-            to adapt your own text.
-          </p>
         </Reveal>
       </div>
     </section>

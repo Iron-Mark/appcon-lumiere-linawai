@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useId, useState } from "react";
 import { Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -58,16 +57,8 @@ export function Faq() {
             id="faq-title"
             eyebrow="FAQ"
             title="Still wondering?"
-            description="Short answers. If something’s missing, jump in and try it."
+            description="Short answers about Meaning Check, Taglish, and the Chrome companion."
           />
-          <Reveal delay={80} className="font-ui mt-6 flex flex-col gap-2 text-base text-ink-muted">
-            <Link href="/onboarding" className="landing-inline-link w-fit">
-              Open Linaw
-            </Link>
-            <a href="#try-it" className="landing-inline-link w-fit">
-              Try the live demo
-            </a>
-          </Reveal>
         </div>
 
         <div className="font-ui w-full">

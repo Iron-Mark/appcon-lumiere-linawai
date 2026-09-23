@@ -1,10 +1,8 @@
-import Link from "next/link";
 import {
   EyeOff,
   FileText,
   Headphones,
   Languages,
-  Layers,
   ListChecks,
   MessageSquareText,
   ShieldCheck,
@@ -20,45 +18,50 @@ const VIEWS = [
   { icon: Headphones, name: "Listen", note: "Read aloud at your pace" },
 ];
 
-function FeatureBlock({
-  children,
-  delay,
-  href,
-  linkLabel,
-  className,
-}: {
-  children: ReactNode;
-  delay?: number;
-  href?: string;
-  linkLabel?: string;
-  className?: string;
-}) {
-  return (
-    <Reveal
-      delay={delay}
-      className={`font-ui flex flex-col gap-4 ${className ?? ""}`}
-    >
-      {children}
-      {href && linkLabel ? (
-        href.startsWith("/") ? (
-          <Link href={href} className="landing-inline-link mt-auto text-sm">
-            {linkLabel}
-          </Link>
-        ) : (
-          <a href={href} className="landing-inline-link mt-auto text-sm">
-            {linkLabel}
-          </a>
-        )
-      ) : null}
-    </Reveal>
-  );
-}
+const FEATURES = [
+  {
+    icon: ShieldCheck,
+    title: "Meaning Check",
+    body: "Warns when a condition, number, or deadline looks off — so you review the source, not trust a rewrite blindly.",
+  },
+  {
+    icon: Languages,
+    title: "Taglish-aware",
+    body: "Plain Language that sounds like how Filipinos talk: English, Tagalog, or both.",
+    href: "#try-it",
+    linkLabel: "Try Taglish in the demo",
+  },
+  {
+    icon: EyeOff,
+    title: "Zero-disclosure by design",
+    body: "No diagnosis, no sign-up form, no “accessibility mode.” Anyone can use it without identifying as struggling.",
+  },
+] as const;
 
-function FeatureIcon({ icon: Icon }: { icon: typeof Layers }) {
+function FeatureIcon({ icon: Icon }: { icon: typeof ShieldCheck }) {
   return (
     <span className="flex size-10 items-center justify-center rounded-lg bg-action-soft">
       <Icon className="size-5 text-action" strokeWidth={1.75} aria-hidden="true" />
     </span>
+  );
+}
+
+function QuietLink({
+  href,
+  children,
+  className,
+}: {
+  href: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  const classes = ["landing-inline-link text-sm", className]
+    .filter(Boolean)
+    .join(" ");
+  return (
+    <a href={href} className={classes}>
+      {children}
+    </a>
   );
 }
 
@@ -77,77 +80,70 @@ export function Features() {
           description="Detail, wording, delivery, and browser behavior: preference language only. Linaw adapts without diagnosing anyone."
         />
 
-        <div className="mt-12 grid gap-10 md:grid-cols-3 md:gap-x-8 md:gap-y-12">
-          <FeatureBlock
-            className="md:col-span-2 md:row-span-2"
-            href="#try-it"
-            linkLabel="Try all four views"
-          >
-            <FeatureIcon icon={Layers} />
-            <div>
-              <h3 className="font-reading text-xl font-semibold text-ink">Four adaptive views</h3>
-              <p className="mt-1 leading-relaxed text-pretty text-ink-muted">
-                Switch formats on the same content instantly. The source never
-                changes, only the shape it takes.
-              </p>
-            </div>
-            <ul className="mt-2 grid list-none gap-6 p-0 sm:grid-cols-2">
-              {VIEWS.map((view) => (
-                <li
-                  key={view.name}
-                  className="flex min-h-11 items-start gap-3"
-                >
-                  <view.icon
-                    className="mt-0.5 size-5 shrink-0 text-action"
-                    strokeWidth={1.75}
-                    aria-hidden="true"
-                  />
-                  <div className="flex flex-col">
-                    <span className="font-medium text-ink">{view.name}</span>
-                    <span className="text-sm text-ink-muted">{view.note}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </FeatureBlock>
+        {/* Band A — four adaptive views */}
+        <Reveal className="mt-12">
+          <div>
+            <h3 className="font-reading text-xl font-semibold text-ink">
+              Four adaptive views
+            </h3>
+            <p className="mt-1 max-w-xl leading-relaxed text-pretty text-ink-muted">
+              Switch formats on the same content instantly. The source never
+              changes — only the shape it takes.
+            </p>
+          </div>
 
-          <FeatureBlock delay={60} href="#verification" linkLabel="See Meaning Check">
-            <FeatureIcon icon={ShieldCheck} />
-            <div>
-              <h3 className="font-reading text-lg font-semibold text-ink">Meaning Check</h3>
-              <p className="mt-1 leading-relaxed text-pretty text-ink-muted">
-                Checks can warn when a condition, number, or deadline looks off,
-                so you can review the source, not trust a rewrite blindly.
-              </p>
-            </div>
-          </FeatureBlock>
+          <ul className="mt-8 grid list-none grid-cols-1 divide-y divide-border p-0 sm:grid-cols-2 md:grid-cols-4 md:divide-x md:divide-y-0">
+            {VIEWS.map((view) => (
+              <li
+                key={view.name}
+                className="flex min-h-11 items-center gap-3 py-4 md:px-6 md:py-0 md:first:pl-0 md:last:pr-0"
+              >
+                <FeatureIcon icon={view.icon} />
+                <p className="font-ui m-0 min-w-0 leading-snug">
+                  <span className="font-medium text-ink">{view.name}</span>
+                  <span className="text-sm text-ink-muted"> · {view.note}</span>
+                </p>
+              </li>
+            ))}
+          </ul>
+        </Reveal>
 
-          <FeatureBlock delay={120} href="#try-it" linkLabel="Try Taglish in the demo">
-            <FeatureIcon icon={Languages} />
+        {/* Band B — guarantees that stay on across views */}
+        <div className="mt-12 border-t border-border pt-10">
+          <Reveal>
             <div>
-              <h3 className="font-reading text-lg font-semibold text-ink">Taglish-aware</h3>
-              <p className="mt-1 leading-relaxed text-pretty text-ink-muted">
-                Plain Language that sounds like how Filipinos actually talk:
-                English, Tagalog, or both.
+              <h3 className="font-reading text-xl font-semibold text-ink">
+                Guarantees, not extra modes
+              </h3>
+              <p className="mt-1 max-w-xl leading-relaxed text-pretty text-ink-muted">
+                Meaning Check, Taglish, and zero-disclosure — the rules that
+                stay on no matter which view you pick.
               </p>
             </div>
-          </FeatureBlock>
+          </Reveal>
 
-          <FeatureBlock
-            delay={180}
-            className="md:col-span-3 md:flex-row md:items-center md:gap-6 md:border-t md:border-border md:pt-10"
-            href="/onboarding"
-            linkLabel="Open Linaw — no special mode"
-          >
-            <FeatureIcon icon={EyeOff} />
-            <div className="md:flex-1">
-              <h3 className="font-reading text-lg font-semibold text-ink">Zero-disclosure by design</h3>
-              <p className="mt-1 leading-relaxed text-pretty text-ink-muted">
-                No diagnosis, no sign-up form, no “accessibility mode.” Anyone can
-                use it, so no one has to identify as struggling to use it.
-              </p>
-            </div>
-          </FeatureBlock>
+          <div className="mt-8 grid gap-10 md:grid-cols-3 md:gap-x-8">
+            {FEATURES.map((feature, i) => (
+              <Reveal
+                key={feature.title}
+                delay={60 * (i + 1)}
+                className="font-ui flex flex-col"
+              >
+                <FeatureIcon icon={feature.icon} />
+                <h3 className="mt-4 font-reading text-lg font-semibold text-ink">
+                  {feature.title}
+                </h3>
+                <p className="mt-1 leading-relaxed text-pretty text-ink-muted">
+                  {feature.body}
+                </p>
+                {"href" in feature && feature.href ? (
+                  <QuietLink href={feature.href} className="mt-3">
+                    {feature.linkLabel}
+                  </QuietLink>
+                ) : null}
+              </Reveal>
+            ))}
+          </div>
         </div>
       </div>
     </section>

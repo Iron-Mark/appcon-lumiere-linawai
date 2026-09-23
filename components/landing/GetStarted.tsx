@@ -2,25 +2,13 @@ import Link from "next/link";
 import { AppWindow, Download, Info, Puzzle } from "lucide-react";
 import { Reveal } from "./Reveal";
 import { SectionHeading } from "./SectionHeading";
-import { OpenLinawButton } from "./OpenLinawButton";
 
 const EXTENSION_STEPS = [
   {
     step: 1,
     title: "Download the extension",
-    detail: (
-      <>
-        Get{" "}
-        <a
-          href="/linaw-chrome-extension.zip"
-          download="linaw-chrome-extension.zip"
-          className="landing-inline-link font-medium text-ink"
-        >
-          linaw-chrome-extension.zip
-        </a>{" "}
-        and unzip it on your computer.
-      </>
-    ),
+    detail:
+      "Use the Download as ZIP button above, then unzip it on your computer.",
   },
   {
     step: 2,
@@ -67,7 +55,6 @@ export function GetStarted() {
               the workspace. Nothing to install.
             </p>
             <div className="mt-6 flex flex-col gap-3">
-              <OpenLinawButton fullWidth />
               <Link
                 href="/read"
                 className="inline-flex h-11 min-h-11 cursor-pointer items-center justify-center rounded-lg border border-border bg-transparent text-base font-semibold text-ink transition-colors hover:bg-action-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"

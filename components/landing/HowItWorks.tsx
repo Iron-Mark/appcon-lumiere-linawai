@@ -59,7 +59,7 @@ export function HowItWorks() {
                 {i < STEPS.length - 1 ? (
                   <span
                     aria-hidden="true"
-                    className="absolute top-1/2 -right-3 hidden -translate-y-1/2 items-center md:flex"
+                    className="absolute top-1/2 right-0 z-10 hidden size-7 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full bg-paper md:flex"
                   >
                     <ChevronRight className="size-4 text-ink-subtle" />
                   </span>
@@ -77,13 +77,6 @@ export function HowItWorks() {
             </Reveal>
           ))}
         </ol>
-        <p className="font-ui mt-10 text-center text-base leading-relaxed text-ink-muted">
-          See it in action —{" "}
-          <a href="#try-it" className="landing-inline-link">
-            try the live demo
-          </a>
-          .
-        </p>
       </div>
     </section>
   );

@@ -32,7 +32,12 @@ type ViewMode = "adapted" | "original";
 
 function modeSummary(prefs: Preferences): string {
   const detail = prefs.detail === "full" ? "Full text" : "Key points";
-  const wording = prefs.wording === "original" ? "Original wording" : "Plain language";
+  const wording =
+    prefs.wording === "original"
+      ? "Original wording"
+      : prefs.wording === "taglish"
+        ? "Taglish"
+        : "Plain language";
   const delivery = prefs.delivery === "listen" ? "Listen" : "Read";
   return `${detail} • ${wording} • ${delivery}`;
 }
@@ -135,7 +140,7 @@ export function Panel({
   const runAdapt = async (nextPrefs: Preferences, nextSource: string) => {
     const trimmed = nextSource.trim();
     if (!trimmed) {
-      setError("Nothing to adapt yet. Select text on the page first.");
+      setError("Nothing to clarify yet. Select text on the page first.");
       setResponse(null);
       return;
     }
@@ -371,6 +376,7 @@ export function Panel({
               }
             >
               <option value="plain">Plain language</option>
+              <option value="taglish">Taglish</option>
               <option value="original">Original wording</option>
             </select>
           </div>

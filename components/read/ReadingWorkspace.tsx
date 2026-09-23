@@ -33,6 +33,7 @@ import {
   type Wording,
 } from "@/lib/domain";
 import { preferenceStore } from "@/lib/storage/preferences";
+import { LINAW_PREFERENCES_CHANGED_EVENT } from "@/lib/storage/preferences-sync";
 import { Sindi, type SindiState } from "@/components/sindi";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -174,8 +175,18 @@ export function ReadingWorkspace({
       }
       setPrefsReady(true);
     })();
+
+    const onExternalPrefs = (event: Event) => {
+      const detail = (event as CustomEvent<Preferences>).detail;
+      if (!detail || cancelled) return;
+      setPreferences(detail);
+      setHasStoredPrefs(true);
+    };
+    window.addEventListener(LINAW_PREFERENCES_CHANGED_EVENT, onExternalPrefs);
+
     return () => {
       cancelled = true;
+      window.removeEventListener(LINAW_PREFERENCES_CHANGED_EVENT, onExternalPrefs);
     };
   }, []);
 
@@ -818,7 +829,11 @@ export function ReadingWorkspace({
   const detailLabel =
     preferences.detail === "full" ? "Full" : "Key Points";
   const wordingLabel =
-    preferences.wording === "original" ? "Original" : "Plain Language";
+    preferences.wording === "original"
+      ? "Original"
+      : preferences.wording === "taglish"
+        ? "Taglish"
+        : "Plain Language";
   const deliveryLabel =
     preferences.delivery === "listen" ? "Listen" : "Read";
 

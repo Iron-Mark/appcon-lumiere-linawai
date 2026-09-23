@@ -31,6 +31,20 @@ const PLAIN_POINTS = [
   "A late confirmation needs written approval.",
 ];
 
+// Taglish keeps dates, times, roles, and the approval rule in English, as people do.
+const TAGLISH = [
+  "Members of the Linaw campus pilot, kumpirmahin ninyo ang orientation seat ninyo by Thursday at 5 PM.",
+  "Mentors, dumating ng Friday at 8:30 AM. Other members, dumating ng 9:00 AM.",
+  "Late confirmations ay tatanggapin lang only with written approval from the program coordinator.",
+];
+
+const TAGLISH_POINTS = [
+  "Kumpirmahin ang seat mo by Thursday at 5 PM.",
+  "Mentors, dumating ng Friday at 8:30 AM.",
+  "Other members, dumating ng 9:00 AM.",
+  "Late confirmation? Kailangan ng written approval.",
+];
+
 type Example = {
   kicker: string;
   blocks: string[];
@@ -40,17 +54,26 @@ type Example = {
 
 function detailBlocks(draft: DraftPreferences, detail: "full" | "key_points"): Example {
   const plain = draft.wording === "plain";
+  const taglish = draft.wording === "taglish";
   if (detail === "key_points") {
     return {
-      kicker: plain ? "Key points, in everyday words" : "Key points",
-      blocks: plain ? PLAIN_POINTS : KEY_POINTS,
+      kicker: taglish
+        ? "Key points, sa Taglish"
+        : plain
+          ? "Key points, in everyday words"
+          : "Key points",
+      blocks: taglish ? TAGLISH_POINTS : plain ? PLAIN_POINTS : KEY_POINTS,
       list: true,
       spoken: false,
     };
   }
   return {
-    kicker: plain ? "The full message, in everyday words" : "The full message",
-    blocks: plain ? PLAIN : SOURCE,
+    kicker: taglish
+      ? "The full message, sa Taglish"
+      : plain
+        ? "The full message, in everyday words"
+        : "The full message",
+    blocks: taglish ? TAGLISH : plain ? PLAIN : SOURCE,
     list: false,
     spoken: false,
   };
@@ -75,7 +98,11 @@ export function exampleFor(
   }
 
   if (stepId === "wording") {
-    const next = { ...draft, wording: selected === "plain" ? "plain" : "original" } as DraftPreferences;
+    const next = {
+      ...draft,
+      wording:
+        selected === "plain" || selected === "taglish" ? selected : "original",
+    } as DraftPreferences;
     return detailBlocks(next, draft.detail === "key_points" ? "key_points" : "full");
   }
 

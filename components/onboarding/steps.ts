@@ -3,6 +3,7 @@ import {
   BookOpen,
   FileText,
   Hand,
+  Languages,
   List,
   MessageSquareText,
   Quote,
@@ -17,7 +18,8 @@ import type {
   Wording,
 } from "@/lib/domain";
 
-export type StepId = keyof Preferences;
+/** Steps are the choice dimensions only — sync metadata like `updatedAt` is not a step. */
+export type StepId = Exclude<keyof Preferences, "updatedAt">;
 
 export type ChoiceValue = Detail | Wording | Delivery | BrowserBehavior;
 
@@ -33,7 +35,8 @@ export type OnboardingStep = {
   question: string;
   promptIdle: string;
   lineFor: (value: ChoiceValue) => string;
-  options: readonly [StepOption, StepOption];
+  /** Two or more choices; keyboard cycling wraps around the list. */
+  options: readonly [StepOption, StepOption, ...StepOption[]];
 };
 
 export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
@@ -67,7 +70,9 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
     lineFor: (value) =>
       value === "original"
         ? "Original: keep the source wording."
-        : "Plain Language: simpler words.",
+        : value === "taglish"
+          ? "Taglish: the everyday mix, with dates and rules kept as is."
+          : "Plain Language: simpler words.",
     options: [
       {
         value: "original",
@@ -80,6 +85,12 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
         label: "Plain Language",
         hint: "Use clearer, everyday words.",
         icon: MessageSquareText,
+      },
+      {
+        value: "taglish",
+        label: "Taglish",
+        hint: "Tagalog–English, the way people actually talk.",
+        icon: Languages,
       },
     ],
   },
