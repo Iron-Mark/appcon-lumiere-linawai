@@ -15,7 +15,7 @@ Each row: what, which file/function to replace or add, which spec.
 
 | Item | Replace / add | Spec |
 | --- | --- | --- |
-| Gemini extraction + adaptation over `adapt()` — **do not build yet** (spends tokens) | Add `lib/adapt/http.ts` using prompts in `lib/adapt/prompts.ts` (gemini-3.8-flash / AI SDK when wired); point `lib/adapt/index.ts` at it only after team go-ahead. Do **not** add `app/api` in this scaffold — keep the client port. See `spec-02-gemini-adapt`. | `05-client-port.md` |
+| Gemini extraction + adaptation over `adapt()` - **not connected** (spends tokens) | `app/api/adapt/route.ts` and `lib/adapt/http.ts` exist and run the local fixture pipeline (including fidelity). Gemini / `lib/adapt/prompts.ts` are still not wired. See `spec-02-gemini-adapt`. | `05-client-port.md` |
 | DeBERTa NLI — **do not build yet** (remote model) | `lib/fidelity` NLI layer (today: neutral stub). Prior feat used non-blocking HF `cross-encoder/nli-deberta-v3-base`; wire that into `runNliSlot` without a second adapt path. | `06-fidelity.md` |
 | Repair regeneration — **do not build yet** (needs generative model) | Pipeline after `repair_required`; generative repair via Gemini (`buildRepairPrompt` in `lib/adapt/prompts.ts`) | `06-fidelity.md`, `05-client-port.md` |
 | Preference sync across web and extension | New `PreferenceStore` implementation; accounts | `01-onboarding.md`, `07-extension.md` |

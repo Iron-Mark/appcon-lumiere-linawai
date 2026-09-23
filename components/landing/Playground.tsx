@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
   CircleCheck,
   FileText,
@@ -71,6 +71,7 @@ export function Playground() {
   const [speaking, setSpeaking] = useState(false);
   const [rate, setRate] = useState(1);
   const [speechError, setSpeechError] = useState<string | null>(null);
+  const panelId = useId();
 
   const variant = careless ? "bad" : "good";
   const isFlagged = careless && view !== "full";
@@ -117,7 +118,7 @@ export function Playground() {
   const showLangToggle = view === "plain" || view === "listen";
 
   return (
-    <section id="try-it" aria-labelledby="try-title" className="px-5 py-20 md:py-24">
+    <section id="try-it" aria-labelledby="try-title" className="landing-section">
       <div className="mx-auto max-w-6xl">
         <SectionHeading
           id="try-title"
@@ -127,15 +128,18 @@ export function Playground() {
         />
 
         <div className="font-ui mt-12 grid gap-4 lg:grid-cols-[1fr_320px]">
-          <div className="rounded-xl border border-border bg-paper-raised">
+          <div className="overflow-hidden rounded-xl border border-border bg-paper-raised shadow-[0_1px_0_color-mix(in_srgb,var(--color-ink)_5%,transparent)]">
             <div className="flex flex-col gap-3 border-b border-border p-3 sm:flex-row sm:items-center sm:justify-between">
               <div role="tablist" aria-label="Reading views" className="flex h-auto w-full flex-wrap justify-start gap-1 rounded-lg bg-paper-inset/60 p-1 sm:w-fit">
                 {VIEWS.map(({ value, label, icon: Icon }) => (
                   <button
                     key={value}
+                    id={`${panelId}-tab-${value}`}
                     type="button"
                     role="tab"
                     aria-selected={view === value}
+                    aria-controls={panelId}
+                    tabIndex={view === value ? 0 : -1}
                     onClick={() => handleViewChange(value)}
                     className={cn(
                       "inline-flex h-11 min-h-11 cursor-pointer flex-none items-center gap-2 rounded-md px-3 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
@@ -155,7 +159,7 @@ export function Playground() {
                 aria-label="Plain language style"
                 className={cn(
                   "flex items-center gap-1 self-start rounded-lg border border-border p-1 text-sm sm:self-auto",
-                  showLangToggle ? "visible" : "invisible",
+                  showLangToggle ? "flex" : "hidden",
                 )}
               >
                 {(["en", "tl"] as const).map((code) => (
@@ -182,7 +186,11 @@ export function Playground() {
             </div>
 
             <div className="min-h-72 p-6 md:p-8">
-              <div role="tabpanel" aria-label={`${VIEWS.find((v) => v.value === view)?.label} view`}>
+              <div
+                id={panelId}
+                role="tabpanel"
+                aria-labelledby={`${panelId}-tab-${view}`}
+              >
                 {view === "full" ? (
                   <p className="font-reading text-lg leading-relaxed text-ink">{SOURCE}</p>
                 ) : null}
@@ -272,8 +280,11 @@ export function Playground() {
             </div>
           </div>
 
-          <aside aria-labelledby="checks-title" className="flex flex-col gap-4 rounded-xl border border-border bg-paper-raised p-6">
-            <div className="flex items-center justify-between">
+          <aside
+            aria-labelledby="checks-title"
+            className="flex flex-col gap-4 rounded-xl border border-border bg-paper-raised p-6 shadow-[0_1px_0_color-mix(in_srgb,var(--color-ink)_5%,transparent)]"
+          >
+            <div className="flex items-center justify-between gap-3">
               <h3 id="checks-title" className="font-reading m-0 font-semibold text-ink">
                 Meaning Check
               </h3>
@@ -337,11 +348,11 @@ export function Playground() {
 
         <p className="font-ui mt-6 text-center text-sm text-ink-muted">
           Demo with illustrative text. To adapt your own content,{" "}
-          <Link href="/onboarding" className="cursor-pointer font-medium text-action underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+          <Link href="/onboarding" className="landing-inline-link">
             open Linaw
           </Link>{" "}
           or visit the{" "}
-          <Link href="/read" className="cursor-pointer font-medium text-action underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+          <Link href="/read" className="landing-inline-link">
             reading workspace
           </Link>
           .

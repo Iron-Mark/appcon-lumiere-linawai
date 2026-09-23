@@ -11,7 +11,11 @@ import {
   type ChangeEvent,
   type DragEvent,
 } from "react";
-import { adapt, getDevelopmentSampleSource } from "@/lib/adapt";
+import {
+  adapt,
+  FLAGGED_SAMPLE_SOURCE,
+  getDevelopmentSampleSource,
+} from "@/lib/adapt";
 import { SignInDialog } from "@/components/auth";
 import { authStore } from "@/lib/auth";
 import {
@@ -568,6 +572,24 @@ export function ReadingWorkspace({
     setError(null);
     setUploadStatus("Example loaded into the source.");
     setComposerExpanded(false);
+  };
+
+  /**
+   * The flagged example is a deliberately wrong adaptation of the campus notice
+   * ("All members arrive at 8:30 AM"). It exists so people can see Meaning Check
+   * catch something, not just pass everything. Runs immediately.
+   */
+  const onLoadFlaggedSample = () => {
+    const source = FLAGGED_SAMPLE_SOURCE;
+    setDraftSource(source);
+    setError(null);
+    setUploadStatus("Flagged example loaded and checked.");
+    setComposerExpanded(false);
+    setResultsRevealed(true);
+    void runAdapt(source, preferences, {
+      fixtureSample: false,
+      autoListen: false,
+    });
   };
 
   const onClearDraft = () => {
@@ -1175,6 +1197,17 @@ export function ReadingWorkspace({
                 >
                   Use an example
                 </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={onLoadFlaggedSample}
+                  disabled={working}
+                  title="A deliberately wrong version of the example, so you can see Meaning Check catch it"
+                  className="min-h-10 cursor-pointer gap-1.5 rounded-lg px-3 font-ui text-[0.875rem] font-medium text-ink-muted hover:bg-warning-soft hover:text-warning focus-visible:ring-2 focus-visible:ring-ring/60"
+                >
+                  <AlertTriangle aria-hidden className="size-3.5" strokeWidth={2.25} />
+                  Try a flagged example
+                </Button>
               </div>
               <Button
                 type="button"
@@ -1360,9 +1393,10 @@ export function ReadingWorkspace({
                   <strong style={{ fontWeight: 600 }}>
                     This note was not produced from your text.
                   </strong>{" "}
-                  This build runs an offline sample adapter, so it can only
-                  work on the built-in example. The checks below refer to that
-                  example, not to what you pasted.
+                  The adapter returned the built-in example instead — the
+                  live model may be unavailable or not connected in this
+                  build. The checks below refer to that example, not to what
+                  you pasted.
                 </p>
               </div>
             ) : null}

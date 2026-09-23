@@ -19,6 +19,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   delete process.env.NLI_ENDPOINT;
+  delete process.env.NEXT_PUBLIC_NLI_ENDPOINT;
 });
 
 describe("runNliSlot endpoint wiring", () => {
@@ -88,6 +89,30 @@ describe("runNliSlot endpoint wiring", () => {
     );
     expect(result.label).toBe("entailment");
     expect(result.check.status).toBe("pass");
+    expect(result.reason).toBe(REASON_NLI_ENTAILED);
+  });
+
+  it("reads NEXT_PUBLIC_NLI_ENDPOINT when NLI_ENDPOINT is unset", async () => {
+    process.env.NEXT_PUBLIC_NLI_ENDPOINT = ENDPOINT;
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        [
+          { label: "entailment", score: 0.88 },
+          { label: "contradiction", score: 0.05 },
+          { label: "neutral", score: 0.07 },
+        ],
+      ],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await runNliSlot(baseInput);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      ENDPOINT,
+      expect.objectContaining({ method: "POST" }),
+    );
+    expect(result.label).toBe("entailment");
     expect(result.reason).toBe(REASON_NLI_ENTAILED);
   });
 

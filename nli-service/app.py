@@ -38,6 +38,7 @@ import logging
 
 import torch
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
@@ -129,6 +130,18 @@ class LabelScore(BaseModel):
 
 
 app = FastAPI(title="Linaw NLI Service")
+
+# Local Next.js (browser Read path) may call /predict directly. Keep this
+# narrow: localhost only, no credentials.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_methods=["POST", "GET", "OPTIONS"],
+    allow_headers=["Content-Type"],
+)
 
 
 @app.get("/health")

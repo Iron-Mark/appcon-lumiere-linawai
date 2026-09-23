@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   EyeOff,
   FileText,
@@ -24,20 +25,35 @@ function FeatureCard({
   className,
   children,
   delay,
+  href,
+  linkLabel,
 }: {
   className?: string;
   children: ReactNode;
   delay?: number;
+  href?: string;
+  linkLabel?: string;
 }) {
   return (
     <Reveal
       delay={delay}
       className={cn(
-        "font-ui flex flex-col gap-4 rounded-xl border border-border bg-paper-raised p-6 transition-colors hover:border-action-border md:p-7",
+        "font-ui flex flex-col gap-4 rounded-xl border border-border bg-paper-raised p-6 shadow-[0_1px_0_color-mix(in_srgb,var(--color-ink)_5%,transparent)] transition-[border-color,box-shadow] hover:border-action-border/60 hover:shadow-[0_2px_8px_color-mix(in_srgb,var(--color-ink)_6%,transparent)] md:p-7",
         className,
       )}
     >
       {children}
+      {href && linkLabel ? (
+        href.startsWith("/") ? (
+          <Link href={href} className="landing-inline-link mt-auto text-sm">
+            {linkLabel}
+          </Link>
+        ) : (
+          <a href={href} className="landing-inline-link mt-auto text-sm">
+            {linkLabel}
+          </a>
+        )
+      ) : null}
     </Reveal>
   );
 }
@@ -52,7 +68,11 @@ function FeatureIcon({ icon: Icon }: { icon: typeof Layers }) {
 
 export function Features() {
   return (
-    <section id="features" aria-labelledby="features-title" className="px-5 py-20 md:py-24">
+    <section
+      id="features"
+      aria-labelledby="features-title"
+      className="landing-section landing-section--inset"
+    >
       <div className="mx-auto max-w-6xl">
         <SectionHeading
           id="features-title"
@@ -62,7 +82,11 @@ export function Features() {
         />
 
         <div className="mt-12 grid gap-4 md:grid-cols-3">
-          <FeatureCard className="md:col-span-2 md:row-span-2">
+          <FeatureCard
+            className="md:col-span-2 md:row-span-2"
+            href="#try-it"
+            linkLabel="Try all four views"
+          >
             <FeatureIcon icon={Layers} />
             <div>
               <h3 className="font-reading text-xl font-semibold text-ink">Four adaptive views</h3>
@@ -75,7 +99,7 @@ export function Features() {
               {VIEWS.map((view) => (
                 <li
                   key={view.name}
-                  className="flex min-h-11 items-center gap-3 rounded-lg border border-border bg-paper p-4"
+                  className="flex min-h-11 items-center gap-3 rounded-lg border border-border bg-paper p-4 transition-colors hover:border-action-border/50"
                 >
                   <view.icon
                     className="size-5 shrink-0 text-ink/70"
@@ -91,7 +115,7 @@ export function Features() {
             </ul>
           </FeatureCard>
 
-          <FeatureCard delay={60}>
+          <FeatureCard delay={60} href="#verification" linkLabel="See Meaning Check">
             <FeatureIcon icon={ShieldCheck} />
             <div>
               <h3 className="font-reading text-lg font-semibold text-ink">Meaning Check</h3>
@@ -102,7 +126,7 @@ export function Features() {
             </div>
           </FeatureCard>
 
-          <FeatureCard delay={120}>
+          <FeatureCard delay={120} href="#try-it" linkLabel="Try Taglish in the demo">
             <FeatureIcon icon={Languages} />
             <div>
               <h3 className="font-reading text-lg font-semibold text-ink">Taglish-aware</h3>
@@ -113,7 +137,12 @@ export function Features() {
             </div>
           </FeatureCard>
 
-          <FeatureCard delay={180} className="md:col-span-3 md:flex-row md:items-center md:gap-6">
+          <FeatureCard
+            delay={180}
+            className="md:col-span-3 md:flex-row md:items-center md:gap-6"
+            href="/onboarding"
+            linkLabel="Open Linaw — no special mode"
+          >
             <FeatureIcon icon={EyeOff} />
             <div className="md:flex-1">
               <h3 className="font-reading text-lg font-semibold text-ink">Zero-disclosure by design</h3>
