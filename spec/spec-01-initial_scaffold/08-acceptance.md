@@ -21,13 +21,13 @@ Run offline / fixture-backed (no server required). Use the campus-pilot developm
 
 ## Must be true
 
-- [ ] Preferences persist (web localStorage; extension storage when built).
-- [ ] Original remains one action away.
-- [ ] Warning state is visible, calm, and evidence-linked.
-- [ ] Copy never claims guarantee / 100% verified.
-- [ ] Public repo runs from `docs/README.md` instructions (`npm install` && `npm run dev`).
-- [ ] Eval/corruption check runnable for the seeded case (fidelity track).
-- [ ] `/todo` lists unbuilt backend plugs (fixture track).
+- [x] Preferences persist (web localStorage; extension storage when built).
+- [x] Original remains one action away.
+- [x] Warning state is visible, calm, and evidence-linked.
+- [x] Copy never claims guarantee / 100% verified.
+- [x] Public repo runs from `docs/README.md` instructions (`npm install` && `npm run dev`).
+- [x] Eval/corruption check runnable for the seeded case (fidelity track). `npm test` — 24 sources, 97 tests.
+- [x] `/todo` lists unbuilt backend plugs (fixture track).
 
 ## Explicitly not required for this slice’s “done”
 
@@ -37,8 +37,6 @@ Run offline / fixture-backed (no server required). Use the campus-pilot developm
 
 ## Wave 0 gate (this agent)
 
-- [ ] Docs + spec manager + `spec-01` files present.
-- [ ] Next app typechecks / builds with placeholders.
-- [ ] Domain Zod, adapt port/selector/stub, PreferenceStore, Sindi API in place.
-- [ ] Placeholder routes name owning tracks.
-- [ ] No Wave 1 directory bodies beyond empty ownership reservations.
+- [x] Docs + spec manager + `spec-01` files present.
+- [x] Domain Zod, adapt port/selector, PreferenceStore, Sindi API in place.
+- [x] Wave 1 tracks have replaced the empty placeholder bodies. The old “no Wave 1 bodies” gate is superseded.

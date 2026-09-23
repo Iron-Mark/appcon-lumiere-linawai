@@ -4,7 +4,11 @@
 
 Linaw AI is an adaptive information platform: a web app and Chrome companion that presents important messages the way you prefer—detail, wording, and delivery—then runs a **Meaning Check** so critical facts, conditions, and relationships are less likely to change silently.
 
-This repository is a single Next.js app at the root. There is no backend in the current scaffold; adaptation uses an in-browser client port that will later call a server.
+This repository is a single Next.js app at the root. Adaptation defaults to the in-browser fixture. `POST /api/adapt` exists; the client in `lib/adapt/http.ts` calls that route and falls back to the fixture when no model key is set. No model key is committed to git. Do not add other API routes.
+
+## Competition brief
+
+The brief asks for an Adaptive Information Communication System: people prefer detailed text, listening, or concise conclusions, and rewriting by hand is slow and still drops meaning. Linaw answers that with preferences, not diagnosis. Onboarding sets detail (Full vs Key Points), wording (original vs Plain Language), and delivery (Read vs Listen). Meaning Check and Show original (one action away) keep important meaning consistent across formats. One paste on the web or one selection in the extension produces the other views, so the sender does not rewrite the notice three times. There is no cognitive profile, diagnosis, or accessibility mode.
 
 ## Product context
 
@@ -39,7 +43,7 @@ Useful scripts:
 | `npm run dev` | Next.js dev server |
 | `npm run build` | Production build |
 | `npm run start` | Serve production build |
-| `npm run test` | Vitest |
+| `npm run test` | Vitest, including the fidelity eval corpus (24 sources; fixture/deterministic checks, not a hosted NLI score) |
 | `npm run typecheck` | TypeScript check |
 
 ## Using the app
@@ -77,8 +81,8 @@ Local fixture work uses a campus-pilot source with a deadline, two groups, two t
 ## Extending the app
 
 - Prefer a numbered phase under `spec/` (see [`spec/AGENTS.md`](../spec/AGENTS.md)) before large feature work.
-- UI should call `adapt()` from `lib/adapt` and the preference store—never import `fixture.ts` directly.
-- A future backend adds `lib/adapt/http.ts` and switches `lib/adapt/index.ts`; domain Zod types stay stable. Do not add that file yet (see **Do not call Gemini yet**).
+- UI should call `adapt()` from `lib/adapt` and the preference store—never import `fixture.ts` or `http.ts` directly.
+- `lib/adapt/http.ts` is already the client: it posts to `/api/adapt` and falls back to the fixture. `lib/adapt/index.ts` re-exports that client. Domain Zod types stay stable. Do not add other API routes; keep the model off unless the team sets a key (see **Do not turn Gemini on**).
 - Parallel tracks own fixed directories listed in [`docs/AGENTS.md`](./AGENTS.md).
 
 ## Backend not connected

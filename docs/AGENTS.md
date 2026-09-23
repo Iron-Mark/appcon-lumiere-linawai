@@ -54,7 +54,7 @@ If your task names one track, stop at that directory. Do not open sibling track 
 
 - **Adapt:** `lib/adapt/port.ts` defines `adapt(input)`. `lib/adapt/index.ts` is the only selector and re-exports `./http`. `http.ts` posts to `/api/adapt` and falls back to the fixture. Request/response stay section-17 domain types.
 - **Preferences:** `lib/storage/preferences.ts` exposes `PreferenceStore`. Web uses `localStorage`. Extension track owns `chrome.storage` under `extension/`.
-- **Sindi:** `components/sindi/` is presentational only (`state`, one short line, SVG lantern). No screen logic.
+- **Sindi:** `components/sindi/` is presentational only (`state`, one short line, SVG sun / Ray). No screen logic.
 - **Fidelity:** four layers (deterministic, relationship, NLI slot, coverage). UI calls one pipeline function when the fidelity track lands.
 
 ## Spec workflow

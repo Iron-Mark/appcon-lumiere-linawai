@@ -21,6 +21,8 @@ Run: `npm install && npm run dev` → http://localhost:3000. Check: `npm run typ
 
 ## Architecture
 
+Full write-up — surfaces, the single port, model provider order (Gemini → OpenAI-compatible gateway → fixture), the Fidelity Guard layers, storage, environment, and known limits: [`docs/architecture.md`](docs/architecture.md).
+
 One Next.js app. Every surface calls the same `adapt()` port; the port decides where adaptation happens (today: try `/api/adapt`, fall back to the in-browser fixture).
 
 ```mermaid
