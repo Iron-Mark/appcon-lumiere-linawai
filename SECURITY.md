@@ -21,7 +21,7 @@ is, not as planned. Update it when the answer changes.
 
 ## When a model key is set
 
-If `GEMINI_API_KEY` or the OpenAI-compatible gateway env is set, `/api/adapt` sends the source text to that provider for adaptation and meaning-map extraction. The reading screen says so before you adapt. The seeded failure example stays on the fixture. The key stays in `.env` (git-ignored). See [`.env.example`](.env.example). An empty key means the model is not called.
+If `GEMINI_API_KEY` or the OpenAI-compatible gateway env is set, `/api/adapt` sends the source text and the reader's detail/wording preference to that provider for adaptation and meaning-map extraction. Provider order is Gemini, then the gateway, then the offline fixture; every response is labelled `adapter: "model" | "fixture"` and the reading screen shows which produced the note. The reading screen also says, before you adapt, that text will be sent. Facts whose quoted evidence does not occur verbatim in the source are dropped before Meaning Check runs. The seeded failure example stays on the fixture. Keys live in `.env.local` (git-ignored) and are read only on the server. See [`.env.example`](.env.example). An empty key means the model is not called. Data retention on the model side is the provider's — for a third-party gateway it is unknown, so do not paste personal data into a build that uses one.
 
 ## Personal data and RA 10173
 

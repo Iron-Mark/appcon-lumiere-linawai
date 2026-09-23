@@ -46,14 +46,33 @@ Severity:
 User-facing reasons must stay cautious. Never output a bare accuracy percentage or a guarantee of correctness. Prefer phrasing like "No issue found in these checks." or "This version may have changed the deadline."
 `.trim();
 
+/** Spelled-out wording instruction, repeated in the user turn so smaller models do not skip it. */
+function wordingDirective(wording: Wording): string {
+  switch (wording) {
+    case "plain":
+      return "Plain Language — short everyday words, short sentences, active voice. Keep every date, time, number, name, and condition exactly as written.";
+    case "taglish":
+      return "Taglish — write adaptedText in natural conversational Taglish (Tagalog mixed with English, as spoken in Metro Manila). Tagalog for the connecting words and verbs (e.g. 'Kumpirmahin', 'dumating', 'kailangan', 'tatanggapin lang'); keep dates, times, numbers, places, role names, and any 'only if / unless' condition in English exactly as written in the source. Every sentence must contain some Tagalog.";
+    case "original":
+    default:
+      return "Original — keep the source wording; only trim per the detail level.";
+  }
+}
+
+function detailDirective(detail: Detail): string {
+  return detail === "key_points"
+    ? "Key Points — one short line per critical fact, newline-separated; drop greetings and background."
+    : "Full — keep all content, reorganised only if it aids clarity.";
+}
+
 export function buildGenerativePrompt(
   originalText: string,
   preferences: AdaptPromptPreferences,
 ): string {
   return `
 TARGET PREFERENCES:
-- Detail: ${preferences.detail}
-- Wording: ${preferences.wording}
+- Detail: ${preferences.detail} → ${detailDirective(preferences.detail)}
+- Wording: ${preferences.wording} → ${wordingDirective(preferences.wording)}
 
 ORIGINAL TEXT TO PROCESS:
 """
