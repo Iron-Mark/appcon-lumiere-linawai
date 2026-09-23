@@ -25,7 +25,7 @@ Until someone edits these files, implement against them. Product canon remains [
 
 | Track | Directory ownership | Specs |
 | --- | --- | --- |
-| Onboarding | `components/onboarding/`, `app/page.tsx` | `01-onboarding.md` |
+| Onboarding | `components/onboarding/`, `app/onboarding/` | `01-onboarding.md` |
 | Reading | `components/read/`, `app/read/` | `02-reading-workspace.md`, `03-meaning-check.md` |
 | Fidelity | `lib/fidelity/`, `evals/` | `06-fidelity.md` |
 | Fixture + todo | `lib/adapt/fixture.ts`, `app/todo/` | `05-client-port.md`, `09-backend-todo.md` |

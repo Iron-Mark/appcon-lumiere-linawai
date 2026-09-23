@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { LegalNotice } from "@/components/legal/LegalNotice";
 
 export const metadata: Metadata = {
-  title: "Terms and privacy · Linaw AI",
+  title: "Terms and privacy",
   description:
     "How Linaw uses a message you paste, what stays on this device, and what the AppCon code grant does not cover.",
+  alternates: { canonical: "/legal" },
+  openGraph: { url: "/legal" },
 };
 
 export default async function LegalPage({

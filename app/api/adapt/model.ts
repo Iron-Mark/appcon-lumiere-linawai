@@ -19,7 +19,8 @@ import { answerLooksLeaked } from "./limit";
  * Server-only model adapter for /api/adapt.
  *
  * Provider order:
- *   1. Gemini            — GEMINI_API_KEY (+ GEMINI_MODEL, default gemini-3.8-flash)
+ *   1. Gemini            — GEMINI_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY
+ *                          (+ GEMINI_MODEL, default gemini-3.8-flash)
  *   2. OpenAI-compatible — LLM_API_BASE + LLM_API_KEY (+ LLM_MODEL, default auto);
  *                          used as the fallback gateway when Gemini is unset or fails
  *   3. (route) fixture   — when neither answers, the route falls back and says so
@@ -43,7 +44,11 @@ export type ModelProvider =
 export function readModelProviders(): ModelProvider[] {
   const providers: ModelProvider[] = [];
 
-  const geminiKey = (process.env.GEMINI_API_KEY ?? "").trim();
+  const geminiKey = (
+    process.env.GEMINI_API_KEY ??
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY ??
+    ""
+  ).trim();
   if (geminiKey) {
     providers.push({
       kind: "gemini",

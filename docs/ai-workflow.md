@@ -21,8 +21,8 @@ Root [`AGENTS.md`](../AGENTS.md), [`CLAUDE.md`](../CLAUDE.md), [`.github/copilot
 | Fact | Rule |
 | --- | --- |
 | Repo shape | Single repo, one `package.json`. No monorepo, no `apps/`, no `packages/`. |
-| Backend | **None in this slice.** No `app/api` routes. |
-| Adaptation | UI calls `adapt()` from `lib/adapt`. Selector is `lib/adapt/index.ts`. Later HTTP client is `lib/adapt/http.ts`. |
+| Backend | The only server route is `POST /api/adapt` (`app/api/adapt/route.ts`, helper `model.ts`). Do not add other `app/api` routes. |
+| Adaptation | UI calls `adapt()` from `lib/adapt`. `index.ts` re-exports `http.ts`. `http.ts` posts to `/api/adapt` and falls back to the in-browser fixture. The route tries Gemini, then the OpenAI-compatible gateway, then `fixture.ts`. No key means the fixture. |
 | Spec layout | Only `spec/AGENTS.md` may sit directly in `spec/`. Phases are `spec-NN-short_name/`. |
 | Preferences | Use preference language (Key Points, Plain Language, Listen, Auto-Clarify). Never diagnose the person. Auto-Clarify is explicit opt-in. The on-screen verb is Clarify. |
 | Verification copy | Cautious. Never “guaranteed,” “100% verified,” or “the AI proves this is correct.” |
@@ -39,7 +39,7 @@ This is the **development sample**, not a retired live-event script. Fixture tra
 
 **Warning line:** “The time appears to be attached to the wrong group.”
 
-Do **not** hardcode this copy inside onboarding/reading UI components. Pass source into `adapt()`; let the fixture (or later HTTP) return adapted text and checks.
+Do **not** hardcode this copy inside onboarding/reading UI components. Pass source into `adapt()`. `http.ts` posts to `/api/adapt`; the fixture answers when no model key is set.
 
 Default profile for exercising the path: Key Points, Plain Language, Read.
 
@@ -50,7 +50,7 @@ Wave 0 shipped contracts and shell. Later agents do **not** rewrite Wave 0-owned
 | Track | Owns (only) | Spec files |
 | --- | --- | --- |
 | **Wave 0 (done)** | Guides listed in `docs/AGENTS.md`, `spec/`, shell tooling, `app/layout.tsx`, `app/globals.css`, `lib/domain/`, `lib/adapt/port.ts`, `lib/adapt/index.ts`, `lib/storage/preferences.ts`, `components/sindi/`, placeholder routes | contracts in `spec-01` |
-| **Onboarding** | `components/onboarding/`, `app/page.tsx` | `01-onboarding.md` |
+| **Onboarding** | `components/onboarding/`, `app/onboarding/` | `01-onboarding.md` |
 | **Reading** | `components/read/`, `app/read/` | `02-reading-workspace.md`, `03-meaning-check.md` |
 | **Fidelity** | `lib/fidelity/`, `evals/` | `06-fidelity.md` |
 | **Fixture + todo** | `lib/adapt/fixture.ts`, `app/todo/` | `05-client-port.md`, `09-backend-todo.md` |
@@ -60,17 +60,19 @@ Wave 0 shipped contracts and shell. Later agents do **not** rewrite Wave 0-owned
 
 - If your task names one track, stop at that directory.
 - A missing dependency is a `/todo` row (or a note), not an edit to another track’s files or to `package.json` unless Wave 0 left that install out.
-- Fixture track must **not** edit `lib/adapt/index.ts`. Backend owner switches the selector later.
+- Fixture track must **not** edit `lib/adapt/index.ts`. The selector re-exports `http.ts`.
+- `/` is the public landing page. Onboarding is `/onboarding`.
 
 ## Ports and seams
 
 ```text
 UI / extension
-    → adapt() via lib/adapt (index.ts selects implementation)
-        → fixture.ts (today)  … later http.ts
+    → adapt() via lib/adapt (index.ts re-exports http.ts)
+        → POST /api/adapt (Gemini, then gateway, then fixture.ts)
+        → in-browser fixture if the route is unreachable
     → PreferenceStore via lib/storage/preferences.ts
 Sindi (components/sindi) — presentational only (state + one line + SVG)
-Fidelity — four layers; UI calls one pipeline function when that track lands
+Fidelity — four layers; UI calls one pipeline function
 ```
 
 Forbidden shortcuts:
@@ -133,7 +135,14 @@ Thin entry points that load for other tools: root [`CLAUDE.md`](../CLAUDE.md) (C
 
 ## Out of scope unless a later phase says otherwise
 
-Server routes, Gemini calls, Supabase, DeBERTa host, repair regeneration, account sync, OCR, PDF, healthcare, multi-agent product forks, and separate Learn / Work / Org / Public apps.
+Do not add extra server routes, a second adaptation path, OCR, healthcare flows, multi-agent product forks, or separate Learn / Work / Org / Public apps.
+
+These already exist and stay as they are:
+
+- `POST /api/adapt` calls Gemini only when `GEMINI_API_KEY` is set, then the gateway, then the fixture. Leave the key unset unless the team asks.
+- The semantic check stays off unless `NLI_ENDPOINT` is set.
+- Optional account sync uses Supabase when `NEXT_PUBLIC_SUPABASE_URL` and the publishable key are set. It stores preferences and saved titles, never source text.
+- One repair retry runs after `repair_required` only when a model key is set.
 
 ## Where to look next
 

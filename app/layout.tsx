@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { Lora, Raleway } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -15,10 +16,27 @@ const raleway = Raleway({
   display: "swap",
 });
 
+const description =
+  "Linaw adapts a message to the reader's detail, wording, and delivery, then checks that critical meaning is still intact.";
+
 export const metadata: Metadata = {
-  title: "Linaw AI",
-  description:
-    "Clarify the format. Preserve the meaning. Personalized information with Meaning Check.",
+  metadataBase: new URL("https://appcon-lumiere-linawai.vercel.app"),
+  title: {
+    default: "Linaw AI",
+    template: "%s · Linaw AI",
+  },
+  description,
+  openGraph: {
+    type: "website",
+    siteName: "Linaw AI",
+    title: "Linaw AI",
+    description,
+  },
+  twitter: {
+    card: "summary",
+    title: "Linaw AI",
+    description,
+  },
 };
 
 export default function RootLayout({
@@ -33,6 +51,7 @@ export default function RootLayout({
           Skip to content
         </a>
         <div id="main-content">{children}</div>
+        <Analytics />
       </body>
     </html>
   );

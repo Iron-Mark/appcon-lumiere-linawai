@@ -8,6 +8,7 @@ import { GetStarted } from "./GetStarted";
 import { SocialProof } from "./SocialProof";
 import { Faq } from "./Faq";
 import { Footer } from "./Footer";
+import { LandingJsonLd } from "./LandingJsonLd";
 
 const Playground = dynamic(
   () => import("./Playground").then((mod) => ({ default: mod.Playground })),
@@ -34,6 +35,7 @@ const Playground = dynamic(
 export function LandingPage() {
   return (
     <div className="landing-shell relative min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-paper text-ink">
+      <LandingJsonLd />
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10 opacity-[0.04]"

@@ -8,7 +8,7 @@ Collect the user’s default communication preferences in four calm steps, persi
 
 - Directories: `components/onboarding/`, `app/onboarding/`
 - Do not edit `lib/domain/`, `lib/storage/`, or `components/sindi/` contracts—consume them.
-- **Route gap (landing track):** `/` is now the public landing (`components/landing/`, `app/page.tsx`). Onboarding ships at `/onboarding`. Ownership maps that still list only `app/page.tsx` for this track are stale until updated in `docs/AGENTS.md` / phase README.
+- **Route:** `/` is the public landing (`components/landing/`, `app/page.tsx`). Onboarding ships at `/onboarding` (`app/onboarding/`).
 - Reading-side first-arrival behavior (glance vs text, empty-state preference line) lives under `components/read/` and must stay aligned with this contract.
 
 ## User-visible behavior
@@ -75,16 +75,16 @@ Use Zod types from `lib/domain` (`Preferences`). Persist with `lib/storage/prefe
 
 ## Acceptance checks
 
-- [ ] Four steps match the table; Continue disabled until a choice.
-- [ ] After Detail, wording copy and sample match Key Points vs Full.
-- [ ] After Wording, delivery copy and sample match prior answers.
-- [ ] Listen changes the last-step copy (extension vs on-page listen); Read does not pitch Listen.
-- [ ] Back returns to the previous step without losing prior selections.
-- [ ] Final Continue persists preferences and lands on `/read` with matching layout and a short defaults line.
-- [ ] Selected card styling uses olive tokens from `app/globals.css`.
-- [ ] Sindi `prompt` state renders; no emoji mascot.
-- [ ] No streak/XP/score chrome.
-- [ ] Works on desktop and narrow mobile widths.
+- [x] Four steps match the table; Continue disabled until a choice.
+- [x] After Detail, wording copy and sample match Key Points vs Full.
+- [x] After Wording, delivery copy and sample match prior answers.
+- [x] Listen changes the last-step copy (extension vs on-page listen); Read does not pitch Listen.
+- [x] Back returns to the previous step without losing prior selections.
+- [x] Final Continue persists preferences and lands on `/read` with matching layout and a short defaults line.
+- [x] Selected card styling uses olive tokens from `app/globals.css`.
+- [x] Sindi `prompt` state renders; no emoji mascot.
+- [x] No streak/XP/score chrome.
+- [x] Works on desktop and narrow mobile widths.
 
 ## Out of scope
 

@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import { OnboardingFlow } from "@/components/onboarding";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 /**
  * Onboarding — preference defaults, then /read.

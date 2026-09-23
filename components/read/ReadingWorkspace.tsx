@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -654,6 +655,10 @@ export function ReadingWorkspace({
   const onAdaptDraft = () => {
     const source = draftSource.trim();
     if (!source) return;
+    track("Clarify", {
+      detail: preferences.detail,
+      wording: preferences.wording,
+    });
     setResultsRevealed(true);
     setComposerExpanded(false);
     void runAdapt(source, preferences, {

@@ -40,7 +40,7 @@ Wave 0 finished the contracts and shell. Later agents do not edit Wave 0-owned f
 | Track | Owns (only) | Spec files |
 | --- | --- | --- |
 | **Wave 0 (done)** | `docs/AGENTS.md`, `docs/README.md`, root pointers, `spec/`, `package.json` / tooling, `app/layout.tsx`, `app/globals.css`, `lib/domain/`, `lib/adapt/port.ts`, `lib/adapt/index.ts`, `lib/storage/preferences.ts`, `components/sindi/`, placeholder routes | all of `spec-01` as contracts |
-| **Onboarding** | `components/onboarding/`, `app/page.tsx` | `01-onboarding.md` |
+| **Onboarding** | `components/onboarding/`, `app/onboarding/` | `01-onboarding.md` |
 | **Reading** | `components/read/`, `app/read/` | `02-reading-workspace.md`, `03-meaning-check.md` |
 | **Fidelity** | `lib/fidelity/`, `evals/` | `06-fidelity.md` |
 | **Fixture + todo** | `lib/adapt/fixture.ts`, `app/todo/` | `05-client-port.md`, `09-backend-todo.md` |

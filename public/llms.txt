@@ -1,0 +1,13 @@
+# Linaw AI
+
+Linaw adapts a message to the reader's detail, wording, and delivery, then checks that critical meaning is still intact.
+
+Tagline: Clarify the format. Preserve the meaning.
+
+It offers key points or full detail, original wording, plain language, or Taglish, and reading or listening. Meaning Check compares critical facts in the adapted note with the source. It does not diagnose the reader and it does not guarantee the note is correct.
+
+Page views and a Clarify click (detail and wording only) may be counted. The pasted message is not an analytics payload.
+
+Public pages:
+- https://appcon-lumiere-linawai.vercel.app/
+- https://appcon-lumiere-linawai.vercel.app/legal

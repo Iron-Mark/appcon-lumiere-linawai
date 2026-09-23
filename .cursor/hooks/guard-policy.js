@@ -123,7 +123,7 @@ function checkSecondAdaptPath(rel) {
   if (!/\.(ts|tsx|js|jsx|mjs|cjs)$/i.test(file)) return null;
   return {
     agent:
-      `Blocked: \`${rel}\` looks like a second adaptation path. Allowed files under \`lib/adapt/\` are: port.ts, index.ts, fixture.ts, and (later) http.ts. Callers use \`adapt()\` from \`lib/adapt\` only — see docs/AGENTS.md and docs/ai-workflow.md.`,
+      `Blocked: \`${rel}\` looks like a second adaptation path. Allowed files under \`lib/adapt/\` are: port.ts, index.ts, fixture.ts, and http.ts. Callers use \`adapt()\` from \`lib/adapt\` only — see docs/AGENTS.md and docs/ai-workflow.md.`,
     user: "Linaw policy: do not add another adaptation module beside lib/adapt.",
   };
 }

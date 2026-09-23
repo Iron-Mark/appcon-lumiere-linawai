@@ -180,9 +180,11 @@ function PrivacyPanel() {
         runs only if NLI_ENDPOINT is set, and then only to that address.
       </Section>
       <Section n="3" title="What we do not collect">
-        There is no advertising network and no analytics script on the reading
-        pages. We do not sell messages. We do not ask for a password. The
-        server does not write source text to disk and does not log it.
+        There is no advertising network. Vercel Web Analytics counts page
+        views, and a Clarify click records the detail and wording choices
+        only. The pasted message, the clarified note, and the account email
+        are not in that count. We do not sell messages. The server does not
+        write source text to disk and does not log it.
       </Section>
       <Section n="4" title="How long it stays">
         A successful model answer is kept in server memory, up to 50 notes,
