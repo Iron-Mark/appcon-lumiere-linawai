@@ -19,6 +19,11 @@ import { REASON_WRONG_GROUP, runFidelityGuard } from "@/lib/fidelity";
 export const CAMPUS_PILOT_SOURCE =
   "Members of the Linaw campus pilot must confirm their orientation seat by Thursday at 5 PM. Mentors should arrive Friday at 8:30 AM. Other members should arrive at 9:00 AM. Late confirmations are accepted only with written approval from the program coordinator.";
 
+/** Source text for “Use an example” — UI fills the draft; it does not hardcode this string. */
+export function getDevelopmentSampleSource(): string {
+  return CAMPUS_PILOT_SOURCE;
+}
+
 /** Source string that triggers the seeded corruption path (port has no failure flag). */
 export const SEEDED_FAILURE_SOURCE = "All members arrive at 8:30 AM";
 

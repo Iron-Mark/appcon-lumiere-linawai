@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Ear, EarOff, FileText, RotateCcw } from "lucide-react";
 import type { Check } from "@/lib/domain";
+import { cn } from "@/lib/utils";
 import { AdaptedText } from "./AdaptedText";
 import type { TextMark } from "./marks";
 
@@ -20,6 +21,7 @@ type NoteCardProps = {
   selectedIndex: number | null;
   onSelectMark: (checkIndex: number) => void;
   overallStatus: Check["status"] | null;
+  working?: boolean;
 };
 
 export function NoteCard({
@@ -36,45 +38,117 @@ export function NoteCard({
   selectedIndex,
   onSelectMark,
   overallStatus,
+  working = false,
 }: NoteCardProps) {
   const caution =
     overallStatus === "warning" || overallStatus === "repair_required";
+  const pass = overallStatus === "pass" && !working;
 
   return (
     <article
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "1.1rem",
-        padding: "1.5rem 1.6rem 1.35rem",
-        background: "var(--color-paper-raised)",
-        border: "1px solid var(--color-paper-inset)",
-        borderRadius: "0.65rem",
-        boxShadow: "0 1px 0 color-mix(in srgb, var(--color-ink) 5%, transparent)",
+        gap: "1.35rem",
         minWidth: 0,
+        height: "fit-content",
       }}
     >
-      <header style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-        <h1
+      <header
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.6rem",
+          paddingBottom: "1rem",
+          borderBottom: "1px solid var(--color-paper-inset)",
+        }}
+      >
+        <div
           style={{
-            margin: 0,
-            fontFamily: "var(--font-ui)",
-            fontSize: "1.35rem",
-            fontWeight: 650,
-            letterSpacing: "-0.01em",
-            color: "var(--color-ink)",
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: "0.65rem 0.75rem",
           }}
         >
-          {title}
-        </h1>
+          <h2
+            className="font-reading"
+            style={{
+              margin: 0,
+              fontSize: "1.5rem",
+              fontWeight: 600,
+              letterSpacing: "-0.015em",
+              lineHeight: 1.2,
+              color: "var(--color-ink)",
+              minWidth: 0,
+              flex: "1 1 8rem",
+            }}
+          >
+            {showingOriginal ? "Original source" : title}
+          </h2>
+          <div
+            role="toolbar"
+            aria-label="Note actions"
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "0.5rem",
+              fontFamily: "var(--font-ui)",
+              flex: "0 1 auto",
+              justifyContent: "flex-end",
+            }}
+          >
+            <ActionButton
+              onClick={onToggleOriginal}
+              disabled={working}
+              icon={
+                showingOriginal ? (
+                  <RotateCcw size={18} strokeWidth={2} />
+                ) : (
+                  <FileText size={18} strokeWidth={2} />
+                )
+              }
+              label={showingOriginal ? "Show adapted" : "Show original"}
+              pressed={showingOriginal}
+            />
+            <ActionButton
+              onClick={onToggleListen}
+              disabled={!canListen}
+              icon={
+                listening ? (
+                  <EarOff size={18} strokeWidth={2} />
+                ) : (
+                  <Ear size={18} strokeWidth={2} />
+                )
+              }
+              label={listening ? "Stop" : "Listen"}
+              pressed={listening}
+            />
+          </div>
+        </div>
         <p
+          className="font-ui"
           style={{
             margin: 0,
-            fontFamily: "var(--font-ui)",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
             fontSize: "0.9375rem",
+            lineHeight: 1.45,
             color: caution ? "var(--color-warning)" : "var(--color-ink-muted)",
           }}
         >
+          <span
+            aria-hidden="true"
+            className={cn(
+              "inline-block size-2 shrink-0 rounded-full",
+              working && "animate-pulse bg-ink-subtle motion-reduce:animate-none",
+              !working && caution && "bg-warning-border",
+              !working && pass && "bg-pass",
+              !working && !caution && !pass && "bg-ink-subtle",
+            )}
+          />
           {statusLine}
         </p>
       </header>
@@ -86,30 +160,8 @@ export function NoteCard({
         onSelectMark={onSelectMark}
         showingOriginal={showingOriginal}
         originalText={originalText}
+        working={working}
       />
-
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "0.5rem",
-          fontFamily: "var(--font-ui)",
-          paddingTop: "0.25rem",
-        }}
-      >
-        <ActionButton
-          onClick={onToggleOriginal}
-          icon={showingOriginal ? <RotateCcw size={16} /> : <FileText size={16} />}
-          label={showingOriginal ? "Show adapted" : "Show original"}
-        />
-        <ActionButton
-          onClick={onToggleListen}
-          disabled={!canListen}
-          icon={listening ? <EarOff size={16} /> : <Ear size={16} />}
-          label={listening ? "Stop" : "Listen"}
-          pressed={listening}
-        />
-      </div>
     </article>
   );
 }
@@ -133,27 +185,25 @@ function ActionButton({
       onClick={onClick}
       disabled={disabled}
       aria-pressed={pressed}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "0.4rem",
-        padding: "0.45rem 0.85rem",
-        borderRadius: "0.4rem",
-        border: pressed
-          ? "1.5px solid var(--color-action-border)"
-          : "1.5px solid var(--color-paper-inset)",
-        background: pressed
-          ? "var(--color-action-soft)"
-          : "var(--color-paper)",
-        color: "var(--color-ink)",
-        fontSize: "0.875rem",
-        fontWeight: 550,
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.5 : 1,
-        fontFamily: "var(--font-ui)",
-      }}
+      className={cn(
+        // Quiet by default: the note title owns this row, controls read as tools.
+        "group font-ui inline-flex min-h-10 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.8125rem] font-medium",
+        "transition-[background-color,border-color,color,transform] duration-150 ease-out motion-reduce:transition-none",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+        "disabled:cursor-not-allowed disabled:opacity-45",
+        "enabled:active:translate-y-px",
+        pressed
+          ? "border-action-border bg-action-soft text-ink enabled:hover:bg-action-soft"
+          : "border-transparent bg-transparent text-ink-muted enabled:hover:border-paper-inset enabled:hover:bg-paper-inset enabled:hover:text-ink",
+      )}
     >
-      <span aria-hidden style={{ display: "inline-flex", color: "var(--color-action)" }}>
+      <span
+        aria-hidden
+        className={cn(
+          "inline-flex [&_svg]:size-4",
+          pressed ? "text-action" : "text-ink-subtle group-hover:text-action",
+        )}
+      >
         {icon}
       </span>
       {label}

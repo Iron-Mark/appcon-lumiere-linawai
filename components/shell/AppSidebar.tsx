@@ -2,13 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import {
-  BookOpen,
-  Home,
-  ShieldCheck,
-  SlidersHorizontal,
-} from "lucide-react";
+import { BookOpen, FileText, SlidersHorizontal } from "lucide-react";
 
 import {
   Sidebar,
@@ -21,87 +15,109 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 type NavItem = {
   href: string;
   label: string;
-  icon: typeof Home;
+  icon: typeof BookOpen;
 };
 
-const NAV_ITEMS: NavItem[] = [
-  { href: "/home", label: "Home", icon: Home },
+const MAIN_NAV: NavItem[] = [
   { href: "/read", label: "Read", icon: BookOpen },
-  { href: "/read#meaning-check", label: "Checks", icon: ShieldCheck },
-  { href: "/settings", label: "Settings", icon: SlidersHorizontal },
+  { href: "/content", label: "My Content", icon: FileText },
 ];
 
-function navIsActive(pathname: string, hash: string, href: string) {
-  const [pathOnly, fragment] = href.split("#");
-  if (pathname !== pathOnly && !pathname.startsWith(`${pathOnly}/`)) {
-    return false;
+const SETTINGS_ITEM: NavItem = {
+  href: "/settings",
+  label: "Settings",
+  icon: SlidersHorizontal,
+};
+
+function normalizePath(path: string) {
+  if (!path) return "/";
+  if (path.length > 1 && path.endsWith("/")) {
+    return path.slice(0, -1);
   }
-  if (fragment) {
-    return hash === `#${fragment}`;
-  }
-  if (pathOnly === "/read") {
-    return hash !== "#meaning-check";
-  }
-  return true;
+  return path;
+}
+
+/** Exact path match — /read stays active for any hash (including #meaning-check). */
+function navIsActive(pathname: string, href: string) {
+  return normalizePath(pathname) === normalizePath(href);
+}
+
+function navButtonClass(active: boolean) {
+  return active
+    ? "min-h-11 cursor-pointer rounded-xl bg-action-soft px-3 text-[0.9375rem] font-medium text-action hover:bg-action-soft focus-visible:ring-2 focus-visible:ring-focus motion-reduce:transition-none group-data-[collapsible=icon]:size-11 group-data-[collapsible=icon]:min-h-11 group-data-[collapsible=icon]:px-0"
+    : "min-h-11 cursor-pointer rounded-xl bg-transparent px-3 text-[0.9375rem] font-normal text-ink-muted hover:bg-paper-inset hover:text-ink focus-visible:ring-2 focus-visible:ring-focus motion-reduce:transition-none group-data-[collapsible=icon]:size-11 group-data-[collapsible=icon]:min-h-11 group-data-[collapsible=icon]:px-0";
 }
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const [hash, setHash] = useState("");
-
-  useEffect(() => {
-    const sync = () => setHash(window.location.hash);
-    sync();
-    window.addEventListener("hashchange", sync);
-    return () => window.removeEventListener("hashchange", sync);
-  }, [pathname]);
+  const { state, isMobile } = useSidebar();
+  const collapsed = state === "collapsed";
+  const settingsActive = navIsActive(pathname, SETTINGS_ITEM.href);
+  const SettingsIcon = SETTINGS_ITEM.icon;
 
   return (
     <Sidebar
-      collapsible="offcanvas"
-      className="border-sidebar-border bg-sidebar font-ui text-sidebar-foreground"
+      collapsible="icon"
+      className="bg-sidebar font-ui text-sidebar-foreground"
     >
-      <SidebarHeader className="gap-3 px-3 py-4">
-        <Link
-          href="/home"
-          className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-md px-2 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-        >
-          <span
-            aria-hidden
-            className="flex size-8 shrink-0 items-center justify-center rounded-md bg-ink text-sm font-semibold text-paper-raised"
+      <SidebarHeader className="p-2 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-1">
+        <div className="flex min-h-11 items-center gap-1">
+          <Link
+            href="/content"
+            title="Linaw"
+            className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-2.5 overflow-hidden rounded-lg px-2 outline-none transition-colors duration-200 ease-out hover:bg-paper-inset/80 focus-visible:ring-2 focus-visible:ring-sidebar-ring motion-reduce:transition-none group-data-[collapsible=icon]:size-11 group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
           >
-            L
-          </span>
-          <span className="text-base font-semibold tracking-tight text-ink">
-            Linaw
-          </span>
-        </Link>
+            <span
+              aria-hidden
+              className="flex size-8 shrink-0 items-center justify-center rounded-md bg-ink text-sm font-semibold text-paper-raised"
+            >
+              L
+            </span>
+            <span className="whitespace-nowrap text-base font-semibold tracking-tight text-ink group-data-[collapsible=icon]:hidden">
+              Linaw
+            </span>
+          </Link>
+          {!collapsed || isMobile ? (
+            <SidebarTrigger
+              aria-label={isMobile ? "Close menu" : "Toggle sidebar"}
+              className="inline-flex size-11 min-h-11 min-w-11 shrink-0 cursor-pointer rounded-lg text-ink-muted transition-colors duration-200 ease-out hover:bg-paper-inset hover:text-ink focus-visible:ring-2 focus-visible:ring-sidebar-ring motion-reduce:transition-none"
+            />
+          ) : null}
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
+        <SidebarGroup className="p-2 group-data-[collapsible=icon]:px-1">
           <SidebarGroupContent>
-            <SidebarMenu>
-              {NAV_ITEMS.map((item) => {
+            <SidebarMenu className="gap-1.5 group-data-[collapsible=icon]:items-center">
+              {MAIN_NAV.map((item) => {
                 const Icon = item.icon;
-                const active = navIsActive(pathname, hash, item.href);
+                const active = navIsActive(pathname, item.href);
                 return (
-                  <SidebarMenuItem key={item.label}>
+                  <SidebarMenuItem
+                    key={item.label}
+                    className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center"
+                  >
                     <SidebarMenuButton
                       asChild
                       isActive={active}
                       size="lg"
                       tooltip={item.label}
-                      className="min-h-11 cursor-pointer rounded-lg px-3 text-[0.9375rem] data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground"
+                      className={navButtonClass(active)}
                     >
-                      <Link href={item.href}>
+                      <Link
+                        href={item.href}
+                        aria-current={active ? "page" : undefined}
+                      >
                         <Icon aria-hidden strokeWidth={1.75} />
-                        <span>{item.label}</span>
+                        <span className="whitespace-nowrap">{item.label}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -112,10 +128,26 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border px-3 py-3">
-        <p className="px-2 text-xs leading-relaxed text-ink-subtle">
-          Source stays on this device unless you choose to save it.
-        </p>
+      <SidebarFooter className="mt-auto gap-2 border-t border-sidebar-border p-2 pt-4 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-1">
+        <SidebarMenu className="gap-1.5 group-data-[collapsible=icon]:items-center">
+          <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
+            <SidebarMenuButton
+              asChild
+              isActive={settingsActive}
+              size="lg"
+              tooltip={SETTINGS_ITEM.label}
+              className={navButtonClass(settingsActive)}
+            >
+              <Link
+                href={SETTINGS_ITEM.href}
+                aria-current={settingsActive ? "page" : undefined}
+              >
+                <SettingsIcon aria-hidden strokeWidth={1.75} />
+                <span className="whitespace-nowrap">{SETTINGS_ITEM.label}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

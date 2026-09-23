@@ -1,7 +1,7 @@
 import * as React from "react"
 
-/** Collapse the app sidebar into a sheet at phone width (375px and below). */
-const MOBILE_BREAKPOINT = 376
+/** Match Tailwind `md` — below this the sidebar is off-canvas (sheet). */
+const MOBILE_BREAKPOINT = 768
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)

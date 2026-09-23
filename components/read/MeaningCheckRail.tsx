@@ -1,7 +1,8 @@
 "use client";
 
 import type { Check } from "@/lib/domain";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { AlertTriangle, CheckCircle2, ShieldCheck } from "lucide-react";
 import { Sindi, type SindiState } from "@/components/sindi";
 
 type MeaningCheckRailProps = {
@@ -14,6 +15,31 @@ type MeaningCheckRailProps = {
   loading: boolean;
 };
 
+/**
+ * Fidelity layers report with engineering names. Show a reader-facing
+ * label first; the layer name stays visible underneath so the four
+ * layers remain identifiable.
+ */
+const LAYER_LABELS: Record<string, string> = {
+  "Deterministic fact compare": "Dates, times, and numbers match",
+  "Actor–value relationships": "Who and when stay paired",
+  "Actor-value relationships": "Who and when stay paired",
+  "Semantic verification (NLI): neutral": "No contradiction found",
+  "Critical fact coverage": "Key facts are all present",
+};
+
+function readerLabel(claim: string): { label: string; layer?: string } {
+  const mapped = LAYER_LABELS[claim.trim()];
+  return mapped ? { label: mapped, layer: claim } : { label: claim };
+}
+
+/** Ray at a size that registers; overrides the mascot's inline 40px slot. */
+const RAY_LARGE = "[&_svg]:size-14! [&_svg]:min-w-14!";
+
+/** Per-card entrance delay, after the rail itself has landed. */
+const CARD_STAGGER_MS = 40;
+const CARD_BASE_DELAY_MS = 120;
+
 export function MeaningCheckRail({
   checks,
   overallStatus,
@@ -24,6 +50,8 @@ export function MeaningCheckRail({
   loading,
 }: MeaningCheckRailProps) {
   const hasResults = checks != null && checks.length > 0 && !loading;
+  const caution =
+    overallStatus === "warning" || overallStatus === "repair_required";
 
   return (
     <aside
@@ -35,167 +63,318 @@ export function MeaningCheckRail({
         gap: "1rem",
         minWidth: 0,
         fontFamily: "var(--font-ui)",
-        scrollMarginTop: "1.25rem",
+        scrollMarginTop: "4.5rem",
       }}
     >
-      <header style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-        <h2
+      <header
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.6rem",
+          paddingBottom: "0.9rem",
+          borderBottom: "1px solid var(--color-paper-inset)",
+        }}
+      >
+        <div
           style={{
-            margin: 0,
-            fontSize: "0.8125rem",
-            fontWeight: 600,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            color: "var(--color-ink-muted)",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
           }}
         >
-          Meaning Check
-        </h2>
-        {hasResults && overallStatus === "pass" ? (
+          <ShieldCheck
+            size={18}
+            strokeWidth={2}
+            aria-hidden
+            style={{ color: "var(--color-action)", flexShrink: 0 }}
+          />
+          <h2
+            className="font-reading"
+            style={{
+              margin: 0,
+              fontSize: "1.1875rem",
+              fontWeight: 600,
+              letterSpacing: "-0.012em",
+              lineHeight: 1.2,
+              color: "var(--color-ink)",
+            }}
+          >
+            Meaning Check
+          </h2>
+        </div>
+        <div
+          aria-hidden
+          style={{
+            height: 3,
+            width: "3.25rem",
+            borderRadius: 999,
+            background: caution && hasResults
+              ? "var(--color-warning-border)"
+              : "var(--color-action)",
+            transition: "background var(--motion-base) ease",
+          }}
+        />
+      </header>
+
+      {!hasResults ? (
+        <EmptyRail loading={loading} sindiState={sindiState} sindiLine={sindiLine} />
+      ) : (
+        <>
+          <div
+            className={cn(
+              "rounded-xl px-3.5 py-3",
+              "animate-in fade-in-0 slide-in-from-bottom-1 duration-300 fill-mode-both motion-reduce:animate-none",
+              caution ? "bg-warning-soft/70" : "bg-action-soft/55",
+            )}
+            style={{ animationDelay: "60ms" }}
+          >
+            <Sindi
+              state={sindiState}
+              line={sindiLine}
+              className={cn(RAY_LARGE, "items-center")}
+            />
+            {caution ? (
+              <p
+                style={{
+                  margin: "0.55rem 0 0",
+                  fontSize: "0.875rem",
+                  lineHeight: 1.45,
+                  color: "var(--color-ink-muted)",
+                }}
+              >
+                Review flagged claims against the source.
+              </p>
+            ) : null}
+          </div>
+          <ul
+            style={{
+              listStyle: "none",
+              margin: 0,
+              padding: 0,
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.6rem",
+            }}
+          >
+            {checks.map((check, index) => {
+              const selected = selectedIndex === index;
+              const cardCaution =
+                check.status === "warning" ||
+                check.status === "repair_required";
+              const quietPass = check.status === "pass" && !selected;
+              const { label, layer } = readerLabel(check.claim);
+              const showDetail = selected || cardCaution;
+
+              return (
+                <li
+                  key={`${check.claim}-${index}`}
+                  className="animate-in fade-in-0 slide-in-from-bottom-1 duration-300 fill-mode-both motion-reduce:animate-none"
+                  style={{
+                    animationDelay: `${CARD_BASE_DELAY_MS + index * CARD_STAGGER_MS}ms`,
+                  }}
+                >
+                  <button
+                    type="button"
+                    id={`meaning-check-card-${index}`}
+                    onClick={() => onSelect(selected ? null : index)}
+                    aria-pressed={selected}
+                    className={cn(
+                      "font-ui flex w-full min-h-11 cursor-pointer flex-col text-left text-ink",
+                      "rounded-lg border transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out motion-reduce:transition-none",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 active:translate-y-px",
+                      showDetail ? "gap-2 px-4 py-3.5" : "gap-1 px-3.5 py-3",
+                      // Quiet pass: still clearly a live control.
+                      quietPass &&
+                        "border-paper-inset border-l-[3px] border-l-pass/45 bg-transparent hover:border-ink-subtle/50 hover:border-l-pass hover:bg-paper-inset/70",
+                      cardCaution &&
+                        !selected &&
+                        "border-warning-border/55 border-l-[3px] border-l-warning-border bg-paper-raised hover:bg-warning-soft/60",
+                      selected &&
+                        cardCaution &&
+                        "border-2 border-warning-border bg-warning-soft shadow-[0_6px_18px_-10px_color-mix(in_srgb,var(--color-warning)_45%,transparent)]",
+                      selected &&
+                        !cardCaution &&
+                        "border-2 border-action-border bg-action-soft",
+                    )}
+                  >
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.45rem",
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                        color: cardCaution
+                          ? "var(--color-warning)"
+                          : "var(--color-pass)",
+                      }}
+                    >
+                      {cardCaution ? (
+                        <AlertTriangle size={15} strokeWidth={2} aria-hidden />
+                      ) : (
+                        <CheckCircle2 size={15} strokeWidth={2} aria-hidden />
+                      )}
+                      {check.status === "repair_required"
+                        ? "Needs review"
+                        : check.status === "warning"
+                          ? "Warning"
+                          : "Pass"}
+                    </span>
+                    <span
+                      style={{
+                        fontWeight: quietPass ? 500 : 600,
+                        fontSize: "0.9375rem",
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {label}
+                    </span>
+                    {layer ? (
+                      <span
+                        style={{
+                          fontSize: "0.75rem",
+                          lineHeight: 1.4,
+                          color: "var(--color-ink-subtle)",
+                        }}
+                      >
+                        {layer}
+                      </span>
+                    ) : null}
+                    {showDetail && check.reason ? (
+                      <span
+                        style={{
+                          fontSize: "0.875rem",
+                          color: cardCaution
+                            ? "var(--color-warning)"
+                            : "var(--color-ink-muted)",
+                          lineHeight: 1.45,
+                        }}
+                      >
+                        {check.reason}
+                      </span>
+                    ) : null}
+                    {showDetail && check.evidence ? (
+                      <span
+                        id={`meaning-check-evidence-${index}`}
+                        className="font-reading"
+                        style={{
+                          display: "block",
+                          marginTop: "0.1rem",
+                          padding: "0.6rem 0.75rem",
+                          borderRadius: "0.4rem",
+                          fontSize: "0.875rem",
+                          lineHeight: 1.55,
+                          background:
+                            selected && cardCaution
+                              ? "color-mix(in srgb, var(--color-warning) 18%, var(--color-paper-raised))"
+                              : "var(--color-paper-inset)",
+                          color: "var(--color-ink)",
+                          boxShadow:
+                            selected && cardCaution
+                              ? "inset 0 0 0 2px var(--color-warning-border)"
+                              : undefined,
+                        }}
+                      >
+                        {check.evidence}
+                      </span>
+                    ) : null}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+    </aside>
+  );
+}
+
+function EmptyRail({
+  loading,
+  sindiState,
+  sindiLine,
+}: {
+  loading: boolean;
+  sindiState: SindiState;
+  sindiLine?: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "1rem",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "0.75rem",
+          padding: "1rem 0.75rem 0.25rem",
+          textAlign: "center",
+        }}
+      >
+        <Sindi
+          state={loading ? "working" : sindiState === "empty" ? "empty" : sindiState}
+          line={loading ? "Checking meaning…" : sindiLine ?? ""}
+          className={cn(RAY_LARGE, "flex-col gap-3 text-center")}
+        />
+        {loading ? null : (
           <p
             style={{
               margin: 0,
+              maxWidth: "16rem",
               fontSize: "0.9375rem",
-              color: "var(--color-pass)",
+              lineHeight: 1.5,
+              color: "var(--color-ink-muted)",
             }}
           >
-            No issue found in these checks.
+            Checks will appear here after you adapt a note.
           </p>
-        ) : null}
-      </header>
-
-      <Sindi state={sindiState} line={sindiLine} />
-
-      {!hasResults ? (
-        <div
-          style={{
-            padding: "1.25rem 0",
-            color: "var(--color-ink-muted)",
-            fontSize: "0.9375rem",
-            lineHeight: 1.5,
-          }}
-        >
-          {loading
-            ? "Checking meaning…"
-            : "Checks will appear here after you adapt a note."}
-        </div>
-      ) : (
+        )}
+      </div>
+      {loading ? (
         <ul
+          aria-hidden="true"
           style={{
             listStyle: "none",
             margin: 0,
             padding: 0,
             display: "flex",
             flexDirection: "column",
-            gap: "0.75rem",
+            gap: "0.6rem",
           }}
         >
-          {checks.map((check, index) => {
-            const selected = selectedIndex === index;
-            const caution =
-              check.status === "warning" || check.status === "repair_required";
-            return (
-              <li key={`${check.claim}-${index}`}>
-                <button
-                  type="button"
-                  id={`meaning-check-card-${index}`}
-                  onClick={() => onSelect(selected ? null : index)}
-                  aria-pressed={selected}
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.5rem",
-                    width: "100%",
-                    textAlign: "left",
-                    padding: "0.9rem 1rem",
-                    borderRadius: "0.5rem",
-                    cursor: "pointer",
-                    border: selected
-                      ? caution
-                        ? "2px solid var(--color-warning-border)"
-                        : "2px solid var(--color-action-border)"
-                      : "1px solid var(--color-paper-inset)",
-                    background: selected
-                      ? caution
-                        ? "var(--color-warning-soft)"
-                        : "var(--color-action-soft)"
-                      : "var(--color-paper-raised)",
-                    color: "var(--color-ink)",
-                    fontFamily: "var(--font-ui)",
-                    transition:
-                      "background var(--motion-base) ease, border-color var(--motion-base) ease",
-                  }}
-                >
-                  <span
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      fontSize: "0.8125rem",
-                      fontWeight: 600,
-                      color: caution
-                        ? "var(--color-warning)"
-                        : "var(--color-pass)",
-                    }}
-                  >
-                    {caution ? (
-                      <AlertTriangle size={16} strokeWidth={2} aria-hidden />
-                    ) : (
-                      <CheckCircle2 size={16} strokeWidth={2} aria-hidden />
-                    )}
-                    {check.status === "repair_required"
-                      ? "Needs review"
-                      : check.status === "warning"
-                        ? "Warning"
-                        : "Pass"}
-                  </span>
-                  <span style={{ fontWeight: 600, fontSize: "0.9375rem" }}>
-                    {check.claim}
-                  </span>
-                  {check.reason ? (
-                    <span
-                      style={{
-                        fontSize: "0.875rem",
-                        color: caution
-                          ? "var(--color-warning)"
-                          : "var(--color-ink-muted)",
-                        lineHeight: 1.45,
-                      }}
-                    >
-                      {check.reason}
-                    </span>
-                  ) : null}
-                  {check.evidence ? (
-                    <span
-                      id={`meaning-check-evidence-${index}`}
-                      style={{
-                        display: "block",
-                        marginTop: "0.15rem",
-                        padding: "0.55rem 0.65rem",
-                        borderRadius: "0.35rem",
-                        fontSize: "0.8125rem",
-                        lineHeight: 1.45,
-                        fontFamily: "var(--font-reading)",
-                        background:
-                          selected && caution
-                            ? "color-mix(in srgb, var(--color-warning) 18%, var(--color-paper-raised))"
-                            : "var(--color-paper-inset)",
-                        color: "var(--color-ink)",
-                        boxShadow:
-                          selected && caution
-                            ? "inset 0 0 0 2px var(--color-warning-border)"
-                            : undefined,
-                      }}
-                    >
-                      {check.evidence}
-                    </span>
-                  ) : null}
-                </button>
-              </li>
-            );
-          })}
+          {[0, 1, 2, 3].map((i) => (
+            <li
+              key={i}
+              className="animate-pulse rounded-lg border border-paper-inset motion-reduce:animate-none"
+              style={{
+                height: "3.9rem",
+                padding: "0.85rem 0.9rem",
+                animationDelay: `${i * 120}ms`,
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.55rem",
+              }}
+            >
+              <span
+                className="rounded-sm bg-paper-inset"
+                style={{ height: "0.6rem", width: "3rem" }}
+              />
+              <span
+                className="rounded-sm bg-paper-inset"
+                style={{ height: "0.8rem", width: `${72 - i * 9}%` }}
+              />
+            </li>
+          ))}
         </ul>
-      )}
-    </aside>
+      ) : null}
+    </div>
   );
 }
