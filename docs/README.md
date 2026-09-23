@@ -2,7 +2,7 @@
 
 **Adapt the format. Preserve the meaning.**
 
-Linaw AI is an adaptive information platform: a web app (and later a Chrome companion) that presents important messages the way you prefer—detail, wording, and delivery—then runs a **Meaning Check** so critical facts, conditions, and relationships are less likely to change silently.
+Linaw AI is an adaptive information platform: a web app and Chrome companion that presents important messages the way you prefer—detail, wording, and delivery—then runs a **Meaning Check** so critical facts, conditions, and relationships are less likely to change silently.
 
 This repository is a single Next.js app at the root. There is no backend in the current scaffold; adaptation uses an in-browser client port that will later call a server.
 
@@ -15,8 +15,6 @@ Canonical product decisions live in:
 That file wins on product questions. For what this MVP slice implements, follow `spec/` (start at [`spec/AGENTS.md`](../spec/AGENTS.md), then [`spec/spec-01-initial_scaffold/README.md`](../spec/spec-01-initial_scaffold/README.md)).
 
 Research notes under [`docs/A1-AppCon-Research/`](./A1-AppCon-Research/) are background only.
-
-Agent rules: [`docs/AGENTS.md`](./AGENTS.md).
 
 AI development workflow (tracks, ports, hooks, campus-pilot sample): [`docs/ai-workflow.md`](./ai-workflow.md).
 
@@ -44,16 +42,33 @@ Useful scripts:
 | `npm run test` | Vitest |
 | `npm run typecheck` | TypeScript check |
 
+## Using the app
+
+Onboarding finishes by taking you to `/read`. Preferences stay on your device (local storage). Meaning Check runs against the in-browser fixture—not a remote model.
+
+## Do not call Gemini yet
+
+Do not wire up Gemini or add `lib/adapt/http.ts` while exploring this scaffold. Live model calls spend tokens. The planned adapter work lives in [`spec/spec-02-gemini-adapt`](../spec/spec-02-gemini-adapt/). Until that phase is built, the model adapter also appears as unfinished work on [`/todo`](http://localhost:3000/todo).
+
 ## Specs
 
 - Spec manager (index and rules): [`spec/AGENTS.md`](../spec/AGENTS.md)
 - Current phase: [`spec/spec-01-initial_scaffold/`](../spec/spec-01-initial_scaffold/)
+- Planned Gemini adapter: [`spec/spec-02-gemini-adapt/`](../spec/spec-02-gemini-adapt/)
 
 Do not put loose notes or code in `spec/` itself—only numbered phase folders.
 
 ## Extension
 
-The Chrome extension (Manifest V3) lives under `extension/` once that track lands. Load it unpacked from Chrome’s extension page after the extension track builds it. The extension reuses the same `lib/` ports and preference schema; Auto-Adapt stays off until the user enables it.
+Build from the **repository root** (after `npm install`):
+
+```bash
+node extension/build.mjs
+```
+
+Then in Chrome: open `chrome://extensions` → enable Developer mode → **Load unpacked** → select the `extension/` folder (the one with `manifest.json`).
+
+Auto-Adapt stays off until you turn it on. There is no Chrome Web Store listing; use Load unpacked only. More detail: [`extension/README.md`](../extension/README.md).
 
 ## Development sample
 
@@ -63,9 +78,16 @@ Local fixture work uses a campus-pilot source with a deadline, two groups, two t
 
 - Prefer a numbered phase under `spec/` (see [`spec/AGENTS.md`](../spec/AGENTS.md)) before large feature work.
 - UI should call `adapt()` from `lib/adapt` and the preference store—never import `fixture.ts` directly.
-- A future backend adds `lib/adapt/http.ts` and switches `lib/adapt/index.ts`; domain Zod types stay stable.
+- A future backend adds `lib/adapt/http.ts` and switches `lib/adapt/index.ts`; domain Zod types stay stable. Do not add that file yet (see **Do not call Gemini yet**).
 - Parallel tracks own fixed directories listed in [`docs/AGENTS.md`](./AGENTS.md).
 
 ## Backend not connected
 
 Unbuilt server work is listed in the app at [`/todo`](http://localhost:3000/todo) (footer link: “Backend not connected”) and in [`spec/spec-01-initial_scaffold/09-backend-todo.md`](../spec/spec-01-initial_scaffold/09-backend-todo.md).
+
+## For coding agents
+
+If you are using a coding agent in this repo, start with:
+
+- [`docs/AGENTS.md`](./AGENTS.md) — agent rules, track ownership, non-negotiables
+- [`spec/AGENTS.md`](../spec/AGENTS.md) — before any work under `spec/`

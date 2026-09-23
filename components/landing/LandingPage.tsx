@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 
 /**
  * One-page editorial landing. Primary path: Open Linaw → /onboarding.
- * Visual direction: warm paper, ink, olive — Granola-like note card calm (Mobbin).
+ * Layout tuned from Mobbin Midday / Tana web heroes: centered serif value
+ * line, one primary CTA, warm paper, quiet product note below.
  */
 export function LandingPage() {
   return (
@@ -20,7 +21,7 @@ export function LandingPage() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        padding: "clamp(1.5rem, 4vw, 3rem) clamp(1.25rem, 4vw, 2rem)",
+        padding: "clamp(2rem, 6vw, 4.5rem) clamp(1.25rem, 5vw, 2.5rem)",
         fontFamily: "var(--font-ui)",
         color: "var(--color-ink)",
       }}
@@ -29,10 +30,12 @@ export function LandingPage() {
         className="landing-frame"
         style={{
           width: "100%",
-          maxWidth: "36rem",
+          maxWidth: "38rem",
           display: "flex",
           flexDirection: "column",
-          gap: "clamp(1.5rem, 3vw, 2.25rem)",
+          alignItems: "center",
+          textAlign: "center",
+          gap: "clamp(1.75rem, 4vw, 2.75rem)",
         }}
       >
         <header
@@ -40,34 +43,58 @@ export function LandingPage() {
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "1rem",
-            alignItems: "flex-start",
+            alignItems: "center",
+            gap: "1.35rem",
+            width: "100%",
           }}
         >
-          <span
-            className="landing-ray"
+          <div
             style={{
-              display: "inline-flex",
-              transform: "scale(0.85)",
-              transformOrigin: "left center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "0.65rem",
             }}
-            aria-hidden="true"
           >
-            <Sindi state="reading" line="" />
-          </span>
+            <span
+              className="landing-ray"
+              style={{
+                display: "inline-flex",
+                transform: "scale(0.72)",
+                transformOrigin: "center",
+              }}
+              aria-hidden="true"
+            >
+              <Sindi state="reading" line="" />
+            </span>
+            <p
+              style={{
+                margin: 0,
+                fontFamily: "var(--font-reading)",
+                fontSize: "clamp(1.375rem, 3.5vw, 1.625rem)",
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+                lineHeight: 1.2,
+                color: "var(--color-ink)",
+              }}
+            >
+              Linaw AI
+            </p>
+          </div>
 
           <h1
             style={{
               margin: 0,
+              maxWidth: "22ch",
               fontFamily: "var(--font-reading)",
-              fontSize: "clamp(2.5rem, 8vw, 3.75rem)",
+              fontSize: "clamp(2.125rem, 7vw, 3.25rem)",
               fontWeight: 600,
-              lineHeight: 1.12,
-              letterSpacing: "-0.02em",
+              lineHeight: 1.18,
+              letterSpacing: "-0.025em",
               color: "var(--color-ink)",
             }}
           >
-            Linaw AI
+            Adapt the format. Preserve the meaning.
           </h1>
 
           <p
@@ -75,77 +102,95 @@ export function LandingPage() {
               margin: 0,
               maxWidth: "28rem",
               fontFamily: "var(--font-ui)",
-              fontSize: "clamp(1.0625rem, 2.5vw, 1.1875rem)",
+              fontSize: "clamp(1rem, 2.2vw, 1.125rem)",
               fontWeight: 500,
-              lineHeight: 1.45,
+              lineHeight: 1.55,
               color: "var(--color-ink-muted)",
             }}
           >
-            Adapt the format. Preserve the meaning.
+            Clearer layout for dense pages — the facts stay the same.
           </p>
         </header>
 
-        <aside
+        <div
           className="landing-reveal landing-reveal-delay"
-          aria-label="Example of an adapted sentence"
           style={{
-            background: "var(--color-paper-raised)",
-            border: "1px solid var(--color-paper-inset)",
-            borderRadius: "0.75rem",
-            boxShadow:
-              "0 1px 0 color-mix(in srgb, var(--color-ink) 6%, transparent), 0 18px 40px -28px color-mix(in srgb, var(--color-ink) 28%, transparent)",
-            padding: "1.25rem 1.35rem 1.35rem",
             display: "flex",
             flexDirection: "column",
-            gap: "0.85rem",
+            alignItems: "center",
+            gap: "1rem",
+            width: "100%",
           }}
         >
-          <div
+          <Button
+            asChild
+            className="landing-cta"
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.4rem",
+              minHeight: "2.75rem",
+              minWidth: "11rem",
+              height: "auto",
+              padding: "0.85rem 1.75rem",
+              borderRadius: "0.625rem",
+              fontFamily: "var(--font-ui)",
+              fontSize: "1.0625rem",
+              fontWeight: 600,
+              letterSpacing: "0.01em",
+              background: "var(--color-action)",
+              color: "var(--color-paper-raised)",
             }}
-            aria-hidden="true"
           >
-            <span
-              style={{
-                width: "0.55rem",
-                height: "0.55rem",
-                borderRadius: "999px",
-                background: "#c4a484",
-              }}
-            />
-            <span
-              style={{
-                width: "0.55rem",
-                height: "0.55rem",
-                borderRadius: "999px",
-                background: "#b8c49a",
-              }}
-            />
-            <span
-              style={{
-                width: "0.55rem",
-                height: "0.55rem",
-                borderRadius: "999px",
-                background: "#d4c4a8",
-              }}
-            />
-            <span
-              style={{
-                marginLeft: "0.5rem",
-                fontSize: "0.75rem",
-                fontWeight: 500,
-                letterSpacing: "0.03em",
-                color: "var(--color-ink-subtle)",
-                textTransform: "uppercase",
-              }}
-            >
-              Adapted
-            </span>
-          </div>
+            <Link href="/onboarding">Open Linaw</Link>
+          </Button>
 
+          <p
+            className="landing-companion"
+            style={{
+              margin: 0,
+              maxWidth: "30rem",
+              fontSize: "0.875rem",
+              lineHeight: 1.55,
+              color: "var(--color-ink-subtle)",
+            }}
+          >
+            Chrome companion is not in the Chrome Web Store. Build with{" "}
+            <code className="landing-code">node extension/build.mjs</code>, then
+            Load unpacked — steps in{" "}
+            <code className="landing-code">extension/README.md</code>.
+          </p>
+        </div>
+
+        <aside
+          className="landing-reveal landing-reveal-delay-2 landing-note"
+          aria-label="Example of an adapted sentence"
+          style={{
+            width: "100%",
+            maxWidth: "26rem",
+            marginTop: "0.25rem",
+            background: "var(--color-paper-raised)",
+            border: "1px solid color-mix(in srgb, var(--color-ink) 8%, transparent)",
+            borderRadius: "0.75rem",
+            boxShadow:
+              "0 1px 0 color-mix(in srgb, var(--color-ink) 5%, transparent), 0 22px 48px -32px color-mix(in srgb, var(--color-ink) 22%, transparent)",
+            padding: "1.35rem 1.5rem 1.45rem",
+            textAlign: "left",
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.65rem",
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontFamily: "var(--font-ui)",
+              fontSize: "0.6875rem",
+              fontWeight: 600,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              color: "var(--color-ink-subtle)",
+            }}
+          >
+            Adapted
+          </p>
           <p
             style={{
               margin: 0,
@@ -157,137 +202,30 @@ export function LandingPage() {
           >
             Meet by the lobby at 3. Bring your badge.
           </p>
-
-          <p
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-ui)",
-              fontSize: "0.8125rem",
-              lineHeight: 1.5,
-              color: "var(--color-ink-subtle)",
-            }}
-          >
-            From denser source text — format changed, meaning kept.
-          </p>
         </aside>
-
-        <div
-          className="landing-reveal landing-reveal-delay-2"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "1.25rem",
-            alignItems: "stretch",
-          }}
-        >
-          <Button
-            asChild
-            className="landing-cta"
-            style={{
-              minHeight: "2.75rem",
-              height: "auto",
-              padding: "0.85rem 1.5rem",
-              borderRadius: "999px",
-              fontFamily: "var(--font-ui)",
-              fontSize: "1.0625rem",
-              fontWeight: 600,
-              letterSpacing: "0.02em",
-              background: "var(--color-action)",
-              color: "var(--color-paper-raised)",
-              width: "100%",
-              maxWidth: "16rem",
-            }}
-          >
-            <Link href="/onboarding">Open Linaw</Link>
-          </Button>
-
-          <section
-            aria-labelledby="companion-heading"
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.5rem",
-              maxWidth: "32rem",
-            }}
-          >
-            <h2
-              id="companion-heading"
-              style={{
-                margin: 0,
-                fontFamily: "var(--font-ui)",
-                fontSize: "0.9375rem",
-                fontWeight: 600,
-                color: "var(--color-ink)",
-              }}
-            >
-              Chrome companion
-            </h2>
-            <p
-              style={{
-                margin: 0,
-                fontSize: "0.9375rem",
-                lineHeight: 1.55,
-                color: "var(--color-ink-muted)",
-              }}
-            >
-              There is no Chrome Web Store listing yet. Load the companion
-              unpacked for now. Steps live in{" "}
-              <code
-                style={{
-                  fontFamily: "ui-monospace, Consolas, monospace",
-                  fontSize: "0.875em",
-                  background: "var(--color-paper-inset)",
-                  padding: "0.1em 0.35em",
-                  borderRadius: "0.25rem",
-                }}
-              >
-                extension/README.md
-              </code>
-              : build with{" "}
-              <code
-                style={{
-                  fontFamily: "ui-monospace, Consolas, monospace",
-                  fontSize: "0.875em",
-                  background: "var(--color-paper-inset)",
-                  padding: "0.1em 0.35em",
-                  borderRadius: "0.25rem",
-                }}
-              >
-                node extension/build.mjs
-              </code>
-              , then Chrome → Extensions → Developer mode → Load unpacked →
-              select the{" "}
-              <code
-                style={{
-                  fontFamily: "ui-monospace, Consolas, monospace",
-                  fontSize: "0.875em",
-                  background: "var(--color-paper-inset)",
-                  padding: "0.1em 0.35em",
-                  borderRadius: "0.25rem",
-                }}
-              >
-                extension/
-              </code>{" "}
-              folder.
-            </p>
-          </section>
-        </div>
       </div>
 
       <style>{`
+        .landing-code {
+          font-family: ui-monospace, Consolas, monospace;
+          font-size: 0.875em;
+          background: var(--color-paper-inset);
+          padding: 0.12em 0.35em;
+          border-radius: 0.25rem;
+        }
         .landing-reveal {
           animation: landing-fade-up var(--motion-slow) ease both;
         }
         .landing-reveal-delay {
-          animation-delay: 80ms;
+          animation-delay: 90ms;
         }
         .landing-reveal-delay-2 {
-          animation-delay: 140ms;
+          animation-delay: 160ms;
         }
         @keyframes landing-fade-up {
           from {
             opacity: 0;
-            transform: translateY(0.6rem);
+            transform: translateY(0.55rem);
           }
           to {
             opacity: 1;
@@ -306,12 +244,6 @@ export function LandingPage() {
           .landing-reveal-delay,
           .landing-reveal-delay-2 {
             animation: none;
-          }
-        }
-        @media (min-width: 640px) {
-          .landing-page .landing-cta {
-            width: auto;
-            align-self: flex-start;
           }
         }
       `}</style>
