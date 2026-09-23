@@ -32,7 +32,7 @@ export function Faq() {
   const [open, setOpen] = useState<string | null>(FAQS[0]?.q ?? null);
 
   return (
-    <section aria-labelledby="faq-title" className="border-t border-border px-5 py-20 md:py-24">
+    <section id="faq" aria-labelledby="faq-title" className="border-t border-border px-5 py-20 md:py-24">
       <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-[1fr_1.4fr]">
         <SectionHeading id="faq-title" eyebrow="FAQ" title="Questions, answered plainly." />
         <div className="font-ui flex w-full flex-col">
@@ -45,7 +45,7 @@ export function Faq() {
                     type="button"
                     aria-expanded={isOpen}
                     onClick={() => setOpen(isOpen ? null : item.q)}
-                    className="flex w-full items-center justify-between gap-4 rounded-lg py-5 text-left text-base font-medium text-ink"
+                    className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-4 rounded-lg py-4 text-left text-base font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                   >
                     {item.q}
                     <ChevronDown

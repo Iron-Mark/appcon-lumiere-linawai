@@ -12,3 +12,4 @@ export { Faq } from "./Faq";
 export { Footer } from "./Footer";
 export { SectionHeading } from "./SectionHeading";
 export { Reveal } from "./Reveal";
+export { OpenLinawButton } from "./OpenLinawButton";

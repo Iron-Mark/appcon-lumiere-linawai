@@ -1,48 +1,43 @@
 import Link from "next/link";
+import { OpenLinawButton } from "./OpenLinawButton";
 
 const LINKS = [
-  { href: "#how-it-works", label: "How it Works" },
-  { href: "#features", label: "Features" },
-  { href: "#verification", label: "Verification" },
+  { href: "#how-it-works", label: "How it works" },
+  { href: "#features", label: "Preferences" },
+  { href: "#verification", label: "Meaning Check" },
   { href: "#try-it", label: "Try it" },
   { href: "#faq", label: "FAQ" },
 ];
 
 export function Navbar() {
   return (
-    <header className="font-ui sticky top-0 z-40 border-b border-border bg-paper/85 backdrop-blur-md">
+    <header className="font-ui sticky top-0 z-40 border-b border-border/80 bg-paper/90 backdrop-blur-md">
       <nav
         aria-label="Main"
-        className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-5"
+        className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5"
       >
         <Link
           href="#top"
-          className="inline-flex items-baseline gap-0.5 text-xl font-semibold tracking-tight text-ink"
+          className="font-reading inline-flex min-h-11 items-center text-xl font-semibold tracking-tight text-ink focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         >
-          <span>Linaw</span>
-          <span aria-hidden="true" className="text-action">
-            .
-          </span>
-          <span className="sr-only">home</span>
+          Linaw AI
+          <span className="sr-only"> — home</span>
         </Link>
-        <ul className="hidden items-center gap-7 md:flex">
+
+        <ul className="hidden items-center gap-1 md:flex">
           {LINKS.map((link) => (
             <li key={link.href}>
               <a
                 href={link.href}
-                className="text-sm text-ink-muted transition-colors hover:text-ink"
+                className="inline-flex min-h-11 cursor-pointer items-center rounded-md px-2.5 text-sm text-ink-muted transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
               >
                 {link.label}
               </a>
             </li>
           ))}
         </ul>
-        <Link
-          href="/onboarding"
-          className="inline-flex h-10 items-center rounded-full bg-action px-4 text-sm font-semibold text-paper-raised transition-colors hover:bg-action-hover"
-        >
-          Open Linaw
-        </Link>
+
+        <OpenLinawButton withArrow={false} className="shrink-0 px-4 text-sm" />
       </nav>
     </header>
   );

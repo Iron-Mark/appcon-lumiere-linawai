@@ -127,7 +127,7 @@ export function Playground() {
         />
 
         <div className="font-ui mt-12 grid gap-4 lg:grid-cols-[1fr_320px]">
-          <div className="rounded-2xl border border-border bg-card">
+          <div className="rounded-xl border border-border bg-paper-raised">
             <div className="flex flex-col gap-3 border-b border-border p-3 sm:flex-row sm:items-center sm:justify-between">
               <div role="tablist" aria-label="Reading views" className="flex h-auto w-full flex-wrap justify-start gap-1 rounded-lg bg-paper-inset/60 p-1 sm:w-fit">
                 {VIEWS.map(({ value, label, icon: Icon }) => (
@@ -138,9 +138,9 @@ export function Playground() {
                     aria-selected={view === value}
                     onClick={() => handleViewChange(value)}
                     className={cn(
-                      "inline-flex h-9 flex-none items-center gap-2 rounded-md px-3 text-sm transition-colors",
+                      "inline-flex h-11 min-h-11 cursor-pointer flex-none items-center gap-2 rounded-md px-3 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
                       view === value
-                        ? "bg-card font-medium text-ink shadow-sm"
+                        ? "bg-paper-raised font-medium text-ink shadow-sm"
                         : "text-ink-muted hover:text-ink",
                     )}
                   >
@@ -169,7 +169,7 @@ export function Playground() {
                       setLang(code);
                     }}
                     className={cn(
-                      "rounded-md px-3 py-1 transition-colors",
+                      "min-h-11 cursor-pointer rounded-md px-3 py-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
                       lang === code
                         ? "bg-action-soft font-medium text-ink"
                         : "text-ink-muted hover:text-ink",
@@ -222,7 +222,7 @@ export function Playground() {
                       <button
                         type="button"
                         onClick={toggleSpeech}
-                        className="inline-flex h-11 items-center gap-2 rounded-full bg-action px-5 text-base font-semibold text-paper-raised transition-colors hover:bg-action-hover"
+                        className="inline-flex h-11 min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-action px-5 text-base font-semibold text-paper-raised transition-colors hover:bg-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                       >
                         {speaking ? (
                           <Square className="size-4" aria-hidden="true" />
@@ -239,7 +239,7 @@ export function Playground() {
                             aria-pressed={rate === r}
                             onClick={() => setRate(r)}
                             className={cn(
-                              "rounded-md px-2.5 py-1 tabular-nums transition-colors",
+                              "min-h-11 cursor-pointer rounded-md px-2.5 py-2 tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
                               rate === r
                                 ? "bg-action-soft font-medium text-ink"
                                 : "text-ink-muted hover:text-ink",
@@ -272,10 +272,10 @@ export function Playground() {
             </div>
           </div>
 
-          <aside aria-labelledby="checks-title" className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
+          <aside aria-labelledby="checks-title" className="flex flex-col gap-4 rounded-xl border border-border bg-paper-raised p-6">
             <div className="flex items-center justify-between">
-              <h3 id="checks-title" className="m-0 font-semibold text-ink">
-                Meaning checks
+              <h3 id="checks-title" className="font-reading m-0 font-semibold text-ink">
+                Meaning Check
               </h3>
               <p aria-live="polite" className="m-0 text-sm text-ink-muted">
                 {isFlagged ? "1 flagged" : `${CHECKS.length} of ${CHECKS.length} kept`}
@@ -296,7 +296,7 @@ export function Playground() {
                     {flagged ? (
                       <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-label="Flagged" />
                     ) : (
-                      <CircleCheck className="mt-0.5 size-4 shrink-0 text-pass" aria-label="Verified" />
+                      <CircleCheck className="mt-0.5 size-4 shrink-0 text-pass" aria-label="Present in adaptation" />
                     )}
                     <div className="flex flex-col">
                       <span className="text-sm font-medium text-ink">{check.label}</span>
@@ -337,11 +337,11 @@ export function Playground() {
 
         <p className="font-ui mt-6 text-center text-sm text-ink-muted">
           Demo with illustrative text. To adapt your own content,{" "}
-          <Link href="/onboarding" className="font-medium text-action underline underline-offset-4">
+          <Link href="/onboarding" className="cursor-pointer font-medium text-action underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
             open Linaw
           </Link>{" "}
           or visit the{" "}
-          <Link href="/read" className="font-medium text-action underline underline-offset-4">
+          <Link href="/read" className="cursor-pointer font-medium text-action underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
             reading workspace
           </Link>
           .

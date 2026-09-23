@@ -33,7 +33,7 @@ function FeatureCard({
     <Reveal
       delay={delay}
       className={cn(
-        "font-ui flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 transition-colors hover:border-action-border md:p-7",
+        "font-ui flex flex-col gap-4 rounded-xl border border-border bg-paper-raised p-6 transition-colors hover:border-action-border md:p-7",
         className,
       )}
     >
@@ -56,16 +56,16 @@ export function Features() {
       <div className="mx-auto max-w-6xl">
         <SectionHeading
           id="features-title"
-          eyebrow="Features"
+          eyebrow="Your preferences"
           title="Built for how people actually read."
-          description="Different days, different brains, different formats. Linaw adapts without asking anyone to explain why."
+          description="Detail, wording, delivery, and browser behavior — preference language only. Linaw adapts without diagnosing anyone."
         />
 
         <div className="mt-12 grid gap-4 md:grid-cols-3">
           <FeatureCard className="md:col-span-2 md:row-span-2">
             <FeatureIcon icon={Layers} />
             <div>
-              <h3 className="text-xl font-semibold text-ink">Four adaptive views</h3>
+              <h3 className="font-reading text-xl font-semibold text-ink">Four adaptive views</h3>
               <p className="mt-1 leading-relaxed text-pretty text-ink-muted">
                 Switch formats on the same content instantly — the source never
                 changes, only the shape it takes.
@@ -75,7 +75,7 @@ export function Features() {
               {VIEWS.map((view) => (
                 <li
                   key={view.name}
-                  className="flex items-center gap-3 rounded-xl border border-border bg-background p-4"
+                  className="flex min-h-11 items-center gap-3 rounded-lg border border-border bg-paper p-4"
                 >
                   <view.icon
                     className="size-5 shrink-0 text-ink/70"
@@ -94,10 +94,10 @@ export function Features() {
           <FeatureCard delay={60}>
             <FeatureIcon icon={ShieldCheck} />
             <div>
-              <h3 className="text-lg font-semibold text-ink">Meaning verification</h3>
+              <h3 className="font-reading text-lg font-semibold text-ink">Meaning Check</h3>
               <p className="mt-1 leading-relaxed text-pretty text-ink-muted">
-                Dropped conditions, numbers, and deadlines get flagged before you
-                rely on them.
+                Checks can warn when a condition, number, or deadline looks off —
+                so you can review the source, not trust a rewrite blindly.
               </p>
             </div>
           </FeatureCard>
@@ -105,7 +105,7 @@ export function Features() {
           <FeatureCard delay={120}>
             <FeatureIcon icon={Languages} />
             <div>
-              <h3 className="text-lg font-semibold text-ink">Taglish-aware</h3>
+              <h3 className="font-reading text-lg font-semibold text-ink">Taglish-aware</h3>
               <p className="mt-1 leading-relaxed text-pretty text-ink-muted">
                 Plain Language that sounds like how Filipinos actually talk —
                 English, Tagalog, or both.
@@ -116,7 +116,7 @@ export function Features() {
           <FeatureCard delay={180} className="md:col-span-3 md:flex-row md:items-center md:gap-6">
             <FeatureIcon icon={EyeOff} />
             <div className="md:flex-1">
-              <h3 className="text-lg font-semibold text-ink">Zero-disclosure by design</h3>
+              <h3 className="font-reading text-lg font-semibold text-ink">Zero-disclosure by design</h3>
               <p className="mt-1 leading-relaxed text-pretty text-ink-muted">
                 No diagnosis, no sign-up form, no “accessibility mode.” Anyone can
                 use it, so no one has to identify as struggling to use it.

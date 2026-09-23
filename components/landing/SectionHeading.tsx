@@ -23,15 +23,17 @@ export function SectionHeading({
         align === "center" && "mx-auto items-center text-center",
       )}
     >
-      <p className="font-ui text-sm font-semibold text-action">{eyebrow}</p>
+      <p className="font-ui m-0 text-xs font-semibold tracking-[0.08em] text-action uppercase">
+        {eyebrow}
+      </p>
       <h2
         id={id}
-        className="font-ui text-3xl font-semibold tracking-tight text-balance text-ink md:text-4xl"
+        className="font-reading m-0 text-3xl font-semibold tracking-[-0.02em] text-balance text-ink md:text-[2.25rem] md:leading-tight"
       >
         {title}
       </h2>
       {description ? (
-        <p className="font-ui text-lg leading-relaxed text-pretty text-ink-muted">
+        <p className="font-ui m-0 text-base leading-relaxed text-pretty text-ink-muted md:text-lg">
           {description}
         </p>
       ) : null}

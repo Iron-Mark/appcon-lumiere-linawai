@@ -3,27 +3,34 @@ import { TriangleAlert } from "lucide-react";
 /**
  * Illustrative before/after card. Static marketing copy only —
  * the app adapts the user's own content through lib/adapt.
+ * Visual: quiet Granola-like note window on warm paper.
  */
 export function HeroDemoCard() {
   return (
-    <figure className="border-beam rounded-2xl bg-card font-ui shadow-[0_1px_2px_rgb(26_24_20/0.05),0_12px_40px_-12px_rgb(26_24_20/0.18)]">
-      <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-3">
-        <div className="flex items-center gap-2 text-xs text-ink-muted">
-          <span className="size-2 rounded-full bg-action" aria-hidden="true" />
-          <span>enrollment-policy.pdf</span>
+    <figure className="font-ui m-0 overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--color-ink)_10%,transparent)] bg-paper-raised shadow-[0_1px_0_color-mix(in_srgb,var(--color-ink)_6%,transparent),0_24px_48px_-28px_color-mix(in_srgb,var(--color-ink)_28%,transparent)]">
+      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex items-center gap-1.5" aria-hidden="true">
+            <span className="size-2 rounded-full bg-[#c4a484]" />
+            <span className="size-2 rounded-full bg-[#b8c49a]" />
+            <span className="size-2 rounded-full bg-[#d4c4a8]" />
+          </span>
+          <span className="truncate text-xs text-ink-muted">
+            enrollment-policy.pdf
+          </span>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-warning-border/50 bg-warning-soft px-2.5 py-0.5 text-xs font-medium text-ink">
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-warning-border/40 bg-warning-soft px-2 py-1 text-xs font-medium text-ink">
           <TriangleAlert className="size-3.5 text-warning" aria-hidden="true" />
-          1 condition flagged
+          Condition flagged
         </span>
       </div>
 
       <div className="grid gap-px bg-border md:grid-cols-2">
-        <div className="flex flex-col gap-2 rounded-bl-2xl bg-card p-5 text-left md:rounded-bl-2xl">
-          <p className="text-xs font-medium tracking-wider text-ink-muted uppercase">
+        <div className="flex flex-col gap-2 bg-paper-raised p-5 text-left">
+          <p className="m-0 text-[0.6875rem] font-semibold tracking-[0.06em] text-ink-subtle uppercase">
             Source
           </p>
-          <p className="font-reading leading-relaxed text-ink">
+          <p className="font-reading m-0 leading-relaxed text-ink">
             Students may drop a subject before the midterm,{" "}
             <span className="rounded bg-warning-soft px-1 underline decoration-warning decoration-2 underline-offset-4">
               only with written approval
@@ -31,11 +38,11 @@ export function HeroDemoCard() {
             from their adviser.
           </p>
         </div>
-        <div className="flex flex-col gap-2 bg-card p-5 text-left">
-          <p className="text-xs font-medium tracking-wider text-ink-muted uppercase">
+        <div className="flex flex-col gap-2 bg-paper-raised p-5 text-left">
+          <p className="m-0 text-[0.6875rem] font-semibold tracking-[0.06em] text-ink-subtle uppercase">
             Key Points
           </p>
-          <ul className="flex flex-col gap-1.5 leading-relaxed text-ink">
+          <ul className="m-0 flex list-none flex-col gap-1.5 p-0 leading-relaxed text-ink">
             <li className="flex gap-2">
               <span
                 aria-hidden="true"

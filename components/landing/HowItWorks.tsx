@@ -26,15 +26,15 @@ export function HowItWorks() {
       <div className="mx-auto max-w-6xl">
         <SectionHeading
           id="how-title"
-          eyebrow="How it works"
+          eyebrow="How the web app works"
           title="Three steps, zero guesswork."
-          description="No setup, no settings maze. Linaw works the moment you open something to read."
+          description="Choose preferences, adapt a notice, then review Meaning Check — the original stays one step away."
         />
         <ol className="mt-12 grid list-none gap-10 p-0 md:grid-cols-3 md:gap-6">
           {STEPS.map((step, i) => (
             <Reveal as="li" key={step.label} delay={i * 80} className="relative flex flex-col gap-4">
               <div className="flex items-center gap-3">
-                <span className="flex size-12 items-center justify-center rounded-xl border border-border bg-card">
+                <span className="flex size-12 items-center justify-center rounded-lg border border-border bg-paper-raised">
                   <step.icon className="size-5 text-action" strokeWidth={1.75} aria-hidden="true" />
                 </span>
                 {i < STEPS.length - 1 ? (
@@ -45,7 +45,7 @@ export function HowItWorks() {
                 ) : null}
               </div>
               <div>
-                <h3 className="font-ui text-lg font-semibold text-ink">
+                <h3 className="font-reading text-lg font-semibold text-ink">
                   <span className="sr-only">Step {i + 1}: </span>
                   {step.label}
                 </h3>

@@ -27,6 +27,7 @@ export function MeaningCheckRail({
 
   return (
     <aside
+      id="meaning-check"
       aria-label="Meaning Check"
       style={{
         display: "flex",
@@ -34,6 +35,7 @@ export function MeaningCheckRail({
         gap: "1rem",
         minWidth: 0,
         fontFamily: "var(--font-ui)",
+        scrollMarginTop: "1.25rem",
       }}
     >
       <header style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>

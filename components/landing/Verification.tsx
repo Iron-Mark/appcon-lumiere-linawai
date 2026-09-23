@@ -12,14 +12,14 @@ export function Verification() {
       <div className="mx-auto max-w-6xl">
         <SectionHeading
           id="verification-title"
-          eyebrow="Verification"
+          eyebrow="Meaning Check"
           title="Four words can change everything."
-          description="Most simplifiers make text shorter. Linaw makes sure it stays true. Here is the kind of loss it is built to catch."
+          description="Most simplifiers make text shorter. Linaw checks whether critical meaning survived. Checks can warn — they do not prove a rewrite is correct."
           align="center"
         />
 
         <Reveal delay={100} className="mt-12">
-          <figure className="font-ui m-0 overflow-hidden rounded-2xl border border-border bg-card">
+          <figure className="font-ui m-0 overflow-hidden rounded-xl border border-border bg-paper-raised shadow-[0_1px_0_color-mix(in_srgb,var(--color-ink)_5%,transparent)]">
             <div className="grid md:grid-cols-2">
               <div className="flex flex-col gap-4 border-b border-border p-6 md:border-r md:border-b-0 md:p-8">
                 <div className="flex items-center justify-between">
@@ -53,12 +53,12 @@ export function Verification() {
                     <del className="decoration-warning decoration-2">only with written approval</del>
                   </span>
                 </blockquote>
-                <div className="mt-auto flex gap-3 rounded-xl bg-warning-soft p-4 text-sm leading-relaxed text-ink">
+                <div className="mt-auto flex gap-3 rounded-lg bg-warning-soft p-4 text-sm leading-relaxed text-ink">
                   <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
                   <p className="m-0">
-                    <strong className="font-semibold">Condition dropped.</strong> The
-                    adaptation reads as a right, but the source makes it a
-                    permission. Linaw restores the phrase and shows you why.
+                    <strong className="font-semibold">Important condition may have changed.</strong>{" "}
+                    The adaptation reads as a right, but the source makes it a
+                    permission. Review the source before you rely on it.
                   </p>
                 </div>
               </div>
