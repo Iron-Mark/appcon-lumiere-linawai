@@ -262,7 +262,7 @@ export function Panel({
             />
           </div>
           <h1 id={titleId} className="linaw-brand-title">
-            Linaw AI
+            Linaw
           </h1>
         </div>
         {onClose && (
