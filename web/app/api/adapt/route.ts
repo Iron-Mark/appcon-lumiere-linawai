@@ -61,13 +61,13 @@ export async function POST(req: NextRequest) {
     // before this change. Running them concurrently means the NLI check adds
     // ~0ms to the critical path in the common case, since Gemini's own
     // verification call already takes longer than the 5s NLI budget.
-    const [verification, nliFindings] = await Promise.all([
+    const [verification, nliResult] = await Promise.all([
       withTimeout(
         generateObject({
           model,
           schema: VerificationOutputSchema,
           system: VERIFICATION_SYSTEM_PROMPT,
-          prompt: buildVerificationPrompt(originalText, generative.object.adaptedText),
+          prompt: buildVerificationPrompt(originalText, generative.object.adaptedText, preferences),
         }),
         TIMEOUT_MS
       ),
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     ]);
 
     // --- 2b. Merge Gemini issues + NLI-synthesized issues ---
-    const nliIssues: VerificationOutput["issues"] = nliFindings
+    const nliIssues: VerificationOutput["issues"] = nliResult.findings
       .filter((f) => f.contradictionScore > NLI_CONTRADICTION_THRESHOLD)
       .map((f) => ({
         type: "semantic_contradiction",
@@ -128,7 +128,18 @@ export async function POST(req: NextRequest) {
       verifiedAgainstFinalText: !repaired,
       nli: {
         enabled: Boolean(process.env.HUGGINGFACE_API_KEY?.trim()),
+        // Operational status of the auxiliary check itself — distinct from
+        // `enabled` (which only reflects whether a key is configured) and
+        // from `flaggedClaims` (which is 0 both when HF wasn't reached AND
+        // when it was reached but found nothing). See runNLICheck() below.
+        //   "disabled"     — no HUGGINGFACE_API_KEY; NLI intentionally skipped.
+        //   "ok"           — HF request completed and was parsed for scoring
+        //                    (zero findings still counts as "ok").
+        //   "soft_failure" — NLI was attempted but timeout/non-2xx/malformed
+        //                    payload/network error prevented a valid result.
+        status: nliResult.status,
         flaggedClaims: nliIssues.length,
+        auditedClaims: nliResult.auditedClaims,
       },
     });
   } catch (err) {
@@ -152,6 +163,16 @@ async function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
 
 type NLIFinding = { claim: string; contradictionScore: number };
 type HFLabelScore = { label: string; score: number };
+
+// Operational status of the auxiliary NLI check, distinct from the
+// scoring result itself. See runNLICheck() for exact semantics.
+type NLIStatus = "disabled" | "ok" | "soft_failure";
+interface NLICheckResult {
+  status: NLIStatus;
+  findings: NLIFinding[];
+  /** Number of claims actually sent to the HF endpoint (0 if not attempted). */
+  auditedClaims: number;
+}
 
 function isLabelScore(value: unknown): value is HFLabelScore {
   return (
@@ -190,23 +211,33 @@ function extractContradictions(payload: unknown, claims: string[]): NLIFinding[]
 
 /**
  * Auxiliary semantic-contradiction check against the raw original text.
- * Strictly non-blocking: never throws, never rejects. Any failure (missing
- * key, network error, timeout, rate limit, cold start) resolves to `[]` and
- * the primary Gemini verification/repair pipeline proceeds unaffected.
+ * Strictly non-blocking: never throws, never rejects. Any operational
+ * failure (network error, timeout, non-2xx, malformed payload) is reported
+ * via `status: "soft_failure"` with empty findings — never as a thrown
+ * error — so the primary Gemini verification/repair pipeline proceeds
+ * unaffected either way.
+ *
+ * `status` answers a different question than `findings`/`flaggedClaims`:
+ * it tells you whether the HF request itself completed and was usable,
+ * independent of whether any contradiction happened to be found. A
+ * successful request that finds zero contradictions is still "ok" — do not
+ * infer HF health from `findings.length` alone.
  */
 async function runNLICheck(
   sourceText: string,
   adaptedText: string
-): Promise<Array<NLIFinding>> {
+): Promise<NLICheckResult> {
   const apiKey = process.env.HUGGINGFACE_API_KEY?.trim();
   if (!apiKey) {
     // Environment & Security Decoupling: silently bypass when unconfigured.
-    return [];
+    return { status: "disabled", findings: [], auditedClaims: 0 };
   }
 
   const claims = splitIntoClaims(adaptedText).slice(0, MAX_NLI_CLAIMS);
   if (claims.length === 0) {
-    return [];
+    // Nothing to audit (e.g. empty adaptedText) — not an operational
+    // failure, just no-op. No HF request is made in this case.
+    return { status: "ok", findings: [], auditedClaims: 0 };
   }
 
   try {
@@ -229,14 +260,22 @@ async function runNLICheck(
       console.warn(
         `[NLI] Hugging Face inference returned HTTP ${response.status}; skipping semantic check for this request.`
       );
-      return [];
+      return { status: "soft_failure", findings: [], auditedClaims: claims.length };
     }
 
     const payload: unknown = await response.json();
-    return extractContradictions(payload, claims);
+    if (!Array.isArray(payload)) {
+      // Unexpected/malformed response shape — could not be parsed for
+      // normal scoring logic, so this is a soft failure, not an "ok" with
+      // zero findings.
+      console.warn("[NLI] Hugging Face returned an unexpected payload shape; skipping semantic check for this request.");
+      return { status: "soft_failure", findings: [], auditedClaims: claims.length };
+    }
+
+    return { status: "ok", findings: extractContradictions(payload, claims), auditedClaims: claims.length };
   } catch (err) {
-    // Network failure, "llm_timeout" from withTimeout, or malformed response.
+    // Network failure or "llm_timeout" from withTimeout.
     console.warn("[NLI] semantic contradiction check failed or timed out:", err);
-    return [];
+    return { status: "soft_failure", findings: [], auditedClaims: claims.length };
   }
 }
