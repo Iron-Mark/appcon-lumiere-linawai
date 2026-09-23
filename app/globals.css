@@ -228,3 +228,123 @@ body {
     @apply border-border;
   }
 }
+
+/* Landing sections — integrated from the landing prototype, re-themed to
+   Linaw tokens (warm paper, ink, olive action, amber warning). */
+
+html {
+  scroll-padding-top: 5rem;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(0.75rem);
+  transition:
+    opacity var(--motion-slow) ease,
+    transform var(--motion-slow) ease;
+}
+
+.reveal-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.gradient-headline {
+  background-image: linear-gradient(
+    100deg,
+    var(--color-ink) 0%,
+    var(--color-ink) 30%,
+    var(--color-action) 50%,
+    var(--color-ink) 70%,
+    var(--color-ink) 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradient-pan 10s ease-in-out infinite;
+}
+
+@keyframes gradient-pan {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Animated border beam drawing attention to the hero demo card */
+@property --beam-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.border-beam {
+  position: relative;
+  isolation: isolate;
+}
+
+.border-beam::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--beam-angle),
+    transparent 0deg,
+    transparent 250deg,
+    var(--color-action) 310deg,
+    color-mix(in srgb, var(--color-action) 30%, transparent) 340deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: beam-spin 7s linear infinite;
+}
+
+@keyframes beam-spin {
+  to {
+    --beam-angle: 360deg;
+  }
+}
+
+.flag-panel {
+  animation: landing-fade-up var(--motion-base) ease both;
+}
+
+@keyframes landing-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.4rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .gradient-headline {
+    animation: none;
+  }
+  .border-beam::before {
+    animation: none;
+    background: color-mix(in srgb, var(--color-action) 45%, transparent);
+  }
+  .flag-panel {
+    animation: none;
+  }
+}

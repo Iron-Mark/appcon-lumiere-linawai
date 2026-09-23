@@ -27,8 +27,9 @@ export function MeaningCheckRail({
 
   return (
     <aside
+      id="meaning-check"
       aria-label="Meaning Check"
-      className="font-ui flex min-w-0 flex-col gap-4"
+      className="font-ui flex min-w-0 scroll-mt-5 flex-col gap-4"
     >
       <header className="flex flex-col gap-1.5 border-b border-paper-inset pb-3">
         <h2 className="m-0 text-xs font-semibold tracking-[0.06em] text-ink-muted uppercase">
