@@ -3,3 +3,9 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .cache/
+
+# Generated evaluation result files (evaluate.py --output). Not tracked by
+# default -- a small summarized baseline artifact may be intentionally
+# tracked later via an explicit exception, once we have a real (reviewed)
+# benchmark result worth keeping.
+results/

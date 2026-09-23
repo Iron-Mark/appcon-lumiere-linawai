@@ -135,3 +135,31 @@ Response — one entry per input pair, in the same order as `inputs`:
 
 Real model/runtime errors return a `500` with a generic `nli_inference_failed`
 detail — they are never disguised as a fake/placeholder prediction.
+
+## Direct NLI benchmark (separate from `web/evals`)
+
+`web/evals/*` is an end-to-end regression suite against the whole Next.js
+`/api/adapt` pipeline. Separately, `nli-service/data/` and
+`nli-service/evaluation/` hold a **direct** benchmark that tests only the
+base model itself (`premise + hypothesis -> contradiction/entailment/neutral`),
+before any fine-tuning. See `data/README.md` for the full explanation,
+including:
+
+- why `dev_candidates.jsonl` is development-only candidate data (already
+  scored once by the base model, so it can never become the final blind
+  holdout),
+- the `dev_candidates.jsonl` -> `dev_gold.jsonl` -> future blind holdout
+  methodology, and
+- why this data must never be reused as fine-tuning data.
+
+Quick commands (from `nli-service/`, with `.venv` active):
+
+```bash
+# Candidate structural check / development-only wiring check
+python evaluation/validate_dataset.py data/dev_candidates.jsonl
+python evaluation/evaluate.py data/dev_candidates.jsonl --allow-unreviewed
+
+# Human-reviewed development benchmark
+python evaluation/validate_dataset.py data/dev_gold.jsonl --require-reviewed
+python evaluation/evaluate.py data/dev_gold.jsonl
+```
