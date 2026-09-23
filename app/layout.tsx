@@ -18,7 +18,7 @@ const raleway = Raleway({
 export const metadata: Metadata = {
   title: "Linaw AI",
   description:
-    "Adapt the format. Preserve the meaning. Personalized information with Meaning Check.",
+    "Clarify the format. Preserve the meaning. Personalized information with Meaning Check.",
 };
 
 export default function RootLayout({

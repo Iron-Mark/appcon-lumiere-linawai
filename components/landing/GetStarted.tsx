@@ -76,7 +76,7 @@ export function GetStarted() {
               Chrome companion
             </h3>
             <p className="mt-2 leading-relaxed text-pretty text-ink-muted">
-              A thin add-on for pages you already have open. Auto-Adapt is
+              A thin add-on for pages you already have open. Auto-Clarify is
               explicit opt-in, never silent.
             </p>
 

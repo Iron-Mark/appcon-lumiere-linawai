@@ -20,8 +20,8 @@ Panel / overlay repeats:
 - Show original
 - Open in web app
 - Disable on this site
-- **Auto-Adapt** off until the user turns it on
-- Manual “adapt selection” works without Auto-Adapt
+- **Auto-Clarify** off until the user turns it on
+- Manual “Clarify with Linaw” works without Auto-Clarify
 
 Sindi states in the header, smaller size. Keyboard focus matches visual order.
 
@@ -29,16 +29,16 @@ Sindi states in the header, smaller size. Keyboard focus matches visual order.
 
 - Manifest V3
 - Page text or selected-text ingestion
-- When Auto-Adapt is explicitly enabled by the user: eligible content may adapt automatically with the saved profile
-- Auto-Adapt stays off until that opt-in; the campus-pilot sample does not assume it is on
+- When Auto-Clarify is explicitly enabled by the user: eligible content may clarify automatically with the saved profile
+- Auto-Clarify stays off until that opt-in; the campus-pilot sample does not assume it is on
 - Site disable is remembered per origin
 - No separate adaptation algorithm—call `adapt()`
 
 ## Acceptance checks
 
 - [ ] Unpacked load works per README instructions once built.
-- [ ] Manual adapt selection works with Auto-Adapt off.
-- [ ] Auto-Adapt requires explicit enable.
+- [ ] Manual clarify selection works with Auto-Clarify off.
+- [ ] Auto-Clarify requires explicit enable.
 - [ ] Show original / open web / disable on this site present.
 - [ ] Same domain preference field names as web.
 - [ ] Does not add `app/api` or a second npm package tree.

@@ -11,7 +11,7 @@ export const REASON_WRONG_GROUP =
 export const REASON_NLI_DISCONNECTED = "Semantic check not connected.";
 
 export const REASON_NLI_CONTRADICTION =
-  "Adapted text may conflict with the source. Review source.";
+  "Clarified text may conflict with the source. Review source.";
 
 export const REASON_NLI_ENTAILED = "No issue found in these checks.";
 

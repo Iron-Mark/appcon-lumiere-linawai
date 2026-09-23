@@ -38,7 +38,7 @@ export function Hero() {
               id="hero-title"
               className="font-reading m-0 max-w-[16ch] text-[2.125rem] font-semibold leading-[1.15] tracking-[-0.03em] text-ink md:text-5xl md:leading-[1.12]"
             >
-              Adapt the format. Preserve the meaning.
+              Clarify the format. Preserve the meaning.
             </h1>
           </Reveal>
 

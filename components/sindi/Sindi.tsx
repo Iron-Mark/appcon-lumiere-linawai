@@ -36,7 +36,7 @@ const RAY = {
 
 const DEFAULT_LINES: Record<SindiState, string> = {
   prompt: "One choice at a time.",
-  working: "Adapting…",
+  working: "Clarifying…",
   reading: "",
   listening: "Reading aloud…",
   pass: "No issue found in these checks.",

@@ -8,15 +8,15 @@ Define what the initial scaffold builds, what it leaves as ports, and the shared
 
 Linaw AI adapts important information to how the user prefers to receive it, while checking that critical meaning is preserved.
 
-Tagline: **Adapt the format. Preserve the meaning.**
+Tagline: **Clarify the format. Preserve the meaning.**
 
 ## Non-negotiables (from canon §42, MVP-scoped)
 
 1. Product name is **Linaw AI** (Lumière is legacy only).
 2. Core product: **web app** primary; **Chrome companion** reuses the same adapt pipeline.
 3. Personalization is **user-selected preferences**, never cognitive diagnosis or ability labels.
-4. Modes: Detail **Full / Key Points**, Wording **Original / Plain Language**, Delivery **Read / Listen**, Browser **Auto-Adapt / Manual**.
-5. Auto-Adapt is **opt-in**.
+4. Modes: Detail **Full / Key Points**, Wording **Original / Plain Language**, Delivery **Read / Listen**, Browser **Auto-Clarify / Manual**.
+5. Auto-Clarify is **opt-in**. The stored value stays `auto_adapt`.
 6. Original source stays **authoritative and one action away**.
 7. Differentiator is **meaning preservation** (Meaning Map → Fidelity Guard → Meaning Check), not format count.
 8. Verification is never presented as a guarantee.
@@ -74,7 +74,7 @@ ui (web / extension) → adapt() → POST /api/adapt
 
 ## Shared copy rules
 
-- Preference words only: Key Points, Plain Language, Listen, Auto-Adapt (and Full, Original, Read, Manual as needed).
+- Preference words only: Key Points, Plain Language, Listen, Auto-Clarify (and Full, Original, Read, Manual as needed). The button is Clarify. Do not put Adapt back on screen.
 - Never: ADHD mode, dyslexic learner, auditory learner, cognitive fatigue, slow reader.
 - Meaning Check: “No issue found in these checks.” / “Important condition may have changed. Review source.” / relationship-specific cautious lines. Never “100% verified” or “guaranteed.”
 

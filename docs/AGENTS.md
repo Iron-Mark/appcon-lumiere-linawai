@@ -13,11 +13,11 @@ Human setup instructions live in `docs/README.md`. Root `AGENTS.md`, `CLAUDE.md`
 
 ## Non-negotiables
 
-- Product name: **Linaw AI**. Tagline: **Adapt the format. Preserve the meaning.**
+- Product name: **Linaw AI**. Tagline: **Clarify the format. Preserve the meaning.**
 - One Next.js app at the repo root. One `package.json`. No monorepo, no `apps/`, no `packages/`. The only server route is `app/api/adapt`.
 - `adapt()` posts to that route. With no model key it runs the fixture, including an in-browser fallback if the route is down. Do not add other API routes.
 - UI calls `adapt()` from `lib/adapt` and the preference store. It never imports `fixture.ts` directly and never branches on “demo mode.”
-- Prefer preference language (Key Points, Plain Language, Listen, Auto-Adapt). Never diagnose or label the person. Auto-Adapt is always explicit opt-in.
+- Prefer preference language (Key Points, Plain Language, Listen, Auto-Clarify). Never diagnose or label the person. Auto-Clarify is always explicit opt-in. The on-screen verb is Clarify, not Adapt.
 - Verification copy is cautious. Never say “guaranteed,” “100% verified,” or “the AI proves this is correct.”
 - Spec wins over code until someone edits the spec. Spec does not replace the project-context canon.
 - Fixture development sample (campus pilot) lives in `lib/adapt/fixture.ts` once the fixture track lands—see `spec/spec-01-initial_scaffold/05-client-port.md`. Seeded bad adaptation: “All members arrive at 8:30 AM.” Warning: “The time appears to be attached to the wrong group.”

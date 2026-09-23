@@ -1,6 +1,6 @@
 # Linaw AI
 
-**Adapt the format. Preserve the meaning.**
+**Clarify the format. Preserve the meaning.**
 
 Linaw takes one message — a notice, an email, a lesson — and gives it back to each reader in the format they chose (key points or full detail, plain or original wording, read or listened to), then runs a **Meaning Check** that compares every critical fact in the adapted note against the source before the reader relies on it.
 
@@ -66,7 +66,7 @@ Layers stay separate and are reported separately — never collapsed into one sc
 ```mermaid
 flowchart TD
   SRC[Source text] --> MAP[Meaning Map<br/>actor · action · value · condition · evidence]
-  ADP[Adapted note] --> L1
+  ADP[Clarified note] --> L1
   MAP --> L1[1 · Deterministic fact compare<br/>dates, times, numbers]
   MAP --> L2[2 · Actor–value relationships<br/>who ↔ when stay paired]
   SRC --> L3[3 · Semantic verification NLI<br/>DeBERTa via NLI_ENDPOINT · optional]

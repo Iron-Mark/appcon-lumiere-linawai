@@ -24,7 +24,7 @@ Root [`AGENTS.md`](../AGENTS.md), [`CLAUDE.md`](../CLAUDE.md), [`.github/copilot
 | Backend | **None in this slice.** No `app/api` routes. |
 | Adaptation | UI calls `adapt()` from `lib/adapt`. Selector is `lib/adapt/index.ts`. Later HTTP client is `lib/adapt/http.ts`. |
 | Spec layout | Only `spec/AGENTS.md` may sit directly in `spec/`. Phases are `spec-NN-short_name/`. |
-| Preferences | Use preference language (Key Points, Plain Language, Listen, Auto-Adapt). Never diagnose the person. Auto-Adapt is explicit opt-in. |
+| Preferences | Use preference language (Key Points, Plain Language, Listen, Auto-Clarify). Never diagnose the person. Auto-Clarify is explicit opt-in. The on-screen verb is Clarify. |
 | Verification copy | Cautious. Never “guaranteed,” “100% verified,” or “the AI proves this is correct.” |
 
 ## Development sample (campus pilot)

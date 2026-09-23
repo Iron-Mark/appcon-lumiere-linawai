@@ -205,7 +205,7 @@ export async function savePreferences(
   return updatePreferences(preferences);
 }
 
-/** Auto-Adapt is on only when the user explicitly chose auto_adapt or auto. */
+/** Auto-Clarify is on only when the user explicitly chose auto_adapt or auto. */
 export function isAutoAdaptEnabled(
   preferences?: { browserBehavior?: string } | null,
 ): boolean {

@@ -47,14 +47,21 @@ export function runDeterministicChecks(
   const knownNameCorpus = buildNameCorpus(meaningMap);
 
   for (const fact of meaningMap.criticalFacts) {
+    // Everything the source actually says about this fact counts as known:
+    // the value, its condition/exception text, and the verbatim evidence.
+    // A value can hold several times ("from 9:00 AM to 3:00 PM"), and a
+    // time can live in the condition ("before 12:00 noon") — comparing the
+    // adaptation against `value` alone flagged both as mismatches.
+    const known = [fact.value, fact.condition, fact.exception, fact.evidence]
+      .filter((s): s is string => Boolean(s))
+      .join(" ");
+    for (const time of extractTimes(known)) mapTimes.add(time);
     if (fact.value) {
-      const time = normalizeTimeToken(fact.value);
-      if (time) mapTimes.add(time);
-      for (const day of extractWeekdays(fact.value)) mapWeekdays.add(day);
-      for (const day of extractWeekdays(fact.evidence)) mapWeekdays.add(day);
-      for (const n of extractNumbers(fact.value)) mapNumbers.add(n);
+      const single = normalizeTimeToken(fact.value);
+      if (single) mapTimes.add(single);
     }
-    for (const day of extractWeekdays(fact.evidence)) mapWeekdays.add(day);
+    for (const day of extractWeekdays(known)) mapWeekdays.add(day);
+    for (const n of extractNumbers(known)) mapNumbers.add(n);
     for (const qu of extractQuantityUnits(
       `${fact.value ?? ""} ${fact.evidence}`,
     )) {

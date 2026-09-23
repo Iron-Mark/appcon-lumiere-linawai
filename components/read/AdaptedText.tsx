@@ -83,7 +83,7 @@ export function AdaptedText({
           fontStyle: "italic",
         }}
       >
-        Adapted text will appear on this paper once you run Adapt.
+        Clarified text will appear on this paper once you run Clarify.
       </p>
     );
   }
@@ -355,11 +355,11 @@ export function statusLabel(
   detailLabel: string,
   wordingLabel: string,
 ): string {
-  if (working) return "Adapting…";
+  if (working) return "Clarifying…";
   if (listening) return "Reading aloud…";
   if (!overall) return "Paste a source, or use an example.";
   if (overall === "warning" || overall === "repair_required") {
     return "Review a flagged claim against the source.";
   }
-  return `Adapted · ${detailLabel} · ${wordingLabel}`;
+  return `Clarified · ${detailLabel} · ${wordingLabel}`;
 }

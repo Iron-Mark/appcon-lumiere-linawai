@@ -669,7 +669,7 @@ function renderPanel() {
           const wasAuto = isAutoAdaptEnabled(state.preferences);
           state.preferences = next;
           renderPanel();
-          // Only extract page text when the user newly opts into Auto-Adapt.
+          // Only extract page text when the user newly opts into Auto-Clarify.
           if (!wasAuto && isAutoAdaptEnabled(next)) {
             void maybeAutoAdapt();
           }
@@ -718,7 +718,7 @@ function updateFab() {
     btn.id = "linaw-fab-btn";
     btn.name = "linaw-fab-btn";
     btn.className = "linaw-fab";
-    btn.textContent = "Adapt with Linaw";
+    btn.textContent = "Clarify with Linaw";
 
     btn.addEventListener("click", () => {
       void openWithSelection();
@@ -788,7 +788,7 @@ async function openWithSelection() {
 }
 
 /**
- * Auto-Adapt only after explicit opt-in (browserBehavior === auto_adapt or auto)
+ * Auto-Clarify only after explicit opt-in (browserBehavior === auto_adapt or auto)
  * and when this origin is not disabled. Never sends page text before consent.
  */
 async function maybeAutoAdapt() {

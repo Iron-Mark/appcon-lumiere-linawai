@@ -69,7 +69,7 @@ Seeded bad adaptation:
 
 Warning line: “The time appears to be attached to the wrong group.”
 
-Default profile for exercising the path: **Key Points**, **Plain Language**, **Read**. Auto-Adapt stays an explicit opt-in; the sample does not assume it is on.
+Default profile for exercising the path: **Key Points**, **Plain Language**, **Read**. Auto-Clarify stays an explicit opt-in; the sample does not assume it is on. The stored value is still `auto_adapt`.
 
 ## Fixture track responsibilities
 

@@ -1,6 +1,6 @@
 # Linaw AI
 
-**Adapt the format. Preserve the meaning.**
+**Clarify the format. Preserve the meaning.**
 
 Linaw AI is an adaptive information platform: a web app and Chrome companion that presents important messages the way you prefer—detail, wording, and delivery—then runs a **Meaning Check** so critical facts, conditions, and relationships are less likely to change silently.
 
@@ -68,7 +68,7 @@ node extension/build.mjs
 
 Then in Chrome: open `chrome://extensions` → enable Developer mode → **Load unpacked** → select the `extension/` folder (the one with `manifest.json`).
 
-Auto-Adapt stays off until you turn it on. There is no Chrome Web Store listing; use Load unpacked only. More detail: [`extension/README.md`](../extension/README.md).
+Auto-Clarify stays off until you turn it on. There is no Chrome Web Store listing; use Load unpacked only. More detail: [`extension/README.md`](../extension/README.md).
 
 ## Development sample
 

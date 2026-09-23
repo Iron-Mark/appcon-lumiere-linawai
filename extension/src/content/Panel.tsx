@@ -68,7 +68,7 @@ function sindiLineFor(
   isDisabled: boolean,
 ): string | undefined {
   if (isDisabled) return "Linaw disabled on this site.";
-  if (state === "working") return "Adapting…";
+  if (state === "working") return "Clarifying…";
   if (state === "listening") return "Reading aloud…";
   if (state === "pass") return "No issue found in these checks.";
   if (state === "warning") {
@@ -81,7 +81,7 @@ function sindiLineFor(
     );
   }
   if (state === "empty" || state === "prompt") {
-    return "Select text or turn on Auto-Adapt.";
+    return "Select text or turn on Auto-Clarify.";
   }
   return "";
 }
@@ -95,7 +95,7 @@ function statusPillInfo(
     return { icon: "⏸", text: "Disabled on this site", isWarning: true };
   }
   if (working) {
-    return { icon: "⏳", text: "Adapting…", isWarning: false };
+    return { icon: "⏳", text: "Clarifying…", isWarning: false };
   }
   if (!overall) {
     return { icon: "✔", text: "Using your saved preferences", isWarning: false };
@@ -140,7 +140,7 @@ export function Panel({
   const runAdapt = async (nextPrefs: Preferences, nextSource: string) => {
     const trimmed = nextSource.trim();
     if (!trimmed) {
-      setError("Nothing to adapt yet. Select text on the page first.");
+      setError("Nothing to clarify yet. Select text on the page first.");
       setResponse(null);
       return;
     }
@@ -155,7 +155,7 @@ export function Panel({
       });
       setResponse(result);
     } catch {
-      setError("Adaptation could not finish. Try again.");
+      setError("Clarification could not finish. Try again.");
       setResponse(null);
     } finally {
       setWorking(false);
@@ -401,7 +401,7 @@ export function Panel({
 
           <div className="linaw-settings-row">
             <label htmlFor="linaw-autoadapt-select" className="linaw-settings-label">
-              Auto-Adapt
+              Auto-Clarify
             </label>
             <select
               id="linaw-autoadapt-select"
@@ -416,7 +416,7 @@ export function Panel({
               }
             >
               <option value="manual">Off (manual only)</option>
-              <option value="auto_adapt">On (auto-adapt)</option>
+              <option value="auto_adapt">On (auto-clarify)</option>
             </select>
           </div>
 
@@ -509,7 +509,7 @@ export function Panel({
             {error ? (
               <p className="linaw-error">{error}</p>
             ) : working && !response ? (
-              <p className="linaw-loading">Adapting…</p>
+              <p className="linaw-loading">Clarifying…</p>
             ) : view === "original" ? (
               <p className="linaw-paragraph">{source || "—"}</p>
             ) : showAsBullets && bulletItems.length > 0 ? (

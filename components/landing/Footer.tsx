@@ -21,7 +21,7 @@ export function Footer() {
             ·
           </span>
           <p className="m-0 text-sm text-ink-muted">
-            Adapt the format. Preserve the meaning.
+            Clarify the format. Preserve the meaning.
           </p>
         </div>
 
