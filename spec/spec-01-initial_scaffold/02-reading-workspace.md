@@ -57,13 +57,13 @@ Changing Detail / Wording / Delivery updates preferences (store) and re-invokes 
 
 ## Acceptance checks
 
-- [ ] Adapted text renders in Lora on paper tokens; UI chrome in Raleway.
-- [ ] Show original reveals source and can be dismissed without losing adapted text.
-- [ ] Listen speaks the displayed adapted string via Web Speech API.
-- [ ] Preference changes call `adapt()` again with domain preferences.
-- [ ] Sindi states match working / reading / listening / pass / warning as applicable.
-- [ ] No chat composer layout; no inset marketing hero as the shell.
-- [ ] Narrow viewports remain usable (rail may stack—see 03).
+- [x] Adapted text renders in Lora on paper tokens; UI chrome in Raleway.
+- [x] Show original reveals source and can be dismissed without losing adapted text.
+- [x] Listen speaks the displayed adapted string via Web Speech API.
+- [x] Preference changes call `adapt()` again with domain preferences.
+- [x] Sindi states match working / reading / listening / pass / warning as applicable.
+- [x] No chat composer layout; no inset marketing hero as the shell.
+- [x] Narrow viewports remain usable (rail stacks under the note below 860px; preference chip wraps).
 
 ## Out of scope
 

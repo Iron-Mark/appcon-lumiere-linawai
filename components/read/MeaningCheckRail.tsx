@@ -312,9 +312,29 @@ export function MeaningCheckRail({
                   <button
                     type="button"
                     id={`meaning-check-card-${index}`}
+                    data-meaning-check-card=""
                     onClick={() => {
                       if (notRun) return;
                       onSelect(selected ? null : index);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+                        return;
+                      }
+                      const cards = [
+                        ...document.querySelectorAll<HTMLButtonElement>(
+                          "#meaning-check [data-meaning-check-card]",
+                        ),
+                      ];
+                      const here = cards.indexOf(event.currentTarget);
+                      if (here < 0) return;
+                      const next =
+                        event.key === "ArrowDown"
+                          ? cards[here + 1]
+                          : cards[here - 1];
+                      if (!next) return;
+                      event.preventDefault();
+                      next.focus();
                     }}
                     aria-pressed={notRun ? undefined : selected}
                     aria-disabled={notRun || undefined}

@@ -299,7 +299,20 @@ function renderMarked(
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
             onSelectMark(mark.checkIndex);
+            return;
           }
+          if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+          const root = event.currentTarget.closest("main");
+          const marks = [
+            ...(root?.querySelectorAll<HTMLElement>(".adapted-mark") ?? []),
+          ];
+          const here = marks.indexOf(event.currentTarget);
+          if (here < 0) return;
+          const next =
+            event.key === "ArrowRight" ? marks[here + 1] : marks[here - 1];
+          if (!next) return;
+          event.preventDefault();
+          next.focus();
         }}
         style={{
           background: selected

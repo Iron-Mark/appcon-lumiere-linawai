@@ -175,7 +175,7 @@ export function ModeBar({
           type="button"
           variant="outline"
           aria-label={`Reading as ${summary.join(", ")}. Change preferences.`}
-          className="h-11 min-h-11 w-fit max-w-full cursor-pointer gap-1.5 rounded-full px-3.5 font-ui text-[0.875rem] font-medium text-ink hover:bg-paper-inset hover:text-ink"
+          className="h-auto min-h-11 w-fit max-w-full cursor-pointer flex-wrap gap-1.5 rounded-full px-3.5 py-2 font-ui text-[0.875rem] font-medium text-ink hover:bg-paper-inset hover:text-ink"
         >
           {summary.map((label, index) => (
             <span

@@ -47,6 +47,7 @@ import {
   Copy,
   Link2,
   Paperclip,
+  RotateCcw,
   Trash2,
 } from "lucide-react";
 import { ErrorToast } from "./ErrorToast";
@@ -471,6 +472,7 @@ export function ReadingWorkspace({
 
   /** Note layout — remembered across sessions like the other reading choices. */
   const [noteView, setNoteView] = useState<NoteView>("text");
+  const [noteViewHydrated, setNoteViewHydrated] = useState(false);
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(VIEW_STORAGE_KEY);
@@ -478,9 +480,30 @@ export function ReadingWorkspace({
         setNoteView(raw as NoteView);
       }
     } catch {
-      // Fine — default to text.
+      // Fine — default to text until prefs can seed.
+    } finally {
+      setNoteViewHydrated(true);
     }
   }, []);
+  /** First arrival after onboarding: Key Points opens glance; Full opens text. */
+  useEffect(() => {
+    if (!prefsReady || !noteViewHydrated || !hasStoredPrefs) return;
+    try {
+      const raw = window.localStorage.getItem(VIEW_STORAGE_KEY);
+      if (raw && (NOTE_VIEW_VALUES as string[]).includes(raw)) return;
+      const seeded: NoteView =
+        preferences.detail === "key_points" ? "glance" : "text";
+      setNoteView(seeded);
+      window.localStorage.setItem(VIEW_STORAGE_KEY, seeded);
+    } catch {
+      // Best effort.
+    }
+  }, [
+    prefsReady,
+    noteViewHydrated,
+    hasStoredPrefs,
+    preferences.detail,
+  ]);
   const onNoteViewChange = useCallback((next: NoteView) => {
     setNoteView(next);
     try {
@@ -796,12 +819,18 @@ export function ReadingWorkspace({
    * sent. Today that happens whenever the offline fixture receives anything
    * other than its sample; with a live adapter it would flag a hallucinated map.
    * Either way the reader must be told the note is not about their text.
+   *
+   * Exception: the flagged sample source is intentionally short and is checked
+   * against the campus-pilot Meaning Map so Meaning Check can show real evidence
+   * for the seeded wrong-group warning. That mismatch is expected, not a miss.
    */
   const resultUngrounded = useMemo(() => {
     if (!result || working) return false;
     const source = (activeSource ?? "").trim();
     if (!source) return false;
-    const normalize = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
+    const normalize = (s: string) =>
+      s.replace(/\s+/g, " ").trim().replace(/\.$/, "").toLowerCase();
+    if (normalize(source) === normalize(FLAGGED_SAMPLE_SOURCE)) return false;
     const haystack = normalize(source);
     const evidence = result.meaningMap.criticalFacts
       .map((f) => normalize(f.evidence))
@@ -1051,6 +1080,12 @@ export function ReadingWorkspace({
           >
             Clarify a message, then check the meaning.
           </p>
+          <Link
+            href="/todo"
+            className="font-ui mt-2 inline-flex min-h-11 items-center text-sm text-ink-muted underline decoration-border underline-offset-4 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          >
+            Backend not connected
+          </Link>
         </div>
         <div style={{ marginLeft: "auto", minWidth: 0 }}>
           <ModeBar
@@ -1328,20 +1363,34 @@ export function ReadingWorkspace({
               >
                 Edit source
               </Button>
-              {/* Once a result exists the note is the focus; re-adapt steps back to secondary. */}
-              <Button
-                type="button"
-                variant={result ? "outline" : "default"}
-                onClick={onAdaptDraft}
-                disabled={working || !draftHasText}
-                aria-disabled={working || !draftHasText}
-                aria-describedby={
-                  !draftHasText ? "adapt-disabled-reason" : undefined
-                }
-                className={`${result ? "" : "adapt-primary "}min-h-10 shrink-0 cursor-pointer px-4 font-ui text-[0.875rem] font-semibold whitespace-nowrap focus-visible:ring-2 focus-visible:ring-ring/60`}
-              >
-                {result ? "Clarify again" : "Clarify"}
-              </Button>
+              {result ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={onAdaptDraft}
+                  disabled={working || !draftHasText}
+                  aria-disabled={working || !draftHasText}
+                  aria-label="Clarify again"
+                  className="source-well-icon size-11 min-h-11 min-w-11 shrink-0 cursor-pointer text-ink-muted hover:bg-transparent hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60"
+                >
+                  <RotateCcw aria-hidden="true" />
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="default"
+                  onClick={onAdaptDraft}
+                  disabled={working || !draftHasText}
+                  aria-disabled={working || !draftHasText}
+                  aria-describedby={
+                    !draftHasText ? "adapt-disabled-reason" : undefined
+                  }
+                  className="adapt-primary min-h-10 shrink-0 cursor-pointer px-4 font-ui text-[0.875rem] font-semibold whitespace-nowrap focus-visible:ring-2 focus-visible:ring-ring/60"
+                >
+                  Clarify
+                </Button>
+              )}
             </div>
           </div>
         )}
@@ -1379,45 +1428,59 @@ export function ReadingWorkspace({
 
       {!showResultsGrid ? (
         <section
-          aria-label="How Linaw works"
+          aria-label={hasStoredPrefs ? "Your reading defaults" : "How Linaw works"}
           className="read-guide animate-in fade-in-0 slide-in-from-bottom-1 duration-300 fill-mode-both motion-reduce:animate-none"
           style={{ animationDelay: "80ms" }}
         >
           <div className="read-guide-mascot" aria-hidden="true">
             <Sindi state="empty" line="" className="read-guide-ray" />
           </div>
-          <div className="read-guide-heading">
-            <p className="read-guide-eyebrow">How Linaw works</p>
-            <p className="read-guide-lede font-reading">
-              Paste, clarify, then check the meaning held.
-            </p>
-          </div>
-          <ol className="read-guide-steps">
-            {[
-              {
-                title: "Paste or drop",
-                body: "Plain text or a PDF, up to 30 pages long.",
-              },
-              {
-                title: "Clarify",
-                body: "Rewritten to your detail and wording choices.",
-              },
-              {
-                title: "Meaning Check",
-                body: "Key facts are checked against the source.",
-              },
-            ].map((step, i) => (
-              <li key={step.title} className="read-guide-step">
-                <span aria-hidden="true" className="read-guide-num font-reading">
-                  {i + 1}
-                </span>
-                <div>
-                  <p className="read-guide-title">{step.title}</p>
-                  <p className="read-guide-body">{step.body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
+          {hasStoredPrefs ? (
+            <div className="read-guide-heading">
+              <p className="read-guide-eyebrow">Ready when you are</p>
+              <p className="read-guide-lede font-reading">
+                {detailLabel} · {wordingLabel} · {deliveryLabel}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="read-guide-heading">
+                <p className="read-guide-eyebrow">How Linaw works</p>
+                <p className="read-guide-lede font-reading">
+                  Paste, clarify, then check the meaning held.
+                </p>
+              </div>
+              <ol className="read-guide-steps">
+                {[
+                  {
+                    title: "Paste or drop",
+                    body: "Plain text or a PDF, up to 30 pages long.",
+                  },
+                  {
+                    title: "Clarify",
+                    body: "Rewritten to your detail and wording choices.",
+                  },
+                  {
+                    title: "Meaning Check",
+                    body: "Key facts are checked against the source.",
+                  },
+                ].map((step, i) => (
+                  <li key={step.title} className="read-guide-step">
+                    <span
+                      aria-hidden="true"
+                      className="read-guide-num font-reading"
+                    >
+                      {i + 1}
+                    </span>
+                    <div>
+                      <p className="read-guide-title">{step.title}</p>
+                      <p className="read-guide-body">{step.body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
         </section>
       ) : null}
 
@@ -1664,6 +1727,13 @@ export function ReadingWorkspace({
         @media (max-width: 860px) {
           .read-workspace-grid {
             grid-template-columns: 1fr !important;
+          }
+          .read-page-header {
+            align-items: flex-start;
+          }
+          .read-note-surface,
+          .read-meaning-rail {
+            padding: 1.1rem 1rem 1.15rem !important;
           }
         }
         @media (max-width: 375px) {

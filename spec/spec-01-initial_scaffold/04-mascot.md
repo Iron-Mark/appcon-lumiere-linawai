@@ -39,10 +39,10 @@ Motion uses **transform/opacity only** and must not change layout bounds. Durati
 
 ## Acceptance checks
 
-- [ ] All product states render without throwing (`prompt`, `working`, `reading`, `listening`, `pass`, `warning`, `empty`).
-- [ ] SVG sun (Ray) present; no emoji, no lantern.
-- [ ] Reduced-motion path does not rely on continuous animation for meaning.
-- [ ] Pass/warning copy never uses guarantee language.
+- [x] All product states render without throwing (`prompt`, `working`, `reading`, `listening`, `pass`, `warning`, `empty`).
+- [x] SVG sun (Ray) present; no emoji, no lantern.
+- [x] Reduced-motion path does not rely on continuous animation for meaning.
+- [x] Pass/warning copy never uses guarantee language.
 
 ## Out of scope
 

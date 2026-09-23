@@ -54,11 +54,11 @@ Render `checks[]` and `overallStatus` from domain types (`lib/domain`). Evidence
 
 ## Acceptance checks
 
-- [ ] Empty rail has no score chip and no prompt list.
-- [ ] After results, at least one mark ↔ rail card ↔ evidence linkage works for the seeded warning case once fixture + fidelity land.
-- [ ] Warning uses amber + icon + words; contrast remains readable.
-- [ ] Keyboard focus order matches visual order for marks and cards.
-- [ ] Copy never claims guarantee/100% verified.
+- [x] Empty rail has no score chip and no prompt list.
+- [x] After results, at least one mark ↔ rail card ↔ evidence linkage works for the seeded warning case once fixture + fidelity land.
+- [x] Warning uses amber + icon + words; contrast remains readable.
+- [x] Keyboard focus order matches visual order for marks and cards. Arrow keys move across marks in the note and down the rail.
+- [x] Copy never claims guarantee/100% verified.
 
 ## Out of scope
 
