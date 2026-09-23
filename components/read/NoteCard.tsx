@@ -1,8 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { Ear, EarOff, FileText, RotateCcw } from "lucide-react";
 import type { Check } from "@/lib/domain";
+import { Button } from "@/components/ui/button";
 import { AdaptedText } from "./AdaptedText";
 import type { TextMark } from "./marks";
 
@@ -42,121 +42,63 @@ export function NoteCard({
 
   return (
     <article
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "1.1rem",
-        padding: "1.5rem 1.6rem 1.35rem",
-        background: "var(--color-paper-raised)",
-        border: "1px solid var(--color-paper-inset)",
-        borderRadius: "0.65rem",
-        boxShadow: "0 1px 0 color-mix(in srgb, var(--color-ink) 5%, transparent)",
-        minWidth: 0,
-      }}
+      className="flex min-w-0 flex-col gap-5 rounded-xl border border-paper-inset bg-paper-raised px-5 py-5 shadow-[0_1px_0_color-mix(in_srgb,var(--color-ink)_6%,transparent),0_12px_28px_-18px_color-mix(in_srgb,var(--color-ink)_18%,transparent)] sm:px-7 sm:py-6"
     >
-      <header style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-        <h1
-          style={{
-            margin: 0,
-            fontFamily: "var(--font-ui)",
-            fontSize: "1.35rem",
-            fontWeight: 650,
-            letterSpacing: "-0.01em",
-            color: "var(--color-ink)",
-          }}
-        >
+      <header className="flex flex-col gap-1.5">
+        <h1 className="font-ui m-0 text-[1.35rem] font-semibold tracking-tight text-ink">
           {title}
         </h1>
         <p
-          style={{
-            margin: 0,
-            fontFamily: "var(--font-ui)",
-            fontSize: "0.9375rem",
-            color: caution ? "var(--color-warning)" : "var(--color-ink-muted)",
-          }}
+          className={`font-ui m-0 text-[0.9375rem] leading-snug ${
+            caution ? "text-warning" : "text-ink-muted"
+          }`}
         >
           {statusLine}
         </p>
       </header>
 
-      <AdaptedText
-        text={adaptedText}
-        marks={marks}
-        selectedIndex={selectedIndex}
-        onSelectMark={onSelectMark}
-        showingOriginal={showingOriginal}
-        originalText={originalText}
-      />
-
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "0.5rem",
-          fontFamily: "var(--font-ui)",
-          paddingTop: "0.25rem",
-        }}
-      >
-        <ActionButton
-          onClick={onToggleOriginal}
-          icon={showingOriginal ? <RotateCcw size={16} /> : <FileText size={16} />}
-          label={showingOriginal ? "Show adapted" : "Show original"}
-        />
-        <ActionButton
-          onClick={onToggleListen}
-          disabled={!canListen}
-          icon={listening ? <EarOff size={16} /> : <Ear size={16} />}
-          label={listening ? "Stop" : "Listen"}
-          pressed={listening}
+      <div className="min-w-0">
+        <AdaptedText
+          text={adaptedText}
+          marks={marks}
+          selectedIndex={selectedIndex}
+          onSelectMark={onSelectMark}
+          showingOriginal={showingOriginal}
+          originalText={originalText}
         />
       </div>
-    </article>
-  );
-}
 
-function ActionButton({
-  onClick,
-  icon,
-  label,
-  disabled,
-  pressed,
-}: {
-  onClick: () => void;
-  icon: ReactNode;
-  label: string;
-  disabled?: boolean;
-  pressed?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-pressed={pressed}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "0.4rem",
-        padding: "0.45rem 0.85rem",
-        borderRadius: "0.4rem",
-        border: pressed
-          ? "1.5px solid var(--color-action-border)"
-          : "1.5px solid var(--color-paper-inset)",
-        background: pressed
-          ? "var(--color-action-soft)"
-          : "var(--color-paper)",
-        color: "var(--color-ink)",
-        fontSize: "0.875rem",
-        fontWeight: 550,
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.5 : 1,
-        fontFamily: "var(--font-ui)",
-      }}
-    >
-      <span aria-hidden style={{ display: "inline-flex", color: "var(--color-action)" }}>
-        {icon}
-      </span>
-      {label}
-    </button>
+      <div className="font-ui flex flex-wrap gap-2 border-t border-paper-inset pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onToggleOriginal}
+          disabled={!adaptedText.trim() && !originalText.trim()}
+          className="min-h-11 gap-2 px-4 font-ui text-[0.9375rem] font-semibold"
+        >
+          {showingOriginal ? (
+            <RotateCcw aria-hidden className="size-4 text-action" strokeWidth={2} />
+          ) : (
+            <FileText aria-hidden className="size-4 text-action" strokeWidth={2} />
+          )}
+          {showingOriginal ? "Show adapted" : "Show original"}
+        </Button>
+        <Button
+          type="button"
+          variant={listening ? "secondary" : "outline"}
+          onClick={onToggleListen}
+          disabled={!canListen}
+          aria-pressed={listening}
+          className="min-h-11 gap-2 px-4 font-ui text-[0.9375rem] font-semibold"
+        >
+          {listening ? (
+            <EarOff aria-hidden className="size-4 text-action" strokeWidth={2} />
+          ) : (
+            <Ear aria-hidden className="size-4 text-action" strokeWidth={2} />
+          )}
+          {listening ? "Stop" : "Listen"}
+        </Button>
+      </div>
+    </article>
   );
 }

@@ -13,7 +13,7 @@ Hybrid verification pipeline matching canon §12. UI calls **one** function; lay
 
 | Layer | Job | MVP note |
 | --- | --- | --- |
-| 1 Deterministic | Exact/normalized compare: dates, times, numbers, names, units, negation, condition/exception markers | Must work offline |
+| 1 Deterministic | Exact/normalized compare: dates, times, numbers, names/entities, units, negation, condition/exception markers, **must vs may** | Must work offline (`lib/fidelity/deterministic.ts`) |
 | 2 Relationship | Values stay attached to the correct actor/action (e.g. 8:30 AM must stay with mentors, not “all members”) | Must catch seeded corruption |
 | 3 NLI slot | Entailment / contradiction / neutral vs evidence | Return **neutral** + “Semantic check not connected” until model wired |
 | 4 Coverage | For Key Points: critical facts retained, intentionally omitted, or flagged | Enforce high priority on conditions, deadlines, exceptions, prohibitions |

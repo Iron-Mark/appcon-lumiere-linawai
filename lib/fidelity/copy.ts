@@ -18,3 +18,9 @@ export const REASON_NEGATION_REVIEW =
 
 export const REASON_VALUE_MISMATCH =
   "A date, time, or number may not match the source. Review source.";
+
+export const REASON_OBLIGATION_CHANGED =
+  "An obligation or permission may have changed. Review source.";
+
+export const REASON_ENTITY_MISMATCH =
+  "A name or group in the adaptation may not match the source. Review source.";

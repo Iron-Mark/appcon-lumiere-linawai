@@ -7,7 +7,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
 } from "react";
 import { adapt } from "@/lib/adapt";
 import {
@@ -20,6 +19,7 @@ import {
 } from "@/lib/domain";
 import { preferenceStore } from "@/lib/storage/preferences";
 import type { SindiState } from "@/components/sindi";
+import { Button } from "@/components/ui/button";
 import { ModeBar } from "./ModeBar";
 import { MeaningCheckRail } from "./MeaningCheckRail";
 import { NoteCard } from "./NoteCard";
@@ -230,113 +230,57 @@ export function ReadingWorkspace() {
 
   if (!prefsReady) {
     return (
-      <main
-        style={{
-          minHeight: "100vh",
-          padding: "2rem 1.25rem",
-          fontFamily: "var(--font-ui)",
-          color: "var(--color-ink-muted)",
-        }}
-      >
+      <main className="font-ui min-h-screen overflow-x-hidden px-5 py-8 text-ink-muted">
         Loading preferences…
       </main>
     );
   }
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        gap: "1.25rem",
-        padding: "1.25rem 1.25rem 2.5rem",
-        maxWidth: "72rem",
-        margin: "0 auto",
-        fontFamily: "var(--font-ui)",
-        color: "var(--color-ink)",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "baseline",
-          justifyContent: "space-between",
-          gap: "0.75rem",
-        }}
-      >
-        <p
-          style={{
-            margin: 0,
-            fontSize: "0.8125rem",
-            fontWeight: 600,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: "var(--color-ink-muted)",
-          }}
-        >
+    <main className="font-ui mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-5 overflow-x-hidden px-4 py-5 text-ink sm:px-6 sm:py-7 lg:gap-6 lg:px-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="m-0 text-xs font-semibold tracking-[0.08em] text-ink-muted uppercase">
           Linaw AI
         </p>
-        <Link
-          href="/todo"
-          style={{
-            fontSize: "0.875rem",
-            color: "var(--color-ink-muted)",
-            textDecoration: "underline",
-            textUnderlineOffset: "0.2em",
-          }}
-        >
-          Backend not connected
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <ModeBar
+            detail={preferences.detail}
+            wording={preferences.wording}
+            delivery={preferences.delivery}
+            disabled={working}
+            onDetail={onDetail}
+            onWording={onWording}
+            onDelivery={onDelivery}
+          />
+          <Link
+            href="/todo"
+            className="min-h-11 inline-flex items-center text-sm text-ink-muted underline underline-offset-[0.2em] transition-colors duration-[var(--motion-base)] hover:text-ink motion-reduce:transition-none"
+          >
+            Backend not connected
+          </Link>
+        </div>
       </div>
 
       {!hasStoredPrefs ? (
-        <p
-          style={{
-            margin: 0,
-            padding: "0.75rem 1rem",
-            background: "var(--color-paper-inset)",
-            borderRadius: "0.45rem",
-            fontSize: "0.9375rem",
-            color: "var(--color-ink-muted)",
-          }}
-        >
+        <p className="m-0 rounded-lg bg-paper-inset px-4 py-3 text-[0.9375rem] text-ink-muted">
           Preferences are not saved yet.{" "}
-          <Link href="/onboarding" style={{ color: "var(--color-action)" }}>
+          <Link
+            href="/onboarding"
+            className="font-semibold text-action underline-offset-2 hover:underline"
+          >
             Set your defaults
           </Link>
           , or continue with Key Points · Plain Language · Read.
         </p>
       ) : null}
 
-      <ModeBar
-        detail={preferences.detail}
-        wording={preferences.wording}
-        delivery={preferences.delivery}
-        disabled={working}
-        onDetail={onDetail}
-        onWording={onWording}
-        onDelivery={onDelivery}
-      />
-
       <section
         aria-label="Source"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "0.65rem",
-        }}
+        className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-paper-inset/80 bg-paper-raised/70 p-4 sm:p-5"
       >
         <label
           htmlFor="source-input"
-          style={{
-            fontSize: "0.8125rem",
-            fontWeight: 600,
-            letterSpacing: "0.04em",
-            textTransform: "uppercase",
-            color: "var(--color-ink-subtle)",
-          }}
+          className="text-xs font-semibold tracking-[0.04em] text-ink-subtle uppercase"
         >
           Source text
         </label>
@@ -346,56 +290,35 @@ export function ReadingWorkspace() {
           onChange={(event) => setDraftSource(event.target.value)}
           rows={4}
           placeholder="Paste or enter the message to adapt…"
-          style={{
-            width: "100%",
-            resize: "vertical",
-            padding: "0.85rem 1rem",
-            borderRadius: "0.5rem",
-            border: "1.5px solid var(--color-paper-inset)",
-            background: "var(--color-paper-raised)",
-            color: "var(--color-ink)",
-            fontFamily: "var(--font-ui)",
-            fontSize: "0.9375rem",
-            lineHeight: 1.5,
-          }}
+          className="font-ui w-full min-w-0 resize-y rounded-lg border-[1.5px] border-paper-inset bg-paper-raised px-4 py-3 text-[0.9375rem] leading-normal text-ink outline-none placeholder:text-ink-subtle focus-visible:border-action-border focus-visible:ring-3 focus-visible:ring-ring/40"
         />
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-          <button
+        <div className="flex flex-wrap gap-2">
+          <Button
             type="button"
             onClick={onAdaptDraft}
             disabled={working}
-            style={primaryButtonStyle}
+            className="min-h-11 px-5 font-ui text-[0.9375rem] font-semibold"
           >
             Adapt
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="secondary"
             onClick={onLoadSample}
             disabled={working}
-            style={secondaryButtonStyle}
+            className="min-h-11 px-5 font-ui text-[0.9375rem] font-semibold"
           >
             Load development sample
-          </button>
+          </Button>
         </div>
         {error ? (
-          <p
-            role="alert"
-            style={{ margin: 0, color: "var(--color-warning)", fontSize: "0.9375rem" }}
-          >
+          <p role="alert" className="m-0 text-[0.9375rem] text-warning">
             {error}
           </p>
         ) : null}
       </section>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1.4fr) minmax(16rem, 0.85fr)",
-          gap: "1.5rem",
-          alignItems: "start",
-        }}
-        className="read-workspace-grid"
-      >
+      <div className="grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] lg:gap-7">
         <NoteCard
           title="Adapted note"
           statusLine={statusLine}
@@ -412,15 +335,7 @@ export function ReadingWorkspace() {
           overallStatus={result?.overallStatus ?? null}
         />
 
-        <div
-          style={{
-            padding: "1.15rem 1.1rem",
-            background: "var(--color-paper-raised)",
-            border: "1px solid var(--color-paper-inset)",
-            borderRadius: "0.65rem",
-            minHeight: "12rem",
-          }}
-        >
+        <div className="min-w-0 rounded-xl border border-paper-inset bg-paper-raised/90 p-4 sm:p-5 lg:sticky lg:top-5 lg:max-h-[calc(100vh-2.5rem)] lg:overflow-y-auto">
           <MeaningCheckRail
             checks={result?.checks ?? null}
             overallStatus={result?.overallStatus ?? null}
@@ -432,38 +347,6 @@ export function ReadingWorkspace() {
           />
         </div>
       </div>
-
-      <style>{`
-        @media (max-width: 860px) {
-          .read-workspace-grid {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
     </main>
   );
 }
-
-const primaryButtonStyle: CSSProperties = {
-  padding: "0.55rem 1.1rem",
-  borderRadius: "0.45rem",
-  border: "none",
-  background: "var(--color-action)",
-  color: "var(--color-paper-raised)",
-  fontFamily: "var(--font-ui)",
-  fontSize: "0.9375rem",
-  fontWeight: 600,
-  cursor: "pointer",
-};
-
-const secondaryButtonStyle: CSSProperties = {
-  padding: "0.55rem 1.1rem",
-  borderRadius: "0.45rem",
-  border: "1.5px solid var(--color-action-border)",
-  background: "var(--color-action-soft)",
-  color: "var(--color-action)",
-  fontFamily: "var(--font-ui)",
-  fontSize: "0.9375rem",
-  fontWeight: 600,
-  cursor: "pointer",
-};

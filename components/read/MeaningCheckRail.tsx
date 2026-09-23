@@ -28,35 +28,14 @@ export function MeaningCheckRail({
   return (
     <aside
       aria-label="Meaning Check"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "1rem",
-        minWidth: 0,
-        fontFamily: "var(--font-ui)",
-      }}
+      className="font-ui flex min-w-0 flex-col gap-4"
     >
-      <header style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-        <h2
-          style={{
-            margin: 0,
-            fontSize: "0.8125rem",
-            fontWeight: 600,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            color: "var(--color-ink-muted)",
-          }}
-        >
+      <header className="flex flex-col gap-1.5 border-b border-paper-inset pb-3">
+        <h2 className="m-0 text-xs font-semibold tracking-[0.06em] text-ink-muted uppercase">
           Meaning Check
         </h2>
         {hasResults && overallStatus === "pass" ? (
-          <p
-            style={{
-              margin: 0,
-              fontSize: "0.9375rem",
-              color: "var(--color-pass)",
-            }}
-          >
+          <p className="m-0 text-[0.9375rem] text-pass">
             No issue found in these checks.
           </p>
         ) : null}
@@ -65,29 +44,13 @@ export function MeaningCheckRail({
       <Sindi state={sindiState} line={sindiLine} />
 
       {!hasResults ? (
-        <div
-          style={{
-            padding: "1.25rem 0",
-            color: "var(--color-ink-muted)",
-            fontSize: "0.9375rem",
-            lineHeight: 1.5,
-          }}
-        >
+        <div className="py-5 text-[0.9375rem] leading-relaxed text-ink-muted">
           {loading
             ? "Checking meaning…"
             : "Checks will appear here after you adapt a note."}
         </div>
       ) : (
-        <ul
-          style={{
-            listStyle: "none",
-            margin: 0,
-            padding: 0,
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.75rem",
-          }}
-        >
+        <ul className="m-0 flex list-none flex-col gap-3 p-0">
           {checks.map((check, index) => {
             const selected = selectedIndex === index;
             const caution =
@@ -99,42 +62,20 @@ export function MeaningCheckRail({
                   id={`meaning-check-card-${index}`}
                   onClick={() => onSelect(selected ? null : index)}
                   aria-pressed={selected}
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.5rem",
-                    width: "100%",
-                    textAlign: "left",
-                    padding: "0.9rem 1rem",
-                    borderRadius: "0.5rem",
-                    cursor: "pointer",
-                    border: selected
+                  className={[
+                    "flex w-full min-h-11 cursor-pointer flex-col gap-2 rounded-lg px-4 py-3.5 text-left font-ui text-ink",
+                    "transition-[background-color,border-color,box-shadow] duration-[var(--motion-base)] ease-out motion-reduce:transition-none",
+                    selected
                       ? caution
-                        ? "2px solid var(--color-warning-border)"
-                        : "2px solid var(--color-action-border)"
-                      : "1px solid var(--color-paper-inset)",
-                    background: selected
-                      ? caution
-                        ? "var(--color-warning-soft)"
-                        : "var(--color-action-soft)"
-                      : "var(--color-paper-raised)",
-                    color: "var(--color-ink)",
-                    fontFamily: "var(--font-ui)",
-                    transition:
-                      "background var(--motion-base) ease, border-color var(--motion-base) ease",
-                  }}
+                        ? "border-2 border-warning-border bg-warning-soft"
+                        : "border-2 border-action-border bg-action-soft"
+                      : "border border-paper-inset bg-paper-raised hover:border-action-border/60",
+                  ].join(" ")}
                 >
                   <span
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      fontSize: "0.8125rem",
-                      fontWeight: 600,
-                      color: caution
-                        ? "var(--color-warning)"
-                        : "var(--color-pass)",
-                    }}
+                    className={`flex min-h-5 items-center gap-2 text-xs font-semibold ${
+                      caution ? "text-warning" : "text-pass"
+                    }`}
                   >
                     {caution ? (
                       <AlertTriangle size={16} strokeWidth={2} aria-hidden />
@@ -147,18 +88,14 @@ export function MeaningCheckRail({
                         ? "Warning"
                         : "Pass"}
                   </span>
-                  <span style={{ fontWeight: 600, fontSize: "0.9375rem" }}>
+                  <span className="text-[0.9375rem] font-semibold leading-snug">
                     {check.claim}
                   </span>
                   {check.reason ? (
                     <span
-                      style={{
-                        fontSize: "0.875rem",
-                        color: caution
-                          ? "var(--color-warning)"
-                          : "var(--color-ink-muted)",
-                        lineHeight: 1.45,
-                      }}
+                      className={`text-sm leading-snug ${
+                        caution ? "text-warning" : "text-ink-muted"
+                      }`}
                     >
                       {check.reason}
                     </span>
@@ -166,19 +103,12 @@ export function MeaningCheckRail({
                   {check.evidence ? (
                     <span
                       id={`meaning-check-evidence-${index}`}
+                      className="mt-0.5 block rounded-md px-2.5 py-2 font-reading text-[0.8125rem] leading-snug text-ink"
                       style={{
-                        display: "block",
-                        marginTop: "0.15rem",
-                        padding: "0.55rem 0.65rem",
-                        borderRadius: "0.35rem",
-                        fontSize: "0.8125rem",
-                        lineHeight: 1.45,
-                        fontFamily: "var(--font-reading)",
                         background:
                           selected && caution
                             ? "color-mix(in srgb, var(--color-warning) 18%, var(--color-paper-raised))"
                             : "var(--color-paper-inset)",
-                        color: "var(--color-ink)",
                         boxShadow:
                           selected && caution
                             ? "inset 0 0 0 2px var(--color-warning-border)"

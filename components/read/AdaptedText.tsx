@@ -13,6 +13,9 @@ type AdaptedTextProps = {
   originalText: string;
 };
 
+const readingClass =
+  "font-reading m-0 max-w-[var(--measure-reading)] text-[1.125rem] leading-[1.7] text-ink whitespace-pre-wrap";
+
 export function AdaptedText({
   text,
   marks,
@@ -23,17 +26,7 @@ export function AdaptedText({
 }: AdaptedTextProps) {
   if (showingOriginal) {
     return (
-      <p
-        className="font-reading"
-        style={{
-          margin: 0,
-          maxWidth: "var(--measure-reading)",
-          fontSize: "1.125rem",
-          lineHeight: 1.7,
-          color: "var(--color-ink)",
-          whiteSpace: "pre-wrap",
-        }}
-      >
+      <p className={readingClass}>
         {originalText ||
           "Original source for this sample is held by the adapter. Paste source text to keep a local copy."}
       </p>
@@ -41,17 +34,7 @@ export function AdaptedText({
   }
 
   return (
-    <p
-      className="font-reading"
-      style={{
-        margin: 0,
-        maxWidth: "var(--measure-reading)",
-        fontSize: "1.125rem",
-        lineHeight: 1.7,
-        color: "var(--color-ink)",
-        whiteSpace: "pre-wrap",
-      }}
-    >
+    <p className={readingClass}>
       {renderMarked(text, marks, selectedIndex, onSelectMark)}
     </p>
   );
@@ -75,6 +58,21 @@ function renderMarked(
     const caution =
       mark.status === "warning" || mark.status === "repair_required";
     const selected = selectedIndex === mark.checkIndex;
+
+    const bg = selected
+      ? caution
+        ? "color-mix(in srgb, var(--color-warning) 35%, var(--color-paper-raised))"
+        : "color-mix(in srgb, var(--color-action) 22%, var(--color-paper-raised))"
+      : caution
+        ? "color-mix(in srgb, var(--color-warning) 22%, var(--color-paper-raised))"
+        : "color-mix(in srgb, var(--color-action) 14%, var(--color-paper-raised))";
+
+    const ring = selected
+      ? caution
+        ? "0 0 0 2px var(--color-warning-border)"
+        : "0 0 0 2px var(--color-action-border)"
+      : undefined;
+
     nodes.push(
       <mark
         key={`mark-${mark.checkIndex}-${i}`}
@@ -90,24 +88,8 @@ function renderMarked(
             onSelectMark(mark.checkIndex);
           }
         }}
-        style={{
-          background:
-            selected && caution
-              ? "color-mix(in srgb, var(--color-warning) 35%, var(--color-paper-raised))"
-              : caution
-                ? "color-mix(in srgb, var(--color-warning) 22%, var(--color-paper-raised))"
-                : "color-mix(in srgb, var(--color-action) 16%, var(--color-paper-raised))",
-          color: "inherit",
-          borderRadius: "0.15rem",
-          padding: "0 0.1em",
-          boxShadow:
-            selected && caution
-              ? "0 0 0 2px var(--color-warning-border)"
-              : selected
-                ? "0 0 0 2px var(--color-action-border)"
-                : undefined,
-          cursor: "pointer",
-        }}
+        className="cursor-pointer rounded-sm px-[0.1em] text-inherit outline-offset-2 transition-[background-color,box-shadow] duration-[var(--motion-base)] ease-out motion-reduce:transition-none"
+        style={{ background: bg, boxShadow: ring }}
       >
         {text.slice(mark.start, mark.end)}
       </mark>,

@@ -1,108 +1,63 @@
 "use client";
 
-import type { KeyboardEvent } from "react";
 import type { ChoiceValue, StepOption } from "./steps";
+import { ToggleGroupItem } from "@/components/ui/toggle-group";
+import { cn } from "@/lib/utils";
 
 type ChoiceCardProps = {
   option: StepOption;
-  selected: boolean;
   name: string;
-  onSelect: (value: ChoiceValue) => void;
 };
 
-export function ChoiceCard({
-  option,
-  selected,
-  name,
-  onSelect,
-}: ChoiceCardProps) {
+/**
+ * Large single-select choice — same ToggleGroupItem + olive on-state as
+ * the reading Preferences dialog, sized for Duolingo-style stacked cards.
+ */
+export function ChoiceCard({ option, name }: ChoiceCardProps) {
   const Icon = option.icon;
   const id = `${name}-${option.value}`;
 
-  function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      onSelect(option.value);
-    }
-  }
-
   return (
-    <button
-      type="button"
+    <ToggleGroupItem
       id={id}
-      role="radio"
-      aria-checked={selected}
-      aria-labelledby={`${id}-label`}
+      value={option.value}
+      aria-label={option.label}
       aria-describedby={`${id}-hint`}
-      onClick={() => onSelect(option.value)}
-      onKeyDown={handleKeyDown}
-      style={{
-        display: "flex",
-        width: "100%",
-        alignItems: "flex-start",
-        gap: "1rem",
-        padding: "1.25rem 1.35rem",
-        textAlign: "left",
-        cursor: "pointer",
-        borderRadius: "0.75rem",
-        border: selected
-          ? "2px solid var(--color-action-border)"
-          : "2px solid var(--color-paper-inset)",
-        background: selected
-          ? "var(--color-action-soft)"
-          : "var(--color-paper-raised)",
-        color: "var(--color-ink)",
-        fontFamily: "var(--font-ui)",
-        fontSize: "1rem",
-        lineHeight: 1.45,
-        transition:
-          "background var(--motion-base) ease, border-color var(--motion-base) ease, transform var(--motion-fast) ease",
-        transform: selected ? "scale(0.98)" : "scale(1)",
-        boxShadow: selected
-          ? "none"
-          : "0 1px 0 color-mix(in srgb, var(--color-ink) 6%, transparent)",
-      }}
+      className={cn(
+        "group/choice h-auto min-h-11 w-full flex-none justify-start gap-4",
+        "rounded-xl border-2 border-paper-inset bg-paper-raised px-5 py-4",
+        "font-ui text-left text-base whitespace-normal text-ink shadow-none",
+        "transition-[background-color,border-color,transform] duration-[var(--motion-base)]",
+        "hover:bg-paper-raised hover:text-ink",
+        "focus-visible:border-focus focus-visible:ring-[3px] focus-visible:ring-focus/40",
+        "data-[state=on]:border-action-border data-[state=on]:bg-action-soft",
+        "data-[state=on]:text-ink data-[state=on]:font-semibold",
+        "motion-reduce:transition-none",
+      )}
     >
       <span
         aria-hidden="true"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: "2.75rem",
-          height: "2.75rem",
-          flexShrink: 0,
-          borderRadius: "0.5rem",
-          background: selected
-            ? "color-mix(in srgb, var(--color-action) 14%, var(--color-paper-raised))"
-            : "var(--color-paper-inset)",
-          color: "var(--color-action)",
-        }}
+        className={cn(
+          "inline-flex size-11 shrink-0 items-center justify-center rounded-lg",
+          "bg-paper-inset text-action",
+          "group-data-[state=on]/choice:bg-action/15",
+        )}
       >
         <Icon size={22} strokeWidth={1.75} />
       </span>
-      <span style={{ display: "flex", flexDirection: "column", gap: "0.35rem", minWidth: 0 }}>
-        <span
-          id={`${id}-label`}
-          style={{
-            fontWeight: 600,
-            fontSize: "1.125rem",
-            letterSpacing: "0.01em",
-          }}
-        >
+      <span className="flex min-w-0 flex-col gap-1">
+        <span className="text-[1.125rem] leading-snug font-semibold tracking-[0.01em]">
           {option.label}
         </span>
         <span
           id={`${id}-hint`}
-          style={{
-            color: "var(--color-ink-muted)",
-            fontSize: "1rem",
-            lineHeight: 1.45,
-          }}
+          className="text-base leading-snug font-normal text-ink-muted"
         >
           {option.hint}
         </span>
       </span>
-    </button>
+    </ToggleGroupItem>
   );
 }
+
+export type { ChoiceValue };

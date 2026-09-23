@@ -1,17 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useState,
-  type KeyboardEvent,
-} from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useId, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import { Sindi } from "@/components/sindi";
+import { Button } from "@/components/ui/button";
+import { ToggleGroup } from "@/components/ui/toggle-group";
 import type { Preferences } from "@/lib/domain";
 import { preferenceStore } from "@/lib/storage/preferences";
+import { cn } from "@/lib/utils";
 import { ChoiceCard } from "./ChoiceCard";
 import {
   ONBOARDING_STEPS,
@@ -22,6 +20,7 @@ import {
 const TOTAL_STEPS = ONBOARDING_STEPS.length;
 
 export function OnboardingFlow() {
+  const router = useRouter();
   const headingId = useId();
   const [stepIndex, setStepIndex] = useState(0);
   const [draft, setDraft] = useState<DraftPreferences>({});
@@ -41,7 +40,7 @@ export function OnboardingFlow() {
       try {
         const existing = await preferenceStore.get();
         if (!cancelled && existing) {
-          window.location.replace("/read");
+          router.replace("/read");
           return;
         }
       } catch {
@@ -53,7 +52,7 @@ export function OnboardingFlow() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [router]);
 
   const selectValue = useCallback(
     (value: ChoiceValue) => {
@@ -86,13 +85,14 @@ export function OnboardingFlow() {
     setError(null);
     try {
       await preferenceStore.set(preferences);
-      // Hard navigate so we never sit on "Saving…" if soft push stalls.
-      window.location.assign("/read");
+      router.replace("/read");
     } catch {
       setError("Could not save your preferences. Try again.");
+    } finally {
+      // Soft nav can leave this screen mounted; never leave the CTA stuck on Saving…
       setSaving(false);
     }
-  }, [draft]);
+  }, [draft, router]);
 
   const goNext = useCallback(() => {
     if (!canContinue || saving) return;
@@ -103,39 +103,13 @@ export function OnboardingFlow() {
     setStepIndex((i) => Math.min(TOTAL_STEPS - 1, i + 1));
   }, [canContinue, isLast, persistAndLeave, saving]);
 
-  function onGroupKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    const options = step.options;
-    const currentIndex = options.findIndex((o) => o.value === selected);
-    if (event.key === "ArrowDown" || event.key === "ArrowRight") {
-      event.preventDefault();
-      const next = options[(currentIndex + 1 + options.length) % options.length];
-      selectValue(next.value);
-      document.getElementById(`${step.id}-${next.value}`)?.focus();
-    } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
-      event.preventDefault();
-      const prev =
-        options[(currentIndex - 1 + options.length) % options.length];
-      selectValue(prev.value);
-      document.getElementById(`${step.id}-${prev.value}`)?.focus();
-    }
-  }
-
   const sindiLine =
     selected !== undefined ? step.lineFor(selected) : step.promptIdle;
 
   if (checkingExisting) {
     return (
       <main
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "2rem",
-          fontFamily: "var(--font-ui)",
-          color: "var(--color-ink-muted)",
-          fontSize: "1rem",
-        }}
+        className="flex min-h-screen items-center justify-center p-8 font-ui text-base text-ink-muted"
         aria-busy="true"
       >
         Loading…
@@ -144,95 +118,35 @@ export function OnboardingFlow() {
   }
 
   return (
-    <main
-      style={{
-        boxSizing: "border-box",
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        maxWidth: "42rem",
-        margin: "0 auto",
-        padding: "1.25rem 1.5rem 0",
-        fontFamily: "var(--font-ui)",
-        color: "var(--color-ink)",
-        fontSize: "1rem",
-      }}
-    >
-      <header
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "1rem",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "1rem",
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-reading)",
-              fontSize: "1.5rem",
-              fontWeight: 600,
-              letterSpacing: "0.02em",
-              color: "var(--color-ink)",
-            }}
-          >
+    <main className="mx-auto box-border flex min-h-screen w-full max-w-2xl flex-col px-6 pt-5 font-ui text-base text-ink">
+      <header className="mb-6 flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-4">
+          <p className="font-reading m-0 text-2xl font-semibold tracking-[0.02em] text-ink">
             Linaw
           </p>
           <Link
             href="/todo"
-            style={{
-              fontSize: "0.9375rem",
-              color: "var(--color-ink-muted)",
-              textDecoration: "underline",
-              textUnderlineOffset: "0.2em",
-            }}
+            className="text-[0.9375rem] text-ink-muted underline underline-offset-4"
           >
             Backend not connected
           </Link>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.75rem",
-          }}
-        >
-          <button
+        <div className="flex items-center gap-3">
+          <Button
             type="button"
+            variant="secondary"
+            size="icon"
             onClick={goBack}
             disabled={stepIndex === 0}
             aria-label="Go back to previous step"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "2.5rem",
-              height: "2.5rem",
-              borderRadius: "999px",
-              border: "none",
-              background:
-                stepIndex === 0 ? "transparent" : "var(--color-paper-inset)",
-              color:
-                stepIndex === 0
-                  ? "var(--color-ink-subtle)"
-                  : "var(--color-ink)",
-              cursor: stepIndex === 0 ? "default" : "pointer",
-              opacity: stepIndex === 0 ? 0.45 : 1,
-              flexShrink: 0,
-            }}
+            className={cn(
+              "size-11 shrink-0 rounded-full",
+              stepIndex === 0 && "opacity-45",
+            )}
           >
             <ChevronLeft size={22} strokeWidth={2} aria-hidden="true" />
-          </button>
+          </Button>
 
           <div
             role="progressbar"
@@ -240,138 +154,67 @@ export function OnboardingFlow() {
             aria-valuemax={TOTAL_STEPS}
             aria-valuenow={stepIndex + 1}
             aria-label={`Step ${stepIndex + 1} of ${TOTAL_STEPS}`}
-            style={{
-              flex: 1,
-              height: "0.5rem",
-              borderRadius: "999px",
-              background: "var(--color-paper-inset)",
-              overflow: "hidden",
-            }}
+            className="h-2 flex-1 overflow-hidden rounded-full bg-paper-inset"
           >
             <div
-              style={{
-                height: "100%",
-                width: `${progress}%`,
-                background: "var(--color-action)",
-                borderRadius: "999px",
-                transition: "width var(--motion-base) ease",
-              }}
+              className="h-full rounded-full bg-action transition-[width] duration-[var(--motion-base)] motion-reduce:transition-none"
+              style={{ width: `${progress}%` }}
             />
           </div>
         </div>
       </header>
 
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          gap: "1.5rem",
-          paddingBottom: "1rem",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: "0.85rem",
-          }}
-        >
+      <div className="flex flex-1 flex-col gap-6 pb-4">
+        <div className="flex items-start gap-3">
           <Sindi state="prompt" line={sindiLine} />
         </div>
 
         <h1
           id={headingId}
-          style={{
-            margin: 0,
-            fontFamily: "var(--font-reading)",
-            fontSize: "1.75rem",
-            fontWeight: 600,
-            lineHeight: 1.25,
-            letterSpacing: "0.01em",
-          }}
+          className="font-reading m-0 text-[1.75rem] leading-tight font-semibold tracking-[0.01em]"
         >
           {step.question}
         </h1>
 
-        <div
-          role="radiogroup"
-          aria-labelledby={headingId}
-          onKeyDown={onGroupKeyDown}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.85rem",
+        <ToggleGroup
+          key={step.id}
+          type="single"
+          orientation="vertical"
+          variant="outline"
+          spacing={3}
+          value={selected ?? ""}
+          onValueChange={(next) => {
+            if (next) selectValue(next as ChoiceValue);
           }}
+          aria-labelledby={headingId}
+          className="flex w-full flex-col items-stretch"
         >
           {step.options.map((option) => (
-            <ChoiceCard
-              key={option.value}
-              option={option}
-              name={step.id}
-              selected={selected === option.value}
-              onSelect={selectValue}
-            />
+            <ChoiceCard key={option.value} option={option} name={step.id} />
           ))}
-        </div>
+        </ToggleGroup>
 
         {error ? (
           <p
             role="alert"
-            style={{
-              margin: 0,
-              padding: "0.75rem 1rem",
-              borderRadius: "0.5rem",
-              background: "var(--color-warning-soft)",
-              border: "1px solid var(--color-warning-border)",
-              color: "var(--color-warning)",
-              fontSize: "1rem",
-            }}
+            className="m-0 rounded-lg border border-warning-border bg-warning-soft px-4 py-3 text-base text-warning"
           >
             {error}
           </p>
         ) : null}
       </div>
 
-      <div
-        style={{
-          position: "sticky",
-          bottom: 0,
-          padding: "1rem 0 1.5rem",
-          background:
-            "linear-gradient(to top, var(--color-paper) 70%, transparent)",
-        }}
-      >
-        <button
+      <div className="sticky bottom-0 bg-[linear-gradient(to_top,var(--color-paper)_70%,transparent)] py-4 pb-6">
+        <Button
           type="button"
+          variant="default"
           onClick={goNext}
           disabled={!canContinue || saving}
           aria-disabled={!canContinue || saving}
-          style={{
-            display: "block",
-            width: "100%",
-            padding: "1rem 1.25rem",
-            borderRadius: "0.75rem",
-            border: "none",
-            fontFamily: "var(--font-ui)",
-            fontSize: "1.0625rem",
-            fontWeight: 600,
-            letterSpacing: "0.02em",
-            cursor: canContinue && !saving ? "pointer" : "not-allowed",
-            background:
-              canContinue && !saving
-                ? "var(--color-action)"
-                : "var(--color-paper-inset)",
-            color:
-              canContinue && !saving
-                ? "var(--color-paper-raised)"
-                : "var(--color-ink-subtle)",
-            transition:
-              "background var(--motion-base) ease, color var(--motion-base) ease",
-          }}
+          className="min-h-11 w-full rounded-xl px-5 py-4 font-ui text-[1.0625rem] font-semibold tracking-[0.02em]"
         >
           {saving ? "Saving…" : isLast ? "Continue to reading" : "Continue"}
-        </button>
+        </Button>
       </div>
     </main>
   );
