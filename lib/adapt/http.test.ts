@@ -83,6 +83,32 @@ describe("adapt http client", () => {
     }
   });
 
+  it("asks the extension worker instead of the host page when chrome.runtime is present", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("chrome", {
+      runtime: {
+        id: "linaw-test",
+        sendMessage: vi.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+          json: {
+            adaptedText: "From Gemini.",
+            meaningMap: { sourceIntent: "A note.", criticalFacts: [] },
+            checks: [],
+            overallStatus: "pass",
+            adapter: "model",
+          },
+        }),
+      },
+    });
+
+    const result = await adapt(validRequest);
+    expect(result.adaptedText).toBe("From Gemini.");
+    expect(result.adapter).toBe("model");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("falls back to the fixture when the error body is not JSON", async () => {
     vi.stubGlobal(
       "fetch",

@@ -17,25 +17,25 @@ const BACKEND_TODOS: TodoRow[] = [
     spec: "05-client-port.md, spec-02-gemini-adapt",
   },
   {
-    what: "DeBERTa NLI (non-blocking HF cross-encoder) - do not build yet (remote model)",
-    replace: "Wire into lib/fidelity runNliSlot (today: neutral stub)",
+    what: "DeBERTa NLI - wired, off unless NLI_ENDPOINT is set (local nli-service; not required for the demo)",
+    replace: "lib/fidelity runNliSlot stays a neutral stub when the endpoint is unset",
     spec: "06-fidelity.md",
   },
   {
-    what: "Repair regeneration - do not build yet (needs generative model)",
+    what: "Repair regeneration - one retry only when a model key is already set; the fixture demo does not call it",
     replace:
-      "Pipeline after repair_required; generative repair via buildRepairPrompt",
+      "app/api/adapt/model.ts calls buildRepairPrompt after repair_required",
     spec: "06-fidelity.md, 05-client-port.md",
   },
   {
-    what: "Preference sync across web and extension",
-    replace: "New PreferenceStore implementation; accounts",
+    what: "Preference sync across web and extension on the same browser (accounts skipped: no auth env)",
+    replace: "lib/storage/preferences-sync.ts postMessage bridge; extension/src/content/prefs-sync.ts",
     spec: "01-onboarding.md, 07-extension.md",
   },
   {
     what: "Saved source content only if the user explicitly saves",
     replace:
-      "Explicit user save on store boundary; off by default; do not silently write sample source",
+      "Reading workspace Save on this device; samples stay unsaved until that click",
     spec: "storage + future backend",
   },
 ];

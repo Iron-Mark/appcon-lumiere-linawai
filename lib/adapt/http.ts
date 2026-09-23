@@ -17,18 +17,68 @@ export type AdapterInfo = {
  * tell the reader up front whether their text will be sent to a model.
  * Falls back to "fixture" when the route is unreachable.
  */
+type ExtensionAdaptReply = {
+  ok?: boolean;
+  status?: number;
+  json?: unknown;
+};
+
+/**
+ * Content-script bridge. The web app has no chrome.runtime id, so it keeps
+ * posting to a relative `/api/adapt`. The extension asks its service worker,
+ * which calls the Linaw app (Gemini, then Pandev, then the fixture).
+ */
+function extensionSendMessage():
+  | ((message: unknown) => Promise<ExtensionAdaptReply>)
+  | null {
+  const runtime = (
+    globalThis as {
+      chrome?: {
+        runtime?: {
+          id?: string;
+          sendMessage?: (message: unknown) => Promise<unknown>;
+        };
+      };
+    }
+  ).chrome?.runtime;
+  if (!runtime?.id || typeof runtime.sendMessage !== "function") return null;
+  const send = runtime.sendMessage.bind(runtime);
+  return async (message) => (await send(message)) as ExtensionAdaptReply;
+}
+
+async function extensionExchange(
+  message: unknown,
+): Promise<ExtensionAdaptReply | null> {
+  const send = extensionSendMessage();
+  if (!send) return null;
+  try {
+    return await send(message);
+  } catch {
+    return null;
+  }
+}
+
 export async function getAdapterInfo(): Promise<AdapterInfo> {
+  if (extensionSendMessage()) {
+    const viaExtension = await extensionExchange({ type: "linaw.adaptInfo" });
+    return parseAdapterInfo(viaExtension?.json);
+  }
+
   try {
     const res = await fetch("/api/adapt", { method: "GET" });
     if (!res.ok) return { adapter: "fixture", providers: [] };
-    const json = (await res.json()) as Partial<AdapterInfo>;
-    return {
-      adapter: json.adapter === "model" ? "model" : "fixture",
-      providers: Array.isArray(json.providers) ? json.providers.map(String) : [],
-    };
+    return parseAdapterInfo(await res.json());
   } catch {
     return { adapter: "fixture", providers: [] };
   }
+}
+
+function parseAdapterInfo(json: unknown): AdapterInfo {
+  const body = (json ?? {}) as Partial<AdapterInfo>;
+  return {
+    adapter: body.adapter === "model" ? "model" : "fixture",
+    providers: Array.isArray(body.providers) ? body.providers.map(String) : [],
+  };
 }
 
 /**
@@ -64,6 +114,12 @@ function plainErrorFromBody(json: unknown): string | null {
  * Callers import adapt() from `@/lib/adapt` only.
  */
 export async function adapt(input: AdaptRequest): Promise<AdaptResponse> {
+  if (extensionSendMessage()) {
+    const viaExtension = await extensionExchange({ type: "linaw.adapt", input });
+    if (!viaExtension) return localFallback(input);
+    return adaptFromExchange(viaExtension, input);
+  }
+
   try {
     const res = await fetch("/api/adapt", {
       method: "POST",
@@ -98,6 +154,24 @@ export async function adapt(input: AdaptRequest): Promise<AdaptResponse> {
     }
     return localFallback(input);
   }
+}
+
+function adaptFromExchange(
+  reply: ExtensionAdaptReply,
+  input: AdaptRequest,
+): Promise<AdaptResponse> {
+  if (!reply.ok && reply.json == null) {
+    return localFallback(input);
+  }
+  const message = plainErrorFromBody(reply.json);
+  if (reply.status && reply.status >= 400 && message) {
+    throw new AdaptRequestError(message);
+  }
+  const parsed = AdaptResponseSchema.safeParse(reply.json);
+  if (!parsed.success) {
+    return localFallback(input);
+  }
+  return Promise.resolve(parsed.data);
 }
 
 /** In-browser fixture, labelled so the UI never presents it as a model result. */

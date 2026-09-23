@@ -81,10 +81,10 @@ Default profile for exercising the path: **Key Points**, **Plain Language**, **R
 
 ## Acceptance checks
 
-- [ ] UI imports only from `lib/adapt` (index), never `fixture.ts`.
-- [ ] Request/response parse with domain Zod schemas.
-- [ ] Fixture track: seeded corruption produces `overallStatus` warning (or repair_required) with evidence.
-- [ ] Switching to HTTP later requires only `http.ts` + selector change.
+- [x] UI imports only from `lib/adapt` (index), never `fixture.ts`.
+- [x] Request/response parse with domain Zod schemas.
+- [x] Fixture track: seeded corruption produces `overallStatus` warning (or repair_required) with evidence.
+- [x] `lib/adapt/http.ts` is the client. It posts to `/api/adapt` and falls back to the fixture. No second adapt path.
 
 ## Out of scope
 

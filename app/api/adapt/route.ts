@@ -7,6 +7,7 @@ import {
   adapt as runLocalAdapt,
   SEEDED_FAILURE_SOURCE,
 } from "@/lib/adapt/fixture";
+import { modelCacheKey, readModelCache, writeModelCache } from "./cache";
 import { adaptWithModel, modelConfigured, readModelProviders } from "./model";
 
 /**
@@ -56,9 +57,26 @@ export async function POST(request: Request): Promise<Response> {
     normalizeKey(input.source) === normalizeKey(SEEDED_FAILURE_SOURCE);
 
   if (!isSeededDemo && input.source.trim() && modelConfigured()) {
+    const key = modelCacheKey(
+      input.source,
+      input.preferences.detail,
+      input.preferences.wording,
+    );
+    const cached = readModelCache(key);
+    if (cached) {
+      return Response.json(AdaptResponseSchema.parse(cached), {
+        headers: { "x-linaw-adapter": "model:cache" },
+      });
+    }
+
     const viaModel = await adaptWithModel(input);
     if (viaModel) {
-      return Response.json(AdaptResponseSchema.parse(viaModel.response), {
+      const body = AdaptResponseSchema.parse({
+        ...viaModel.response,
+        adapter: "model",
+      });
+      writeModelCache(key, body);
+      return Response.json(body, {
         headers: { "x-linaw-adapter": `model:${viaModel.provider}` },
       });
     }

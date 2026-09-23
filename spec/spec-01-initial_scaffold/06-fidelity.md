@@ -36,10 +36,10 @@ Statuses: `pass` | `warning` | `repair_required`. User-facing strings stay cauti
 
 ## Acceptance checks
 
-- [ ] Four layers exist as separable modules or clearly separated steps.
-- [ ] Seeded corruption (wrong group/time) fails relationship (or deterministic) and surfaces warning.
-- [ ] NLI slot does not fake entailment when disconnected.
-- [ ] Eval case files match the documented schema; script or Vitest can run the corruption check.
+- [x] Four layers exist as separable modules or clearly separated steps.
+- [x] Seeded corruption (wrong group/time) fails relationship (or deterministic) and surfaces warning.
+- [x] NLI slot does not fake entailment when disconnected.
+- [x] Eval case files match the documented schema; script or Vitest can run the corruption check. `npm test` passed (24 sources).
 
 ## Out of scope
 

@@ -10,8 +10,9 @@ import {
 import {
   GENERATIVE_SYSTEM_PROMPT,
   buildGenerativePrompt,
+  buildRepairPrompt,
 } from "@/lib/adapt/prompts";
-import { runFidelityGuard } from "@/lib/fidelity";
+import { runFidelityGuard, type FidelityGuardResult } from "@/lib/fidelity";
 
 /**
  * Server-only model adapter for /api/adapt.
@@ -141,19 +142,31 @@ export async function adaptWithModel(
     if (!adaptedText) continue;
     const meaningMap = groundMeaningMap(parsed, input.source);
 
-    const guard = await runFidelityGuard({
+    const nliEndpoint = process.env.NLI_ENDPOINT?.trim() || undefined;
+    let text = adaptedText;
+    let map = meaningMap;
+    let guard = await runFidelityGuard({
       source: input.source,
-      adaptedText,
-      meaningMap,
+      adaptedText: text,
+      meaningMap: map,
       preferences: input.preferences,
-      nliEndpoint: process.env.NLI_ENDPOINT?.trim() || undefined,
+      nliEndpoint,
     });
+
+    if (guard.overallStatus === "repair_required") {
+      const repaired = await repairOnce(provider, systemPrompt, input, guard);
+      if (repaired) {
+        text = repaired.adaptedText;
+        map = repaired.meaningMap;
+        guard = repaired.guard;
+      }
+    }
 
     return {
       provider: provider.kind,
       response: {
-        adaptedText,
-        meaningMap,
+        adaptedText: text,
+        meaningMap: map,
         checks: guard.checks,
         overallStatus: guard.overallStatus,
         adapter: "model",
@@ -162,6 +175,58 @@ export async function adaptWithModel(
   }
 
   return null;
+}
+
+/**
+ * One repair attempt when a configured model already failed Meaning Check.
+ * No key means adaptWithModel never reaches this. A failed repair keeps the
+ * first result so the warning still shows.
+ */
+async function repairOnce(
+  provider: ModelProvider,
+  systemPrompt: string,
+  input: AdaptRequest,
+  guard: FidelityGuardResult,
+): Promise<{
+  adaptedText: string;
+  meaningMap: MeaningMap;
+  guard: FidelityGuardResult;
+} | null> {
+  const issues = guard.checks
+    .filter((check) => check.status !== "pass")
+    .map((check) => ({
+      claim: check.claim,
+      status: check.status,
+      reason: check.reason,
+      evidence: check.evidence,
+    }));
+  if (issues.length === 0) return null;
+
+  const repairUser = buildRepairPrompt(
+    input.source,
+    {
+      detail: input.preferences.detail,
+      wording: input.preferences.wording,
+    },
+    issues,
+  );
+  const raw =
+    provider.kind === "gemini"
+      ? await callGemini(provider, systemPrompt, repairUser)
+      : await callChatCompletion(provider, systemPrompt, repairUser);
+  const parsed = raw ? parseModelJson(raw) : null;
+  const adaptedText = parsed?.adaptedText.trim() ?? "";
+  if (!parsed || !adaptedText) return null;
+
+  const meaningMap = groundMeaningMap(parsed, input.source);
+  const repairedGuard = await runFidelityGuard({
+    source: input.source,
+    adaptedText,
+    meaningMap,
+    preferences: input.preferences,
+    nliEndpoint: process.env.NLI_ENDPOINT?.trim() || undefined,
+  });
+  return { adaptedText, meaningMap, guard: repairedGuard };
 }
 
 /** Gemini REST — generateContent with JSON response mode. */
@@ -223,10 +288,11 @@ async function callChatCompletion(
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
-    // vLLM-hosted Qwen: skip the hidden reasoning pass. Extraction here is
-    // schema-driven, and thinking triples latency (≈75 s → ≈25 s) for no gain
-    // in grounding — the Guard verifies the output anyway. Ignored by servers
-    // that do not know the field.
+    // Some OpenAI-compatible hosts (incl. the current fallback) are reasoning
+    // models: a long silent "thinking" pass first. Skip it — extraction here
+    // is schema-driven, and thinking triples latency (≈75 s → ≈25 s) for no
+    // gain in grounding. The Guard verifies the output anyway. Ignored by
+    // servers that do not know the field.
     chat_template_kwargs: { enable_thinking: false },
   };
 

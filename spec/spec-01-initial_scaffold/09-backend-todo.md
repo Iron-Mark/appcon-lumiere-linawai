@@ -16,10 +16,10 @@ Each row: what, which file/function to replace or add, which spec.
 | Item | Replace / add | Spec |
 | --- | --- | --- |
 | Gemini extraction + adaptation over `adapt()` - **wired, off unless a key is set** (spends tokens) | `app/api/adapt/route.ts` tries `app/api/adapt/model.ts` only when `GEMINI_API_KEY` or the OpenAI-compatible gateway env is set. Otherwise, and on model failure, it runs `lib/adapt/fixture.ts`. The seeded failure example never uses the model. | `05-client-port.md`, `spec-02-gemini-adapt` |
-| DeBERTa NLI — **do not build yet** (remote model) | `lib/fidelity` NLI layer (today: neutral stub). Prior feat used non-blocking HF `cross-encoder/nli-deberta-v3-base`; wire that into `runNliSlot` without a second adapt path. | `06-fidelity.md` |
-| Repair regeneration — **do not build yet** (needs generative model) | Pipeline after `repair_required`; generative repair via Gemini (`buildRepairPrompt` in `lib/adapt/prompts.ts`) | `06-fidelity.md`, `05-client-port.md` |
-| Preference sync across web and extension | New `PreferenceStore` implementation; accounts | `01-onboarding.md`, `07-extension.md` |
-| Saved source content | Explicit user save on store boundary; off by default; do not silently write sample source text to a content table | storage + future backend |
+| DeBERTa NLI — **wired, off unless `NLI_ENDPOINT` is set** | `runNliSlot` stays neutral with “Semantic check not connected” when unset. Optional local server: `nli-service/`. Not required for the demo. | `06-fidelity.md` |
+| Repair regeneration — **one retry only when a model key is already set** | `app/api/adapt/model.ts` calls `buildRepairPrompt` after `repair_required`. The fixture demo never calls it. | `06-fidelity.md`, `05-client-port.md` |
+| Preference sync across web and extension | Same-browser `postMessage` bridge in `lib/storage/preferences-sync.ts` and `extension/src/content/prefs-sync.ts`. Accounts skipped: no auth env. | `01-onboarding.md`, `07-extension.md` |
+| Saved source content | Reading workspace **Save on this device**. Samples stay unsaved until that click. No content table. | storage + future backend |
 
 Eval corpus growth (20 → 50) is owned by the **evals / fidelity track**, not this backend checklist.
 
@@ -31,9 +31,9 @@ Eval corpus growth (20 → 50) is owned by the **evals / fidelity track**, not t
 
 ## Acceptance checks
 
-- [ ] `/todo` lists only unbuilt server work (not feature marketing).
-- [ ] Each row names the function/file and spec.
-- [ ] Footer (when reading track adds chrome) can link “Backend not connected” → `/todo`.
+- [x] `/todo` lists only unbuilt server work (not feature marketing).
+- [x] Each row names the function/file and spec.
+- [x] Footer (when reading track adds chrome) can link “Backend not connected” → `/todo`. The link is on onboarding and on the reading header.
 
 ## Out of scope
 
