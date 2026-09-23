@@ -51,7 +51,22 @@ declare namespace chrome {
       currentWindow?: boolean;
     }): Promise<ChromeTab[]>;
     sendMessage(tabId: number, message: ChromeRuntimeMessage): Promise<unknown>;
+    onActivated?: {
+      addListener(
+        callback: (activeInfo: { tabId: number; windowId: number }) => void,
+      ): void;
+    };
+    onUpdated?: {
+      addListener(
+        callback: (
+          tabId: number,
+          changeInfo: { status?: string; url?: string },
+          tab: ChromeTab,
+        ) => void,
+      ): void;
+    };
   };
+
 
   const action: {
     onClicked: {

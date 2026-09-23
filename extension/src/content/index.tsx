@@ -17,7 +17,7 @@ import {
 
 const HOST_ID = "linaw-ai-extension-host";
 
-const PANEL_CSS = `
+export const PANEL_CSS = `
 :host, * { box-sizing: border-box; }
 :host {
   --color-brand: #4f5d2f;
@@ -196,8 +196,23 @@ const PANEL_CSS = `
   text-transform: uppercase;
   color: var(--color-slate-600);
 }
+.linaw-select {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  color: var(--color-slate-800);
+  background-color: var(--color-white);
+  border: 1px solid var(--color-slate-300);
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.linaw-select:focus {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 1px;
+}
 .linaw-btn-group {
   display: inline-flex;
+
   border-radius: 6px;
   overflow: hidden;
   border: 1px solid var(--color-slate-300);
@@ -234,6 +249,89 @@ const PANEL_CSS = `
 .linaw-text-link:hover {
   color: var(--color-slate-800);
   text-decoration: underline;
+}
+.linaw-disabled-banner {
+  background-color: var(--color-warning-bg);
+  border: 1px solid #fde68a;
+  border-radius: 0.5rem;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.linaw-disabled-banner-text {
+  font-size: 0.85rem;
+  color: var(--color-warning);
+  font-weight: 500;
+  line-height: 1.4;
+  margin: 0;
+}
+.linaw-enable-primary-btn {
+  background-color: var(--color-brand);
+  color: var(--color-white);
+  border: 1px solid var(--color-brand);
+  border-radius: 0.5rem;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 150ms ease;
+}
+.linaw-enable-primary-btn:hover {
+  background-color: var(--color-brand-hover);
+}
+.linaw-disabled-sites-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-slate-200);
+}
+.linaw-empty-text {
+  font-size: 0.72rem;
+  color: var(--color-slate-400);
+  margin: 0;
+  font-style: italic;
+}
+.linaw-disabled-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.linaw-disabled-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-slate-200);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+.linaw-disabled-origin {
+  font-size: 0.72rem;
+  color: var(--color-slate-700);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.linaw-remove-btn {
+  background: transparent;
+  border: none;
+  font-size: 0.72rem;
+  color: #dc2626;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.linaw-remove-btn:hover {
+  background-color: #fee2e2;
 }
 .linaw-reading-section {
   display: flex;
@@ -523,8 +621,11 @@ function updateFab() {
   if (!state.fab) {
     const btn = document.createElement("button");
     btn.type = "button";
+    btn.id = "linaw-fab-btn";
+    btn.name = "linaw-fab-btn";
     btn.className = "linaw-fab";
     btn.textContent = "Adapt with Linaw";
+
     btn.addEventListener("click", () => {
       void openWithSelection();
     });
