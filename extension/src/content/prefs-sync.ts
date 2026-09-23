@@ -95,7 +95,7 @@ export function startLinawPreferenceSync(): void {
     const page = readPagePreferences();
     const local = await getStoredDomainPreferences();
 
-    if (shouldApplyRemotePreferences(local, page) && page) {
+    if (page && shouldApplyRemotePreferences(local, page)) {
       applyingFromPageStorage = true;
       try {
         await applySyncedDomainPreferences(page);
