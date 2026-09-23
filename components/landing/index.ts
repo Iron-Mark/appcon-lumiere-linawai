@@ -8,6 +8,8 @@ export { Features } from "./Features";
 export { Verification } from "./Verification";
 export { Playground } from "./Playground";
 export { GetStarted } from "./GetStarted";
+export { SocialProof } from "./SocialProof";
+export { ClosingCta } from "./ClosingCta";
 export { Faq } from "./Faq";
 export { Footer } from "./Footer";
 export { SectionHeading } from "./SectionHeading";

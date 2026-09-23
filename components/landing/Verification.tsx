@@ -2,12 +2,18 @@ import { CircleCheck, TriangleAlert } from "lucide-react";
 import { Reveal } from "./Reveal";
 import { SectionHeading } from "./SectionHeading";
 
+const CHECK_TYPES = [
+  { term: "Conditions", detail: "only if, unless, except" },
+  { term: "Quantities", detail: "numbers, limits, amounts" },
+  { term: "Deadlines", detail: "dates, times, durations" },
+] as const;
+
 export function Verification() {
   return (
     <section
       id="verification"
       aria-labelledby="verification-title"
-      className="border-y border-border bg-paper-inset/40 px-5 py-20 md:py-24"
+      className="landing-section landing-section--inset-strong landing-section--border-y"
     >
       <div className="mx-auto max-w-6xl">
         <SectionHeading
@@ -22,9 +28,9 @@ export function Verification() {
           <figure className="font-ui m-0 overflow-hidden rounded-xl border border-border bg-paper-raised shadow-[0_1px_0_color-mix(in_srgb,var(--color-ink)_5%,transparent)]">
             <div className="grid md:grid-cols-2">
               <div className="flex flex-col gap-4 border-b border-border p-6 md:border-r md:border-b-0 md:p-8">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-ink-muted">Original</p>
-                  <span className="inline-flex items-center gap-1.5 text-xs text-ink-muted">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="m-0 text-sm font-medium text-ink-muted">Original</p>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-paper px-2.5 py-0.5 text-xs text-ink-muted">
                     <CircleCheck className="size-3.5 text-pass" aria-hidden="true" />
                     Source of truth
                   </span>
@@ -39,8 +45,8 @@ export function Verification() {
               </div>
 
               <div className="flex flex-col gap-4 p-6 md:p-8">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-ink-muted">A typical simplification</p>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="m-0 text-sm font-medium text-ink-muted">A typical simplification</p>
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-warning-border/50 bg-warning-soft px-2.5 py-0.5 text-xs font-medium text-ink">
                     <TriangleAlert className="size-3.5 text-warning" aria-hidden="true" />
                     Flagged
@@ -71,13 +77,12 @@ export function Verification() {
         </Reveal>
 
         <Reveal delay={160}>
-          <dl className="font-ui mx-auto mt-10 grid max-w-3xl gap-6 text-center sm:grid-cols-3">
-            {[
-              ["Conditions", "only if, unless, except"],
-              ["Quantities", "numbers, limits, amounts"],
-              ["Deadlines", "dates, times, durations"],
-            ].map(([term, detail]) => (
-              <div key={term} className="flex flex-col gap-1">
+          <dl className="font-ui mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-3">
+            {CHECK_TYPES.map(({ term, detail }) => (
+              <div
+                key={term}
+                className="flex flex-col gap-1 rounded-xl border border-border bg-paper-raised px-5 py-4 text-center shadow-[0_1px_0_color-mix(in_srgb,var(--color-ink)_5%,transparent)]"
+              >
                 <dt className="font-semibold text-ink">{term}</dt>
                 <dd className="m-0 text-sm text-ink-muted">{detail}</dd>
               </div>

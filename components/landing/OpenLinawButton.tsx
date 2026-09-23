@@ -23,7 +23,7 @@ export function OpenLinawButton({
     <Button
       asChild
       className={cn(
-        "landing-cta h-11 min-h-11 cursor-pointer rounded-lg bg-action px-6 text-base font-semibold text-paper-raised shadow-none hover:bg-action-hover focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-paper",
+        "landing-cta h-11 min-h-11 cursor-pointer gap-2 rounded-lg bg-action px-6 text-base font-semibold text-paper-raised shadow-none transition-colors duration-150 hover:bg-action-hover focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-paper motion-reduce:transition-none",
         fullWidth && "w-full sm:w-auto",
         className,
       )}
@@ -31,7 +31,7 @@ export function OpenLinawButton({
       <Link href="/onboarding">
         Open Linaw
         {withArrow ? (
-          <ArrowRight className="size-4" aria-hidden="true" />
+          <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
         ) : null}
       </Link>
     </Button>

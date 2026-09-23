@@ -22,9 +22,9 @@ export type NliSlotInput = {
   evidence?: string;
   /**
    * Optional predict URL (e.g. http://127.0.0.1:8000/predict).
-   * When omitted, uses process.env.NLI_ENDPOINT if available (Node),
-   * otherwise stays disconnected. Browser builds without an explicit
-   * endpoint do not call the network.
+   * When omitted, uses process.env.NLI_ENDPOINT (Node) or
+   * process.env.NEXT_PUBLIC_NLI_ENDPOINT (browser / Next inlines).
+   * Unset = disconnected stub; request failures also fall back.
    */
   endpoint?: string;
 };
@@ -35,10 +35,10 @@ const FETCH_TIMEOUT_MS = 4_000;
 
 /**
  * Layer 3 — NLI / semantic verification slot.
- * Uses NLI_ENDPOINT (or an explicit endpoint) when configured; otherwise
- * returns neutral with “Semantic check not connected.” Request failures
- * fall back to the same disconnected stub so the reading UI never blocks
- * on the network.
+ * Uses an explicit endpoint, NLI_ENDPOINT, or NEXT_PUBLIC_NLI_ENDPOINT when
+ * configured; otherwise returns neutral with “Semantic check not connected.”
+ * Request failures fall back to the same disconnected stub so the reading UI
+ * never blocks on the network.
  */
 export async function runNliSlot(input: NliSlotInput): Promise<NliSlotResult> {
   const endpoint = resolveEndpoint(input.endpoint);
@@ -83,11 +83,11 @@ function resolveEndpoint(explicit?: string): string | undefined {
   if (fromCaller) return fromCaller;
 
   try {
-    const fromEnv =
-      typeof process !== "undefined"
-        ? process.env?.NLI_ENDPOINT?.trim()
-        : undefined;
-    return fromEnv || undefined;
+    if (typeof process === "undefined") return undefined;
+    const fromPublic = process.env?.NEXT_PUBLIC_NLI_ENDPOINT?.trim();
+    if (fromPublic) return fromPublic;
+    const fromServer = process.env?.NLI_ENDPOINT?.trim();
+    return fromServer || undefined;
   } catch {
     return undefined;
   }

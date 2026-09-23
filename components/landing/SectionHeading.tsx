@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Reveal } from "./Reveal";
 import { cn } from "@/lib/utils";
 
@@ -5,7 +6,7 @@ type SectionHeadingProps = {
   id: string;
   eyebrow: string;
   title: string;
-  description?: string;
+  description?: ReactNode;
   align?: "left" | "center";
 };
 
@@ -33,7 +34,12 @@ export function SectionHeading({
         {title}
       </h2>
       {description ? (
-        <p className="font-ui m-0 text-base leading-relaxed text-pretty text-ink-muted md:text-lg">
+        <p
+          className={cn(
+            "font-ui m-0 text-base leading-relaxed text-pretty text-ink-muted md:text-lg",
+            align === "center" && "max-w-xl",
+          )}
+        >
           {description}
         </p>
       ) : null}

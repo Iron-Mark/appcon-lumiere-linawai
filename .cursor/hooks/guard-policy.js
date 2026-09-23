@@ -4,7 +4,7 @@
  *
  * Deny only clear violations that compete with the workflow:
  * - loose files directly under spec/ (except AGENTS.md)
- * - new app/api routes
+ * - app/api routes other than the single adapt POST handler
  * - a second adaptation module beside the known lib/adapt files
  * - UI importing fixture.ts directly
  *
@@ -18,6 +18,9 @@ const ALLOWED_ADAPT_FILES = new Set([
   "fixture.ts",
   "http.ts",
 ]);
+
+/** Only API route allowed in this scaffold. */
+const ALLOWED_API_ROUTE = "app/api/adapt/route.ts";
 
 function readStdin() {
   try {
@@ -100,10 +103,11 @@ function checkLooseSpec(rel) {
 
 function checkAppApi(rel) {
   if (!/^app\/api(\/|$)/i.test(rel)) return null;
+  if (rel.toLowerCase() === ALLOWED_API_ROUTE) return null;
   return {
     agent:
-      "Blocked: `app/api` routes are out of scope for this scaffold. There is no backend in this slice. UI must call `adapt()` from `lib/adapt`. A later HTTP client belongs at `lib/adapt/http.ts`, selected from `lib/adapt/index.ts` — not Next route handlers.",
-    user: "Linaw policy: no app/api routes in this scaffold.",
+      "Blocked: only `app/api/adapt/route.ts` is allowed under `app/api`. UI still calls `adapt()` from `lib/adapt` (selector may use `http.ts`). Do not add other API routes.",
+    user: "Linaw policy: only app/api/adapt/route.ts is allowed.",
   };
 }
 

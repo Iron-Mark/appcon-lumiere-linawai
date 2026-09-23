@@ -11,19 +11,96 @@ Kept literally accurate; update it when the code changes.
 | Part | State tonight |
 | --- | --- |
 | Reading workspace, preferences, Listen (Web Speech), PDF/text intake, saved pieces on device, share links (`/read?s=…`) | **Live**, runs in the browser, no server |
-| Meaning Check layers 1, 2, 4 — deterministic fact compare, actor–value relationships, critical-fact coverage (`lib/fidelity/`) | **Live** rule-based logic; 50 test cases in `evals/` |
-| Meaning Check layer 3 — semantic verification (NLI) | **Not connected.** `lib/fidelity/nli.ts` is a stub; the UI shows it as *Not run* and excludes it from the result |
-| The adaptation itself (`adapt()` in `lib/adapt/`) | **Offline sample adapter** (`fixture.ts`). It adapts the built-in campus-pilot example and its seeded failure case only. For any other input the UI shows a notice that the note was not produced from that text |
-| Live model path (Gemini behind the same `adapt()` port) | **Planned, not started** — `spec/spec-02-gemini-adapt/`. Requires a key (`.env.example`) and an explicit team go-ahead |
-| Chrome extension (`extension/`) | Scaffolded; reads a page and opens the reading panel with the same `adapt()` port |
+| Meaning Check layers 1, 2, 4 — deterministic fact compare, actor–value relationships, critical-fact coverage (`lib/fidelity/`) | **Live** rule-based logic; tested in `evals/` |
+| Meaning Check layer 3 — semantic verification (NLI) | **Optional.** `lib/fidelity/nli.ts` calls a local DeBERTa verifier (`nli-service/`, `cross-encoder/nli-deberta-v3-base`) when `NLI_ENDPOINT` is set — today that is Node-side (evals, CI). In the browser it stays disconnected; the UI shows the layer as *Not run* and excludes it from the verdict |
+| The adaptation itself (`adapt()` in `lib/adapt/`) | **Client port posts to `/api/adapt`, then falls back to the offline sample adapter** (`http.ts` → `fixture.ts`). The route is not in the tree yet, so every call currently falls back. The fixture adapts the built-in campus-pilot example and its seeded failure case only; for any other input the UI shows a notice that the note was not produced from that text |
+| Live model path (Gemini behind `/api/adapt`) | **In progress** — `spec/spec-02-gemini-adapt/`. Needs the route, a key (`.env.example`), and an on-screen notice that text is being sent to a model (see `SECURITY.md`) |
+| Chrome extension (`extension/`) | Builds (`node extension/build.mjs`); MV3 side panel + content script calling the same `adapt()` port. Load unpacked from `extension/` |
 
 Run: `npm install && npm run dev` → http://localhost:3000. Check: `npm run typecheck && npm test`. CI runs both plus `next build` on every push.
+
+## Architecture
+
+One Next.js app. Every surface calls the same `adapt()` port; the port decides where adaptation happens (today: try `/api/adapt`, fall back to the in-browser fixture).
+
+```mermaid
+flowchart LR
+  subgraph Surfaces
+    W[Web app<br/>/read]
+    X[Chrome extension<br/>side panel]
+    S[Share link<br/>/read?s=…]
+  end
+
+  subgraph Port["lib/adapt (single port)"]
+    A["adapt(source, preferences)"]
+    H[http.ts<br/>POST /api/adapt]
+    F[fixture.ts<br/>offline fallback]
+  end
+
+  subgraph Guard["lib/fidelity — Fidelity Guard"]
+    M[Meaning Map<br/>critical facts + evidence]
+    G[runFidelityGuard]
+  end
+
+  subgraph Device["On this device only"]
+    P[(Preferences<br/>localStorage)]
+    C[(Saved pieces<br/>localStorage)]
+  end
+
+  W --> A
+  X --> A
+  S --> W
+  A --> H
+  H -- "route absent / fails" --> F
+  H -.-> R["app/api/adapt<br/>Gemini · in progress"]
+  F --> M --> G
+  G --> W
+  P --> W
+  W --> C
+```
+
+### Meaning Check pipeline
+
+Layers stay separate and are reported separately — never collapsed into one score. A layer that did not run says so.
+
+```mermaid
+flowchart TD
+  SRC[Source text] --> MAP[Meaning Map<br/>actor · action · value · condition · evidence]
+  ADP[Adapted note] --> L1
+  MAP --> L1[1 · Deterministic fact compare<br/>dates, times, numbers]
+  MAP --> L2[2 · Actor–value relationships<br/>who ↔ when stay paired]
+  SRC --> L3[3 · Semantic verification NLI<br/>DeBERTa via NLI_ENDPOINT · optional]
+  ADP --> L3
+  L1 --> FLAG[flagged fact ids]
+  L2 --> FLAG
+  FLAG --> L4[4 · Critical-fact coverage<br/>nothing important dropped]
+  MAP --> L4
+  L1 & L2 & L3 & L4 --> OUT["checks[] + overallStatus<br/>pass · warning · repair_required"]
+  OUT --> UI[Reading UI<br/>marks ↔ cards ↔ evidence]
+```
+
+Verdict language is deliberately cautious ("No issue found in these checks.", "The time appears to be attached to the wrong group.") — it never claims a guarantee.
+
+### Repository map
+
+| Path | What lives there |
+| --- | --- |
+| `app/` | Next.js routes: landing, onboarding, `/read`, `/content`, `/settings` |
+| `components/read/` | Reading workspace, Meaning Check rail, Listen, share links, toasts |
+| `components/sindi/` | Ray, the mascot — presentational, driven by a `state` prop |
+| `lib/domain/` | Zod schemas: preferences, meaning map, checks, adapt request/response |
+| `lib/adapt/` | The single `adapt()` port and its implementations |
+| `lib/fidelity/` | Fidelity Guard layers and the pipeline entry |
+| `evals/` | Golden campus-pilot case, seeded corruption, fidelity cases (vitest) |
+| `nli-service/` | Local FastAPI DeBERTa NLI verifier + evaluation scripts |
+| `extension/` | Manifest V3 Chrome companion |
+| `spec/` | Phase specs — the build contract; `docs/` — canon, agent rules, AppCon research |
+
+Privacy and data handling: [`SECURITY.md`](SECURITY.md).
 
 Human guide (what Linaw is, how to run, specs, extension, `/todo`):
 
 [`docs/README.md`](docs/README.md)
-
-Run: `npm install`, then `npm run dev`, then open http://localhost:3000.
 
 Agent guide: [`docs/AGENTS.md`](docs/AGENTS.md)
 

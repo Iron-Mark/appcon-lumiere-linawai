@@ -1,12 +1,32 @@
+import dynamic from "next/dynamic";
 import { Navbar } from "./Navbar";
 import { Hero } from "./Hero";
 import { HowItWorks } from "./HowItWorks";
 import { Features } from "./Features";
 import { Verification } from "./Verification";
-import { Playground } from "./Playground";
 import { GetStarted } from "./GetStarted";
+import { SocialProof } from "./SocialProof";
+import { ClosingCta } from "./ClosingCta";
 import { Faq } from "./Faq";
 import { Footer } from "./Footer";
+
+const Playground = dynamic(
+  () => import("./Playground").then((mod) => ({ default: mod.Playground })),
+  {
+    loading: () => (
+      <section
+        id="try-it"
+        aria-busy="true"
+        aria-label="Loading interactive demo"
+        className="landing-section"
+      >
+        <div className="mx-auto max-w-6xl">
+          <div className="h-[28rem] animate-pulse rounded-xl bg-paper-inset/50 motion-reduce:animate-none" />
+        </div>
+      </section>
+    ),
+  },
+);
 
 /**
  * Public one-page landing. Primary path: Open Linaw → /onboarding.
@@ -30,7 +50,9 @@ export function LandingPage() {
         <Features />
         <Verification />
         <Playground />
+        <SocialProof />
         <GetStarted />
+        <ClosingCta />
         <Faq />
       </main>
       <Footer />
