@@ -14,7 +14,7 @@ export function Verification() {
           id="verification-title"
           eyebrow="Meaning Check"
           title="Four words can change everything."
-          description="Most simplifiers make text shorter. Linaw checks whether critical meaning survived. Checks can warn — they do not prove a rewrite is correct."
+          description="Most simplifiers make text shorter. Linaw checks whether critical meaning survived. Checks can warn; they do not prove a rewrite is correct."
           align="center"
         />
 

@@ -13,6 +13,7 @@ import { Sindi } from "@/components/sindi";
 import type { Preferences } from "@/lib/domain";
 import { preferenceStore } from "@/lib/storage/preferences";
 import { ChoiceCard } from "./ChoiceCard";
+import { ChoiceExample } from "./ChoiceExample";
 import {
   ONBOARDING_STEPS,
   type ChoiceValue,
@@ -21,7 +22,7 @@ import {
 
 const TOTAL_STEPS = ONBOARDING_STEPS.length;
 
-export function OnboardingFlow() {
+export function OnboardingFlow({ editing = false }: { editing?: boolean }) {
   const headingId = useId();
   const [stepIndex, setStepIndex] = useState(0);
   const [draft, setDraft] = useState<DraftPreferences>({});
@@ -41,8 +42,12 @@ export function OnboardingFlow() {
       try {
         const existing = await preferenceStore.get();
         if (!cancelled && existing) {
-          window.location.replace("/read");
-          return;
+          if (editing) {
+            setDraft(existing);
+          } else {
+            window.location.replace("/read");
+            return;
+          }
         }
       } catch {
         // Stay on onboarding if the store cannot be read.
@@ -53,7 +58,7 @@ export function OnboardingFlow() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [editing]);
 
   const selectValue = useCallback(
     (value: ChoiceValue) => {
@@ -145,13 +150,13 @@ export function OnboardingFlow() {
 
   return (
     <main
+      className="onboarding-shell"
       style={{
         boxSizing: "border-box",
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
         width: "100%",
-        maxWidth: "42rem",
         margin: "0 auto",
         padding: "1.25rem 1.5rem 0",
         fontFamily: "var(--font-ui)",
@@ -294,15 +299,13 @@ export function OnboardingFlow() {
           {step.question}
         </h1>
 
+        <ChoiceExample stepId={step.id} selected={selected} draft={draft} />
+
         <div
           role="radiogroup"
           aria-labelledby={headingId}
           onKeyDown={onGroupKeyDown}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.85rem",
-          }}
+          className="onboarding-choices"
         >
           {step.options.map((option) => (
             <ChoiceCard
@@ -373,6 +376,220 @@ export function OnboardingFlow() {
           {saving ? "Saving…" : isLast ? "Continue to reading" : "Continue"}
         </button>
       </div>
+      <style>{`
+        .onboarding-shell {
+          max-width: min(42rem, 100%);
+        }
+        .onboarding-choices {
+          display: flex;
+          flex-direction: column;
+          gap: 0.85rem;
+        }
+        .onboarding-choice {
+          display: flex;
+          width: 100%;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 1rem;
+          padding: 0.85rem;
+          text-align: left;
+          cursor: pointer;
+          border-radius: 1.15rem;
+          border: 2px solid var(--color-paper-inset);
+          background: var(--color-paper-raised);
+          color: var(--color-ink);
+          font-family: var(--font-ui);
+          font-size: 1rem;
+          line-height: 1.45;
+          box-sizing: border-box;
+          box-shadow: 0 1px 0 color-mix(in srgb, var(--color-ink) 6%, transparent);
+          transition:
+            background var(--motion-base) ease,
+            border-color var(--motion-base) ease,
+            box-shadow var(--motion-base) ease;
+        }
+        .onboarding-choice:hover {
+          border-color: color-mix(in srgb, var(--color-action-border) 45%, var(--color-paper-inset));
+          box-shadow: 0 10px 24px color-mix(in srgb, var(--color-ink) 6%, transparent);
+        }
+        .onboarding-choice:focus-visible {
+          outline: 2px solid var(--color-focus);
+          outline-offset: 3px;
+        }
+        .onboarding-choice.is-selected {
+          border-color: var(--color-action-border);
+          background: color-mix(in srgb, var(--color-action-soft) 72%, var(--color-paper-raised));
+          box-shadow: none;
+        }
+        .onboarding-example {
+          border-radius: 1.15rem;
+          border: 1px solid var(--color-paper-inset);
+          background: var(--color-paper-raised);
+          padding: 1.15rem 1.35rem 1.25rem;
+        }
+        .onboarding-example-kicker {
+          margin: 0 0 0.7rem;
+          font-size: 0.75rem;
+          font-weight: 650;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          color: var(--color-ink-subtle);
+        }
+        .onboarding-example-line {
+          margin: 0 0 0.65rem;
+          font-family: var(--font-reading);
+          font-size: 1.125rem;
+          line-height: 1.55;
+          color: var(--color-ink);
+        }
+        .onboarding-example-line:last-child {
+          margin-bottom: 0;
+        }
+        .onboarding-example-stage {
+          display: grid;
+        }
+        .onboarding-example-stage > * {
+          grid-area: 1 / 1;
+        }
+        .onboarding-example-measure {
+          visibility: hidden;
+        }
+        .listen-player-title {
+          margin: 0;
+          font-family: var(--font-reading);
+          font-size: 1.35rem;
+          font-weight: 600;
+          letter-spacing: -0.02em;
+          color: var(--color-ink);
+        }
+        .listen-player-script {
+          margin: 0.45rem 0 0.9rem;
+          font-size: 0.95rem;
+          line-height: 1.45;
+          color: var(--color-ink-muted);
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .listen-player-bar {
+          display: flex;
+          align-items: center;
+          gap: 0.65rem;
+        }
+        .listen-player-time {
+          font-variant-numeric: tabular-nums;
+          font-size: 0.8125rem;
+          color: var(--color-ink-muted);
+          min-width: 2.2rem;
+        }
+        .listen-player-track {
+          position: relative;
+          flex: 1;
+          height: 0.28rem;
+          border-radius: 999px;
+          background: var(--color-paper-inset);
+        }
+        .listen-player-fill {
+          position: absolute;
+          inset: 0 auto 0 0;
+          border-radius: inherit;
+          background: var(--color-ink);
+        }
+        .listen-player-play {
+          display: inline-flex;
+          width: 2.75rem;
+          height: 2.75rem;
+          flex-shrink: 0;
+          align-items: center;
+          justify-content: center;
+          border: 0;
+          border-radius: 999px;
+          background: var(--color-action);
+          color: var(--color-paper-raised);
+          cursor: pointer;
+        }
+        .listen-player-play:focus-visible {
+          outline: 2px solid var(--color-focus);
+          outline-offset: 3px;
+        }
+        .onboarding-example-list {
+          margin: 0;
+          padding: 0;
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+          gap: 0.55rem;
+        }
+        .onboarding-example-list li {
+          position: relative;
+          padding-left: 1rem;
+          font-family: var(--font-reading);
+          font-size: 1.125rem;
+          line-height: 1.45;
+          color: var(--color-ink);
+        }
+        .onboarding-example-list li::before {
+          content: "";
+          position: absolute;
+          left: 0;
+          top: 0.55rem;
+          width: 0.4rem;
+          height: 0.4rem;
+          border-radius: 999px;
+          background: var(--color-action);
+        }
+        .onboarding-choice-body {
+          display: flex;
+          flex-direction: column;
+          gap: 0.35rem;
+          min-width: 0;
+          padding: 0.35rem 0.5rem 0.55rem;
+        }
+        .onboarding-choice-title {
+          display: flex;
+          align-items: center;
+          gap: 0.65rem;
+          font-weight: 650;
+          font-size: 1.2rem;
+          letter-spacing: -0.01em;
+        }
+        .onboarding-choice-check {
+          margin-left: auto;
+          flex-shrink: 0;
+          color: transparent;
+        }
+        .onboarding-choice.is-selected .onboarding-choice-check {
+          color: var(--color-action);
+        }
+        .onboarding-choice-hint {
+          color: var(--color-ink-muted);
+          font-size: 0.975rem;
+          line-height: 1.45;
+          padding-left: 0;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .onboarding-choice { transition: none; }
+        }
+        @media (min-width: 900px) {
+          .onboarding-shell {
+            max-width: min(58rem, calc(100% - 2rem));
+            padding-left: 2rem;
+            padding-right: 2rem;
+          }
+          .onboarding-choices {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.15rem;
+            align-items: stretch;
+          }
+        }
+        @media (min-width: 1280px) {
+          .onboarding-shell {
+            max-width: min(64rem, calc(100% - 3rem));
+          }
+        }
+      `}</style>
     </main>
   );
 }

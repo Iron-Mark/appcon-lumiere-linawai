@@ -44,7 +44,7 @@ const PLAIN: Record<Lang, { good: string; bad: string }> = {
     bad: "You can leave school at lunch. Give the signed slip to your adviser by Friday. If you don't have a signed slip, stay in the cafeteria.",
   },
   tl: {
-    good: "Pwede kang lumabas ng campus tuwing lunch — pero kailangan muna ng written approval galing sa parent o guardian mo. I-submit ang signed slip sa adviser mo bago mag-Friday. Kung wala kang approved slip, dito ka lang sa cafeteria.",
+    good: "Pwede kang lumabas ng campus tuwing lunch, pero kailangan muna ng written approval galing sa parent o guardian mo. I-submit ang signed slip sa adviser mo bago mag-Friday. Kung wala kang approved slip, dito ka lang sa cafeteria.",
     bad: "Pwede kang lumabas ng campus tuwing lunch. I-submit ang signed slip sa adviser mo bago mag-Friday. Kung wala kang approved slip, dito ka lang sa cafeteria.",
   },
 };

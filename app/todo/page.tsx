@@ -35,7 +35,7 @@ const BACKEND_TODOS: TodoRow[] = [
   {
     what: "Saved source content only if the user explicitly saves",
     replace:
-      "Explicit user save on store boundary; off by default — do not silently write sample source",
+      "Explicit user save on store boundary; off by default; do not silently write sample source",
     spec: "storage + future backend",
   },
   {
@@ -90,7 +90,7 @@ export default function TodoPage() {
       </ol>
 
       <p className="text-sm text-ink-subtle">
-        Backend not connected — fixture path only for this slice.
+        Backend not connected; fixture path only for this slice.
       </p>
     </main>
   );

@@ -52,7 +52,7 @@ export function Hero() {
           <Reveal delay={180}>
             <p className="font-ui mt-5 max-w-md text-base leading-relaxed text-pretty text-ink-muted md:text-lg">
               Linaw adapts important information to how you prefer to receive
-              it — then checks that critical meaning is still intact.
+              it, then checks that critical meaning is still intact.
             </p>
           </Reveal>
 
@@ -76,7 +76,7 @@ export function Hero() {
               <code className="rounded bg-paper-inset px-1 py-0.5 font-mono text-[0.75rem] text-ink">
                 node extension/build.mjs
               </code>
-              , then Load unpacked — see{" "}
+              , then Load unpacked; see{" "}
               <code className="rounded bg-paper-inset px-1 py-0.5 font-mono text-[0.75rem] text-ink">
                 extension/README.md
               </code>
@@ -88,7 +88,7 @@ export function Hero() {
         <Reveal delay={200} className="w-full min-w-0">
           <HeroDemoCard />
           <p className="font-ui mt-3 text-center text-xs text-ink-subtle md:text-left">
-            Illustrative example —{" "}
+            Illustrative example:{" "}
             <Link
               href="/onboarding"
               className="cursor-pointer font-medium text-ink underline decoration-action-border underline-offset-4 hover:text-action focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"

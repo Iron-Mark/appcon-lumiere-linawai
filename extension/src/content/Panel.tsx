@@ -271,7 +271,7 @@ export function Panel({
         {working && !response ? (
           <p className="linaw-muted">Adapting…</p>
         ) : (
-          <div className="linaw-note">{displayed || "—"}</div>
+          <div className="linaw-note">{displayed || ""}</div>
         )}
         <p className="linaw-check-status">
           Meaning Check:{" "}

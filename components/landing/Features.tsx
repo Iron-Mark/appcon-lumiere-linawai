@@ -58,7 +58,7 @@ export function Features() {
           id="features-title"
           eyebrow="Your preferences"
           title="Built for how people actually read."
-          description="Detail, wording, delivery, and browser behavior — preference language only. Linaw adapts without diagnosing anyone."
+          description="Detail, wording, delivery, and browser behavior: preference language only. Linaw adapts without diagnosing anyone."
         />
 
         <div className="mt-12 grid gap-4 md:grid-cols-3">
@@ -67,7 +67,7 @@ export function Features() {
             <div>
               <h3 className="font-reading text-xl font-semibold text-ink">Four adaptive views</h3>
               <p className="mt-1 leading-relaxed text-pretty text-ink-muted">
-                Switch formats on the same content instantly — the source never
+                Switch formats on the same content instantly. The source never
                 changes, only the shape it takes.
               </p>
             </div>
@@ -96,7 +96,7 @@ export function Features() {
             <div>
               <h3 className="font-reading text-lg font-semibold text-ink">Meaning Check</h3>
               <p className="mt-1 leading-relaxed text-pretty text-ink-muted">
-                Checks can warn when a condition, number, or deadline looks off —
+                Checks can warn when a condition, number, or deadline looks off,
                 so you can review the source, not trust a rewrite blindly.
               </p>
             </div>
@@ -107,7 +107,7 @@ export function Features() {
             <div>
               <h3 className="font-reading text-lg font-semibold text-ink">Taglish-aware</h3>
               <p className="mt-1 leading-relaxed text-pretty text-ink-muted">
-                Plain Language that sounds like how Filipinos actually talk —
+                Plain Language that sounds like how Filipinos actually talk:
                 English, Tagalog, or both.
               </p>
             </div>

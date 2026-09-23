@@ -32,8 +32,19 @@ import { preferenceStore } from "@/lib/storage/preferences";
 import { Sindi, type SindiState } from "@/components/sindi";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Bookmark, Check, Clipboard, Paperclip, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Bookmark,
+  Check,
+  Clipboard,
+  Copy,
+  Link2,
+  Paperclip,
+  Trash2,
+} from "lucide-react";
+import { ErrorToast } from "./ErrorToast";
 import { ModeBar } from "./ModeBar";
+import { buildShareLink } from "./shareLink";
 import { MeaningCheckRail } from "./MeaningCheckRail";
 import { NoteCard } from "./NoteCard";
 import { buildMarks, warningLineForChecks } from "./marks";
@@ -48,12 +59,21 @@ import {
   SOURCE_UPLOAD_LIMITS_TEXT,
 } from "./readSourceFile";
 
+const ADAPT_FAILED_MESSAGE = "Could not clarify this note.";
+/** Draft survives a reload during a demo; cleared when the source is cleared. */
+const DRAFT_STORAGE_KEY = "linaw.read.draft";
+
 type ReadingWorkspaceProps = {
   /** Piece id from /read?piece= — loads that saved source. */
   pieceId?: string | null;
+  /** Decoded source from /read?s= — someone shared it; adapt in this reader's preferences. */
+  sharedSource?: string | null;
 };
 
-export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
+export function ReadingWorkspace({
+  pieceId = null,
+  sharedSource = null,
+}: ReadingWorkspaceProps) {
   const router = useRouter();
   const [preferences, setPreferences] = useState<Preferences>(DEFAULT_PREFERENCES);
   const [prefsReady, setPrefsReady] = useState(false);
@@ -104,10 +124,25 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Last adapt() request that threw — offered back as Retry in the error toast. */
+  const failedRunRef = useRef<{
+    source: string;
+    prefs: Preferences;
+    options?: { fixtureSample?: boolean; autoListen?: boolean };
+  } | null>(null);
 
   const displayedText = result?.adaptedText ?? "";
-  const { listening, start: startListen, stop: stopListen, toggle: toggleListen } =
-    useListen(displayedText);
+  const {
+    listening,
+    paused: listenPaused,
+    spoken,
+    rate: listenRate,
+    start: startListen,
+    stop: stopListen,
+    toggle: toggleListen,
+    togglePause: toggleListenPause,
+    cycleRate: cycleListenRate,
+  } = useListen(displayedText);
   stopListenRef.current = stopListen;
 
   const draftHasText = draftSource.trim().length > 0;
@@ -168,6 +203,21 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
     window.addEventListener("hashchange", scrollToRail);
     return () => window.removeEventListener("hashchange", scrollToRail);
   }, [prefsReady, showResultsGrid]);
+
+  const dismissError = useCallback(() => setError(null), []);
+
+  const retryAdapt = useCallback(() => {
+    const failed = failedRunRef.current;
+    if (!failed) return;
+    failedRunRef.current = null;
+    setError(null);
+    setResultsRevealed(true);
+    void runAdaptRef.current?.(failed.source, failed.prefs, failed.options);
+  }, []);
+  const errorAction =
+    error === ADAPT_FAILED_MESSAGE && failedRunRef.current
+      ? { label: "Retry", onClick: retryAdapt }
+      : null;
 
   const prefersReducedMotion = () =>
     typeof window !== "undefined" &&
@@ -233,7 +283,9 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
       } catch {
         if (generation !== adaptGeneration.current) return;
         setWorking(false);
-        setError("Could not adapt this note. Try again.");
+        // Keep the exact failed request so the toast can offer Retry.
+        failedRunRef.current = { source, prefs, options };
+        setError(ADAPT_FAILED_MESSAGE);
         if (!resultRef.current) {
           setResultsRevealed(false);
         }
@@ -301,6 +353,115 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
     };
   }, [pieceId, prefsReady]);
 
+  /** Shared link: load the sender's source and adapt it in *this* reader's preferences. */
+  const loadedSharedRef = useRef<string | null>(null);
+  const [openedFromShare, setOpenedFromShare] = useState(false);
+  useEffect(() => {
+    if (!prefsReady || !sharedSource || pieceId) return;
+    if (loadedSharedRef.current === sharedSource) return;
+    loadedSharedRef.current = sharedSource;
+    const checked = enforceSourceLength(sanitizeSourceText(sharedSource));
+    if (!checked.ok) {
+      setError(checked.error);
+      return;
+    }
+    setDraftSource(checked.text);
+    setComposerExpanded(false);
+    setOpenedFromShare(true);
+    setError(null);
+    setSaveNotice(null);
+    void runAdaptRef.current?.(checked.text, preferencesRef.current, {
+      fixtureSample: false,
+    });
+  }, [sharedSource, pieceId, prefsReady]);
+
+  /** Restore an unsent draft after a reload; pieces and shared links take priority. */
+  const draftRestoredRef = useRef(false);
+  useEffect(() => {
+    if (!prefsReady || draftRestoredRef.current) return;
+    draftRestoredRef.current = true;
+    if (pieceId || sharedSource) return;
+    try {
+      const saved = window.sessionStorage.getItem(DRAFT_STORAGE_KEY);
+      if (saved && saved.trim() && !draftSource) {
+        setDraftSource(saved);
+        setUploadStatus("Restored your unsent draft.");
+      }
+    } catch {
+      // sessionStorage unavailable — nothing to restore.
+    }
+    // draftSource intentionally read once at restore time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefsReady, pieceId, sharedSource]);
+
+  useEffect(() => {
+    if (!draftRestoredRef.current) return;
+    try {
+      if (draftSource.trim()) {
+        window.sessionStorage.setItem(DRAFT_STORAGE_KEY, draftSource);
+      } else {
+        window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+      }
+    } catch {
+      // Best effort only.
+    }
+  }, [draftSource]);
+
+  /** Copy the clarified text itself — for pasting into a group chat or reply. */
+  const [noteCopied, setNoteCopied] = useState(false);
+  const noteCopiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onCopyNote = useCallback(async () => {
+    const text = displayedText.trim();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setNoteCopied(true);
+      setUploadStatus("Clarified note copied.");
+      if (noteCopiedTimerRef.current) clearTimeout(noteCopiedTimerRef.current);
+      noteCopiedTimerRef.current = setTimeout(() => setNoteCopied(false), 1600);
+    } catch {
+      setError("Could not copy the note. Select the text and copy it yourself.");
+    }
+  }, [displayedText]);
+  useEffect(() => {
+    return () => {
+      if (noteCopiedTimerRef.current) clearTimeout(noteCopiedTimerRef.current);
+    };
+  }, []);
+
+  /** Narrow screens: the rail stacks below the note; take the reader there. */
+  const jumpToChecks = useCallback(() => {
+    const el = document.getElementById("meaning-check");
+    if (!el) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
+  }, []);
+
+  const [shareState, setShareState] = useState<"idle" | "copied">("idle");
+  const shareTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onCopyShareLink = useCallback(async () => {
+    if (activeSource === null) return;
+    const built = buildShareLink(activeSource, window.location.origin);
+    if (!built.ok) {
+      setError(built.reason);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(built.url);
+      setShareState("copied");
+      setUploadStatus("Share link copied.");
+      if (shareTimerRef.current) clearTimeout(shareTimerRef.current);
+      shareTimerRef.current = setTimeout(() => setShareState("idle"), 1600);
+    } catch {
+      setError("Could not copy the link. Copy it from the address bar instead.");
+    }
+  }, [activeSource]);
+  useEffect(() => {
+    return () => {
+      if (shareTimerRef.current) clearTimeout(shareTimerRef.current);
+    };
+  }, []);
+
   const sourceMatchesAdapt =
     activeSource !== null && draftSource.trim() === activeSource.trim();
   const alreadySaved =
@@ -315,7 +476,7 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
     if (!result || activeSource === null || working) return;
     const source = activeSource.trim();
     if (draftSource.trim() !== source) {
-      setSaveNotice("Adapt this source before saving.");
+      setSaveNotice("Clarify this source before saving.");
       return;
     }
     const user = await authStore.getUser();
@@ -551,6 +712,25 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
     );
   }, [result]);
 
+  /**
+   * True when the adapter's meaning map is not traceable to the text that was
+   * sent. Today that happens whenever the offline fixture receives anything
+   * other than its sample; with a live adapter it would flag a hallucinated map.
+   * Either way the reader must be told the note is not about their text.
+   */
+  const resultUngrounded = useMemo(() => {
+    if (!result || working) return false;
+    const source = (activeSource ?? "").trim();
+    if (!source) return false;
+    const normalize = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
+    const haystack = normalize(source);
+    const evidence = result.meaningMap.criticalFacts
+      .map((f) => normalize(f.evidence))
+      .filter((e) => e.length >= 8);
+    if (evidence.length === 0) return false;
+    return !evidence.some((e) => haystack.includes(e));
+  }, [result, working, activeSource]);
+
   const originalForDisplay = useMemo(() => {
     if (activeSource && activeSource.trim()) return activeSource;
     if (!result) return "";
@@ -601,6 +781,29 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
     wordingLabel,
   );
 
+  /** Evidence of the selected check, highlighted in the original view (spec 03). */
+  const originalHighlight = useMemo(() => {
+    if (!result || selectedIndex == null) return null;
+    const check = result.checks[selectedIndex];
+    if (!check) return null;
+    const caution =
+      check.status === "warning" || check.status === "repair_required";
+    const original = originalForDisplay.toLowerCase();
+    const present = (s: string) =>
+      s.trim().length >= 8 && original.includes(s.trim().toLowerCase());
+
+    if (present(check.evidence)) return { text: check.evidence, caution };
+    // Fall back to the critical fact the claim is about (e.g. "… → Friday at 8:30 AM").
+    const fact = result.meaningMap.criticalFacts.find(
+      (f) =>
+        f.value &&
+        f.value.trim().length >= 2 &&
+        check.claim.includes(f.value) &&
+        present(f.evidence),
+    );
+    return fact ? { text: fact.evidence, caution } : null;
+  }, [result, selectedIndex, originalForDisplay]);
+
   const onSelectCheck = (index: number | null) => {
     setSelectedIndex(index);
     if (index == null) return;
@@ -609,6 +812,12 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
       block: "nearest",
       behavior: reduceMotion ? "auto" : "smooth",
     };
+    // In the original view the evidence sentence is the thing to bring into view.
+    requestAnimationFrame(() => {
+      document
+        .getElementById("original-evidence")
+        ?.scrollIntoView(scrollOpts);
+    });
     const markEl = document.getElementById(`adapted-mark-${index}`);
     const cardEl = document.getElementById(`meaning-check-card-${index}`);
     markEl?.scrollIntoView(scrollOpts);
@@ -630,20 +839,23 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
     );
   }
 
+  // The textarea is the card: a single sheet of paper. Dashes only appear
+  // while something is being dragged over it, so the resting state reads
+  // as a place to write, not a file-upload zone.
   const wellBorder = sourceDropActive
     ? "2px dashed var(--color-action-border)"
     : sourceSettled
-      ? "2px solid var(--color-action)"
-      : "2px dashed color-mix(in srgb, var(--color-ink-muted) 45%, var(--color-paper-inset))";
+      ? "1px solid var(--color-action)"
+      : "1px solid var(--color-paper-inset)";
 
   const wellBackground = sourceDropActive
-    ? "color-mix(in srgb, var(--color-action-soft) 70%, var(--color-paper-inset))"
+    ? "color-mix(in srgb, var(--color-action-soft) 55%, var(--color-paper-raised))"
     : sourceSettled
-      ? "color-mix(in srgb, var(--color-action-soft) 35%, var(--color-paper-inset))"
-      : "var(--color-paper-inset)";
+      ? "color-mix(in srgb, var(--color-action-soft) 30%, var(--color-paper-raised))"
+      : "var(--color-paper-raised)";
 
   const sourceIconClassName =
-    "source-well-icon size-11 min-h-11 min-w-11 shrink-0 cursor-pointer text-ink-muted hover:bg-transparent hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60";
+    "source-well-icon size-10 min-h-10 min-w-10 shrink-0 cursor-pointer rounded-lg text-ink-muted hover:bg-paper-inset hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60";
 
   const clearSourceButton = draftHasText ? (
     <Button
@@ -745,7 +957,7 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
               color: "var(--color-ink-muted)",
             }}
           >
-            Adapt a message, then check the meaning.
+            Clarify a message, then check the meaning.
           </p>
         </div>
         <div style={{ marginLeft: "auto", minWidth: 0 }}>
@@ -790,45 +1002,48 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: composerExpanded ? "0.85rem" : "0.55rem",
-          padding: composerExpanded
-            ? "1.35rem 1.35rem 1.15rem"
-            : "0.85rem 1rem",
-          background: "var(--color-paper-raised)",
-          border: "1px solid var(--color-paper-inset)",
-          borderRadius: "1rem",
-          boxShadow:
-            "0 1px 0 color-mix(in srgb, var(--color-ink) 4%, transparent)",
+          gap: "0.6rem",
+          padding: composerExpanded ? 0 : "0.6rem 0.75rem",
+          background: composerExpanded
+            ? "transparent"
+            : "color-mix(in srgb, var(--color-paper-inset) 55%, transparent)",
+          borderRadius: "0.85rem",
           width: "100%",
           minWidth: 0,
           maxWidth: "100%",
-          overflow: "hidden",
           boxSizing: "border-box",
         }}
       >
         {composerExpanded ? (
-          <>
+          <div
+            className={`source-well source-sheet${sourceDropActive ? " source-well--drop" : ""}${sourceSettled ? " source-well--settled" : ""}`}
+            onDragOver={onSourceDragOver}
+            onDragLeave={onSourceDragLeave}
+            onDrop={onSourceDrop}
+            style={{
+              position: "relative",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "stretch",
+              background: wellBackground,
+              border: wellBorder,
+              borderRadius: "1.1rem",
+              outline: sourceDropActive
+                ? "2px solid var(--color-action)"
+                : undefined,
+              outlineOffset: sourceDropActive ? "3px" : undefined,
+            }}
+          >
             <div
-              className={`source-well${sourceDropActive ? " source-well--drop" : ""}${sourceSettled ? " source-well--settled" : ""}`}
-              onDragOver={onSourceDragOver}
-              onDragLeave={onSourceDragLeave}
-              onDrop={onSourceDrop}
+              className="source-sheet-body"
               style={{
                 position: "relative",
-                minHeight: "9.5rem",
-                maxHeight: "16rem",
-                overflow: "hidden",
+                minHeight: "11rem",
+                maxHeight: "18rem",
                 display: "flex",
                 flexDirection: "column",
-                alignItems: "stretch",
-                justifyContent: "flex-start",
-                background: wellBackground,
-                border: wellBorder,
-                borderRadius: "0.75rem",
-                outline: sourceDropActive
-                  ? "2px solid var(--color-action)"
-                  : undefined,
-                outlineOffset: sourceDropActive ? "2px" : undefined,
+                overflow: "hidden",
+                borderRadius: "1.1rem 1.1rem 0 0",
               }}
             >
               {showEmptyPrompt ? (
@@ -842,7 +1057,7 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
                     flexDirection: "column",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "0.35rem",
+                    gap: "0.4rem",
                     padding: "1.25rem",
                     pointerEvents: "none",
                     textAlign: "center",
@@ -851,13 +1066,15 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
                   <span
                     className="font-reading"
                     style={{
-                      fontSize: "1.25rem",
+                      fontSize: "1.375rem",
                       fontWeight: 600,
                       color: "var(--color-ink)",
-                      letterSpacing: "-0.01em",
+                      letterSpacing: "-0.012em",
                     }}
                   >
-                    Paste or drop a message
+                    {sourceDropActive
+                      ? "Drop it here"
+                      : "Paste or drop a message"}
                   </span>
                   <span
                     style={{
@@ -875,14 +1092,26 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
                 onChange={(event) => setDraftSource(event.target.value)}
                 onFocus={() => setSourceWellFocused(true)}
                 onBlur={() => setSourceWellFocused(false)}
+                onKeyDown={(event) => {
+                  // Ctrl/⌘+Enter runs the primary action without leaving the keyboard.
+                  if (
+                    event.key === "Enter" &&
+                    (event.ctrlKey || event.metaKey) &&
+                    !working &&
+                    draftHasText
+                  ) {
+                    event.preventDefault();
+                    onAdaptDraft();
+                  }
+                }}
                 rows={6}
                 aria-label="Source text"
                 placeholder={
                   showEmptyPrompt
                     ? undefined
-                    : "Paste or enter the message to adapt…"
+                    : "Paste or enter the message to clarify…"
                 }
-                className={`font-ui source-well-textarea [field-sizing:fixed] block min-h-[9.5rem] max-h-64 w-full max-w-full flex-1 resize-none overflow-y-auto cursor-text border-0 bg-transparent px-3.5 pb-14 pt-3 text-base leading-relaxed text-ink shadow-none placeholder:text-ink-muted focus-visible:border-0 focus-visible:ring-2 focus-visible:ring-ring/60 md:text-base ${
+                className={`font-ui source-well-textarea [field-sizing:fixed] block min-h-[11rem] max-h-72 w-full max-w-full flex-1 resize-none overflow-y-auto cursor-text rounded-none border-0 bg-transparent px-5 pb-4 pt-4 text-base leading-relaxed text-ink shadow-none placeholder:text-ink-muted focus-visible:border-0 focus-visible:ring-0 md:text-base ${
                   draftHasText ? "pr-14" : ""
                 }`}
               />
@@ -891,37 +1120,27 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
                   className="source-well-clear"
                   style={{
                     position: "absolute",
-                    top: "0.25rem",
-                    right: "0.35rem",
+                    top: "0.5rem",
+                    right: "0.5rem",
                     zIndex: 2,
                   }}
                 >
                   {clearSourceButton}
                 </div>
               ) : null}
-              <div
-                className="source-well-actions"
-                style={{
-                  position: "absolute",
-                  right: "0.35rem",
-                  bottom: "0.25rem",
-                  zIndex: 2,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.1rem",
-                }}
-              >
-                {sourceBottomIcons}
-              </div>
             </div>
 
+            {/* Toolbar is part of the sheet: tools on the left, the one action on the right. */}
             <div
+              className="source-sheet-footer"
               style={{
                 display: "flex",
                 flexWrap: "wrap",
                 alignItems: "center",
                 justifyContent: "space-between",
-                gap: "0.65rem",
+                gap: "0.5rem 0.75rem",
+                padding: "0.6rem 0.75rem 0.6rem 0.85rem",
+                borderTop: "1px solid var(--color-paper-inset)",
                 minWidth: 0,
               }}
             >
@@ -930,15 +1149,25 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
                   display: "flex",
                   flexWrap: "wrap",
                   alignItems: "center",
-                  gap: "0.5rem",
+                  gap: "0.15rem",
                 }}
               >
+                {sourceBottomIcons}
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 1,
+                    height: "1.25rem",
+                    margin: "0 0.4rem",
+                    background: "var(--color-paper-inset)",
+                  }}
+                />
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   onClick={onLoadSample}
                   disabled={working}
-                  className="min-h-11 min-w-11 cursor-pointer font-ui text-[0.9375rem] font-medium focus-visible:ring-2 focus-visible:ring-ring/60"
+                  className="min-h-10 cursor-pointer rounded-lg px-3 font-ui text-[0.875rem] font-medium text-ink-muted hover:bg-paper-inset hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60"
                 >
                   Use an example
                 </Button>
@@ -952,12 +1181,13 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
                 aria-describedby={
                   !draftHasText ? "adapt-disabled-reason" : undefined
                 }
+                title="Ctrl+Enter / ⌘+Enter"
                 className="adapt-primary min-h-11 min-w-11 cursor-pointer px-5 font-ui text-[0.9375rem] font-semibold focus-visible:ring-2 focus-visible:ring-ring/60"
               >
-                Adapt
+                Clarify
               </Button>
             </div>
-          </>
+          </div>
         ) : (
           <div className="source-composer-collapsed">
             <p
@@ -991,7 +1221,7 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
                 }
                 className={`${result ? "" : "adapt-primary "}min-h-10 shrink-0 cursor-pointer px-4 font-ui text-[0.875rem] font-semibold whitespace-nowrap focus-visible:ring-2 focus-visible:ring-ring/60`}
               >
-                {result ? "Adapt again" : "Adapt"}
+                {result ? "Clarify again" : "Clarify"}
               </Button>
             </div>
           </div>
@@ -1012,7 +1242,7 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
         </p>
         {!draftHasText ? (
           <p id="adapt-disabled-reason" className="source-visually-hidden">
-            Adapt is unavailable until you enter, paste, or upload source text.
+            Clarify is unavailable until you enter, paste, or upload source text.
           </p>
         ) : null}
 
@@ -1024,22 +1254,9 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
           {uploadStatus}
         </div>
 
-        {error ? (
-          <p
-            role="alert"
-            style={{
-              margin: 0,
-              color: "var(--color-warning)",
-              fontSize: "0.9375rem",
-              borderLeft:
-                "3px solid var(--color-warning-border, var(--color-warning))",
-              paddingLeft: "0.65rem",
-            }}
-          >
-            {error}
-          </p>
-        ) : null}
       </section>
+
+      <ErrorToast message={error} onDismiss={dismissError} action={errorAction} />
 
       {!showResultsGrid ? (
         <section
@@ -1053,7 +1270,7 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
           <div className="read-guide-heading">
             <p className="read-guide-eyebrow">How Linaw works</p>
             <p className="read-guide-lede font-reading">
-              Paste, adapt, then check the meaning held.
+              Paste, clarify, then check the meaning held.
             </p>
           </div>
           <ol className="read-guide-steps">
@@ -1063,7 +1280,7 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
                 body: "Plain text or a PDF, up to 30 pages long.",
               },
               {
-                title: "Adapt",
+                title: "Clarify",
                 body: "Rewritten to your detail and wording choices.",
               },
               {
@@ -1110,8 +1327,43 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
                 "0 1px 2px color-mix(in srgb, var(--color-ink) 6%, transparent), 0 16px 40px -20px color-mix(in srgb, var(--color-ink) 22%, transparent)",
             }}
           >
+            {resultUngrounded ? (
+              <div
+                role="status"
+                className="font-ui animate-in fade-in-0 duration-300 fill-mode-both motion-reduce:animate-none"
+                style={{
+                  display: "flex",
+                  gap: "0.65rem",
+                  alignItems: "flex-start",
+                  marginBottom: "1.1rem",
+                  padding: "0.8rem 0.95rem",
+                  borderRadius: "0.75rem",
+                  background: "var(--color-warning-soft)",
+                  border:
+                    "1px solid color-mix(in srgb, var(--color-warning-border) 45%, transparent)",
+                  color: "var(--color-ink)",
+                  fontSize: "0.875rem",
+                  lineHeight: 1.5,
+                }}
+              >
+                <AlertTriangle
+                  aria-hidden
+                  className="mt-0.5 size-4 shrink-0"
+                  style={{ color: "var(--color-warning)" }}
+                  strokeWidth={2.25}
+                />
+                <p style={{ margin: 0 }}>
+                  <strong style={{ fontWeight: 600 }}>
+                    This note was not produced from your text.
+                  </strong>{" "}
+                  This build runs an offline sample adapter, so it can only
+                  work on the built-in example. The checks below refer to that
+                  example, not to what you pasted.
+                </p>
+              </div>
+            ) : null}
             <NoteCard
-              title="Adapted note"
+              title="Clarified note"
               statusLine={statusLine}
               adaptedText={displayedText}
               originalText={originalForDisplay}
@@ -1125,6 +1377,13 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
               onSelectMark={(index) => onSelectCheck(index)}
               overallStatus={result?.overallStatus ?? null}
               working={working}
+              listenPaused={listenPaused}
+              onTogglePause={toggleListenPause}
+              listenRate={listenRate}
+              onCycleRate={cycleListenRate}
+              spoken={spoken}
+              originalHighlight={originalHighlight}
+              onJumpToChecks={jumpToChecks}
             />
             {result && !working ? (
               <div
@@ -1142,7 +1401,7 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
                   type="button"
                   variant={alreadySaved ? "outline" : "default"}
                   onClick={() => void persistPiece()}
-                  disabled={alreadySaved || !sourceMatchesAdapt}
+                  disabled={alreadySaved || !sourceMatchesAdapt || resultUngrounded}
                   className={`${
                     alreadySaved
                       ? "border-action-border bg-action-soft/60 text-action disabled:opacity-100 "
@@ -1156,6 +1415,56 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
                   )}
                   {alreadySaved ? "Saved on this device" : "Save on this device"}
                 </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void onCopyShareLink()}
+                  disabled={!sourceMatchesAdapt || resultUngrounded}
+                  aria-label="Copy a link that opens this source for someone else, in their own reading preferences"
+                  className="font-ui h-10 min-h-10 cursor-pointer gap-2 rounded-lg px-4 text-sm font-medium focus-visible:ring-2 focus-visible:ring-focus"
+                >
+                  {shareState === "copied" ? (
+                    <Check
+                      aria-hidden
+                      className="size-4 text-action"
+                      strokeWidth={2.25}
+                    />
+                  ) : (
+                    <Link2 aria-hidden className="size-4" strokeWidth={2} />
+                  )}
+                  {shareState === "copied" ? "Link copied" : "Share link"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => void onCopyNote()}
+                  disabled={!displayedText.trim()}
+                  aria-label="Copy the clarified note text"
+                  className="font-ui h-10 min-h-10 cursor-pointer gap-2 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-paper-inset hover:text-ink focus-visible:ring-2 focus-visible:ring-focus"
+                >
+                  {noteCopied ? (
+                    <Check
+                      aria-hidden
+                      className="size-4 text-action"
+                      strokeWidth={2.25}
+                    />
+                  ) : (
+                    <Copy aria-hidden className="size-4" strokeWidth={2} />
+                  )}
+                  {noteCopied ? "Copied" : "Copy note"}
+                </Button>
+                {openedFromShare && !saveNotice ? (
+                  <p
+                    className="font-ui"
+                    style={{
+                      margin: 0,
+                      fontSize: "0.875rem",
+                      color: "var(--color-ink-muted)",
+                    }}
+                  >
+                    Shared with you — shown in your own reading preferences.
+                  </p>
+                ) : null}
                 {saveNotice && !alreadySaved ? (
                   <p
                     className="font-ui"
@@ -1177,7 +1486,7 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
                       color: "var(--color-ink-muted)",
                     }}
                   >
-                    Adapt this source before saving.
+                    Clarify this source before saving.
                   </p>
                 ) : null}
               </div>
@@ -1273,8 +1582,9 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
           min-width: max-content;
           position: relative;
           z-index: 1;
-          /* Opaque so preview glyphs cannot show through the control group. */
-          background: var(--color-paper-raised);
+          /* Opaque so preview glyphs cannot show through the control group;
+             matches the collapsed strip's own fill. */
+          background: color-mix(in srgb, var(--color-paper-inset) 55%, var(--color-paper-raised));
         }
         @keyframes source-collapse-settle {
           from {
@@ -1298,6 +1608,28 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
         }
         .source-well {
           transition: background-color 150ms ease, border-color 150ms ease, outline-color 150ms ease, min-height 180ms ease, max-height 180ms ease;
+        }
+        /* The sheet: one raised piece of paper, lifting slightly when written on. */
+        .source-sheet {
+          box-shadow:
+            0 1px 2px color-mix(in srgb, var(--color-ink) 6%, transparent),
+            0 12px 32px -18px color-mix(in srgb, var(--color-ink) 22%, transparent);
+          transition:
+            box-shadow var(--motion-base) ease,
+            border-color var(--motion-fast) ease,
+            background-color var(--motion-fast) ease;
+        }
+        .source-sheet:focus-within {
+          border-color: var(--color-action-border) !important;
+          box-shadow:
+            0 0 0 3px color-mix(in srgb, var(--color-action) 16%, transparent),
+            0 1px 2px color-mix(in srgb, var(--color-ink) 6%, transparent),
+            0 16px 40px -20px color-mix(in srgb, var(--color-ink) 28%, transparent);
+        }
+        .source-sheet.source-well--drop {
+          box-shadow:
+            0 0 0 6px color-mix(in srgb, var(--color-action) 12%, transparent),
+            0 16px 40px -20px color-mix(in srgb, var(--color-ink) 28%, transparent);
         }
         .source-well-textarea {
           display: block !important;

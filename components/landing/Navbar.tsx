@@ -21,7 +21,7 @@ export function Navbar() {
           className="font-reading inline-flex min-h-11 items-center text-xl font-semibold tracking-tight text-ink focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         >
           Linaw AI
-          <span className="sr-only"> — home</span>
+          <span className="sr-only"> (home)</span>
         </Link>
 
         <ul className="hidden items-center gap-1 md:flex">
