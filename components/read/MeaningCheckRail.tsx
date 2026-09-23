@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { Check } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronDown,
   CircleDashed,
   ShieldCheck,
 } from "lucide-react";
@@ -69,6 +71,42 @@ export function MeaningCheckRail({
     overallStatus === "warning" || overallStatus === "repair_required";
   const skippedLayers = hasResults ? checks.filter(layerNotRun).length : 0;
   const ranCount = hasResults ? checks.length - skippedLayers : 0;
+
+  // Flagged checks are always visible. Passes and not-run layers sit behind a
+  // disclosure: the reader wants the verdict, the sceptic can open the evidence.
+  const flaggedIdx: number[] = [];
+  const quietIdx: number[] = [];
+  if (hasResults) {
+    checks.forEach((c, i) => {
+      const flagged =
+        !layerNotRun(c) &&
+        (c.status === "warning" || c.status === "repair_required");
+      (flagged ? flaggedIdx : quietIdx).push(i);
+    });
+  }
+  const quietPassCount = hasResults
+    ? quietIdx.filter((i) => !layerNotRun(checks[i]!)).length
+    : 0;
+  const quietSummary = (() => {
+    const noun = quietPassCount === 1 ? "check" : "checks";
+    const passed = `${quietPassCount} ${flaggedIdx.length > 0 ? "other " : ""}${noun} passed`;
+    return skippedLayers > 0
+      ? `${passed} · ${skippedLayers} not run`
+      : passed;
+  })();
+
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  // New result → back to the summary view.
+  useEffect(() => {
+    setDetailsOpen(false);
+  }, [checks]);
+  // A mark in the note was chosen whose card is folded away — unfold so the link holds.
+  useEffect(() => {
+    if (selectedIndex == null) return;
+    if (quietIdx.includes(selectedIndex)) setDetailsOpen(true);
+    // quietIdx is derived from checks; selectedIndex is the trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIndex]);
 
   return (
     <aside
@@ -178,17 +216,81 @@ export function MeaningCheckRail({
               </p>
             ) : null}
           </div>
-          <ul
-            style={{
-              listStyle: "none",
-              margin: 0,
-              padding: 0,
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.6rem",
-            }}
-          >
-            {checks.map((check, index) => {
+          {flaggedIdx.length > 0 ? (
+            <ul style={LIST_STYLE} aria-label="Flagged checks">
+              {flaggedIdx.map((index) => renderCard(checks[index]!, index))}
+            </ul>
+          ) : null}
+
+          {quietIdx.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+              {/* Readers get the verdict; the layer-by-layer evidence is one tap away. */}
+              <button
+                type="button"
+                onClick={() => setDetailsOpen((v) => !v)}
+                aria-expanded={detailsOpen}
+                aria-controls="meaning-check-details"
+                className="font-ui group flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-paper-inset bg-transparent px-3.5 py-2.5 text-left text-ink-muted transition-[background-color,border-color,color] duration-150 ease-out hover:border-ink-subtle/50 hover:bg-paper-inset/70 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 motion-reduce:transition-none"
+                style={{ minHeight: 44 }}
+              >
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                    minWidth: 0,
+                  }}
+                >
+                  <CheckCircle2
+                    size={15}
+                    strokeWidth={2}
+                    aria-hidden
+                    style={{ color: "var(--color-pass)", flexShrink: 0 }}
+                  />
+                  <span style={{ minWidth: 0 }}>{quietSummary}</span>
+                </span>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.25rem",
+                    flexShrink: 0,
+                    fontSize: "0.8125rem",
+                    fontWeight: 600,
+                    color: "var(--color-action)",
+                  }}
+                >
+                  {detailsOpen ? "Hide" : "Show"}
+                  <ChevronDown
+                    size={15}
+                    strokeWidth={2.25}
+                    aria-hidden
+                    className="transition-transform duration-200 ease-out motion-reduce:transition-none"
+                    style={{
+                      transform: detailsOpen ? "rotate(180deg)" : "none",
+                    }}
+                  />
+                </span>
+              </button>
+              {detailsOpen ? (
+                <ul
+                  id="meaning-check-details"
+                  style={LIST_STYLE}
+                  aria-label="All checks"
+                >
+                  {quietIdx.map((index) => renderCard(checks[index]!, index))}
+                </ul>
+              ) : null}
+            </div>
+          ) : null}
+        </>
+      )}
+    </aside>
+  );
+
+  function renderCard(check: Check, index: number) {
               const selected = selectedIndex === index;
               const notRun = layerNotRun(check);
               const cardCaution =
@@ -341,13 +443,17 @@ export function MeaningCheckRail({
                   </button>
                 </li>
               );
-            })}
-          </ul>
-        </>
-      )}
-    </aside>
-  );
+  }
 }
+
+const LIST_STYLE = {
+  listStyle: "none",
+  margin: 0,
+  padding: 0,
+  display: "flex",
+  flexDirection: "column",
+  gap: "0.6rem",
+} as const;
 
 function EmptyRail({
   loading,

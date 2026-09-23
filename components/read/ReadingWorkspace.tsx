@@ -812,17 +812,21 @@ export function ReadingWorkspace({
       block: "nearest",
       behavior: reduceMotion ? "auto" : "smooth",
     };
-    // In the original view the evidence sentence is the thing to bring into view.
-    requestAnimationFrame(() => {
-      document
-        .getElementById("original-evidence")
-        ?.scrollIntoView(scrollOpts);
-    });
     const markEl = document.getElementById(`adapted-mark-${index}`);
-    const cardEl = document.getElementById(`meaning-check-card-${index}`);
     markEl?.scrollIntoView(scrollOpts);
-    cardEl?.scrollIntoView(scrollOpts);
     markEl?.focus({ preventScroll: true });
+    // The rail may need a render to unfold the card (or swap to the original
+    // view's evidence highlight) before there is anything to scroll to.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document
+          .getElementById(`meaning-check-card-${index}`)
+          ?.scrollIntoView(scrollOpts);
+        document
+          .getElementById("original-evidence")
+          ?.scrollIntoView(scrollOpts);
+      });
+    });
   };
 
   if (!prefsReady) {
