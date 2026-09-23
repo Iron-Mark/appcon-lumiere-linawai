@@ -25,8 +25,8 @@ describe.each(allEvalCases)("eval case $id", (evalCase) => {
 
   it.each(evalCase.corruptions)(
     "runFidelityGuard flags corruption $id ($type)",
-    (corruption) => {
-      const result = runFidelityGuard({
+    async (corruption) => {
+      const result = await runFidelityGuard({
         source: evalCase.source,
         adaptedText: corruption.adaptedText,
         meaningMap: evalCase.goldMeaningMap,

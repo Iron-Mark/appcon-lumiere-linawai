@@ -39,17 +39,17 @@ export type OnboardingStep = {
 export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
   {
     id: "detail",
-    question: "How much detail?",
-    promptIdle: "Choose how much of the source to keep.",
+    question: "How much of a message would you like to read?",
+    promptIdle: "Some people want every line. Others want the essentials.",
     lineFor: (value) =>
       value === "full"
-        ? "Full — keep more of the source."
-        : "Key Points — focus on the essentials.",
+        ? "Full: keep more of the source."
+        : "Key Points: focus on the essentials.",
     options: [
       {
         value: "full",
         label: "Full",
-        hint: "Keep the complete adapted text.",
+        hint: "Keep the complete clarified text.",
         icon: FileText,
       },
       {
@@ -62,12 +62,12 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
   },
   {
     id: "wording",
-    question: "How should it sound?",
-    promptIdle: "Choose the wording that feels clearest.",
+    question: "What kind of wording feels easiest for you?",
+    promptIdle: "You can stay close to the original, or use everyday words.",
     lineFor: (value) =>
       value === "original"
-        ? "Original — keep the source wording."
-        : "Plain Language — simpler words.",
+        ? "Original: keep the source wording."
+        : "Plain Language: simpler words.",
     options: [
       {
         value: "original",
@@ -85,46 +85,46 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
   },
   {
     id: "delivery",
-    question: "How do you want it delivered?",
-    promptIdle: "Read it or listen to it.",
+    question: "Would you rather read it, or hear it?",
+    promptIdle: "Either way, the words stay the same.",
     lineFor: (value) =>
       value === "read"
-        ? "Read — show the adapted text."
-        : "Listen — speak the adapted text.",
+        ? "Read: the note stays on the page."
+        : "Listen: Linaw reads the note aloud.",
     options: [
       {
         value: "read",
         label: "Read",
-        hint: "Show the adapted text on screen.",
+        hint: "Keep the note on the page.",
         icon: BookOpen,
       },
       {
         value: "listen",
         label: "Listen",
-        hint: "Speak the adapted text aloud.",
+        hint: "Speak the clarified text aloud.",
         icon: Volume2,
       },
     ],
   },
   {
     id: "browserBehavior",
-    question: "How should the browser behave?",
-    promptIdle: "Auto-Adapt stays off until you choose it.",
+    question: "When you are on a page, should Linaw wait for you?",
+    promptIdle: "Auto-Clarify stays off until you choose it.",
     lineFor: (value) =>
       value === "auto_adapt"
-        ? "Auto-Adapt — adapt pages when you ask the extension."
-        : "Manual — you choose when to adapt.",
+        ? "Auto-Clarify: clarify pages when you ask the extension."
+        : "Manual: you choose when to clarify.",
     options: [
       {
         value: "auto_adapt",
-        label: "Auto-Adapt",
-        hint: "Let the extension adapt when you opt in.",
+        label: "Auto-Clarify",
+        hint: "Let the extension clarify when you opt in.",
         icon: Wand2,
       },
       {
         value: "manual",
         label: "Manual",
-        hint: "You decide when to adapt a page.",
+        hint: "You decide when to clarify a page.",
         icon: Hand,
       },
     ],

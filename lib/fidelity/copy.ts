@@ -10,6 +10,14 @@ export const REASON_WRONG_GROUP =
 
 export const REASON_NLI_DISCONNECTED = "Semantic check not connected.";
 
+export const REASON_NLI_CONTRADICTION =
+  "Adapted text may conflict with the source. Review source.";
+
+export const REASON_NLI_ENTAILED = "No issue found in these checks.";
+
+export const REASON_NLI_INCONCLUSIVE =
+  "Semantic check was inconclusive. Review source if unsure.";
+
 export const REASON_DEADLINE_REVIEW =
   "A deadline or schedule detail may be missing. Review source.";
 
@@ -18,3 +26,9 @@ export const REASON_NEGATION_REVIEW =
 
 export const REASON_VALUE_MISMATCH =
   "A date, time, or number may not match the source. Review source.";
+
+export const REASON_OBLIGATION_CHANGED =
+  "An obligation or permission may have changed. Review source.";
+
+export const REASON_ENTITY_MISMATCH =
+  "A name or group in the adaptation may not match the source. Review source.";

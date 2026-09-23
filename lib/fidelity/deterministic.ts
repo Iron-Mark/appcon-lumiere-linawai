@@ -1,8 +1,10 @@
 import type { Check, MeaningMap } from "@/lib/domain";
 import {
   REASON_CONDITION_CHANGED,
+  REASON_ENTITY_MISMATCH,
   REASON_NEGATION_REVIEW,
   REASON_NO_ISSUE,
+  REASON_OBLIGATION_CHANGED,
   REASON_VALUE_MISMATCH,
 } from "./copy";
 import {
@@ -11,17 +13,22 @@ import {
   NEGATION_MARKERS,
   containsNormalizedTime,
   extractNumbers,
+  extractQuantityUnits,
+  extractRoleSubjects,
   extractTimes,
   extractWeekdays,
+  hasObligationMarker,
+  hasPermissionMarker,
   includesMarker,
   includesPhrase,
   normalizeTimeToken,
+  splitSentences,
 } from "./normalize";
 
 /**
  * Layer 1 — Deterministic checks.
- * Exact/normalized compare for dates, times, numbers, negation,
- * and condition/exception markers. Runs offline.
+ * Exact/normalized compare for dates, times, numbers, names/entities, units,
+ * negation, condition/exception markers, and must vs may. Runs offline.
  */
 export function runDeterministicChecks(
   meaningMap: MeaningMap,
@@ -35,6 +42,9 @@ export function runDeterministicChecks(
   const mapTimes = new Set<string>();
   const mapWeekdays = new Set<string>();
   const mapNumbers = new Set<string>();
+  const mapUnitAmounts = new Map<string, Set<string>>();
+  const mapActors = collectMapActors(meaningMap);
+  const knownNameCorpus = buildNameCorpus(meaningMap);
 
   for (const fact of meaningMap.criticalFacts) {
     if (fact.value) {
@@ -45,6 +55,13 @@ export function runDeterministicChecks(
       for (const n of extractNumbers(fact.value)) mapNumbers.add(n);
     }
     for (const day of extractWeekdays(fact.evidence)) mapWeekdays.add(day);
+    for (const qu of extractQuantityUnits(
+      `${fact.value ?? ""} ${fact.evidence}`,
+    )) {
+      const amounts = mapUnitAmounts.get(qu.unit) ?? new Set<string>();
+      amounts.add(qu.amount);
+      mapUnitAmounts.set(qu.unit, amounts);
+    }
   }
 
   // Times present in the adaptation should exist in the Meaning Map (normalized).
@@ -83,6 +100,40 @@ export function runDeterministicChecks(
     }
   }
 
+  // Units: same unit label with an amount the map never used (§12 “15 units vs 18 units”).
+  for (const qu of extractQuantityUnits(adaptedText)) {
+    const allowed = mapUnitAmounts.get(qu.unit);
+    if (allowed && allowed.size > 0 && !allowed.has(qu.amount)) {
+      checks.push({
+        claim: `Quantity ${qu.amount} ${qu.unit}`,
+        status: "warning",
+        evidence: meaningMap.sourceIntent,
+        reason: REASON_VALUE_MISMATCH,
+      });
+    }
+  }
+
+  // Names/entities: role subjects beside schedule/action verbs must be known map actors
+  // (or appear in map evidence). Unknown groups with a mapped time are suspicious.
+  if (mapActors.size > 0) {
+    for (const sentence of splitSentences(adaptedText)) {
+      const hasMappedTime = extractTimes(sentence).some((t) => mapTimes.has(t));
+      if (!hasMappedTime && !extractQuantityUnits(sentence).length) continue;
+
+      for (const subject of extractRoleSubjects(sentence)) {
+        if (isKnownActorOrEvidenceName(subject, mapActors, knownNameCorpus)) {
+          continue;
+        }
+        checks.push({
+          claim: `Name / group: ${subject}`,
+          status: "warning",
+          evidence: meaningMap.sourceIntent,
+          reason: REASON_ENTITY_MISMATCH,
+        });
+      }
+    }
+  }
+
   for (const fact of meaningMap.criticalFacts) {
     if (fact.negated) {
       const flipped =
@@ -94,6 +145,37 @@ export function runDeterministicChecks(
           status: "repair_required",
           evidence: fact.evidence,
           reason: REASON_NEGATION_REVIEW,
+        });
+      }
+    }
+
+    // Must vs may: only flag when both sides state a modal and they disagree (§12).
+    // Scope to sentences that mention this fact so other facts' modals do not bleed in.
+    const evidenceBlob = `${fact.evidence} ${fact.action ?? ""}`;
+    const claimSentences = splitSentences(adaptedText).filter((sentence) =>
+      sentenceMentionsFact(sentence, fact.actor, fact.action, fact.value),
+    );
+
+    if (claimSentences.length > 0) {
+      const evidenceMust = hasObligationMarker(evidenceBlob);
+      const evidenceMay = hasPermissionMarker(evidenceBlob);
+      const claimBlob = claimSentences.join(" ");
+      const adaptedMust = hasObligationMarker(claimBlob);
+      const adaptedMay = hasPermissionMarker(claimBlob);
+
+      if (evidenceMust && adaptedMay && !adaptedMust) {
+        checks.push({
+          claim: describeFact(fact.id, fact.action, fact.value),
+          status: "warning",
+          evidence: fact.evidence,
+          reason: REASON_OBLIGATION_CHANGED,
+        });
+      } else if (evidenceMay && !evidenceMust && adaptedMust) {
+        checks.push({
+          claim: describeFact(fact.id, fact.action, fact.value),
+          status: "warning",
+          evidence: fact.evidence,
+          reason: REASON_OBLIGATION_CHANGED,
         });
       }
     }
@@ -176,4 +258,57 @@ function findEvidenceForValue(
     }
   }
   return null;
+}
+
+function collectMapActors(meaningMap: MeaningMap): Set<string> {
+  const actors = new Set<string>();
+  for (const fact of meaningMap.criticalFacts) {
+    if (fact.actor?.trim()) actors.add(fact.actor.trim().toLowerCase());
+  }
+  return actors;
+}
+
+function buildNameCorpus(meaningMap: MeaningMap): string {
+  return meaningMap.criticalFacts
+    .map((f) => `${f.actor ?? ""} ${f.evidence}`)
+    .join(" ")
+    .toLowerCase();
+}
+
+function isKnownActorOrEvidenceName(
+  subject: string,
+  mapActors: Set<string>,
+  corpus: string,
+): boolean {
+  const lower = subject.toLowerCase();
+  if (mapActors.has(lower)) return true;
+  for (const actor of mapActors) {
+    if (actor.includes(lower) || lower.includes(actor)) return true;
+  }
+  // Broad generalizations are handled by the relationship layer.
+  if (
+    /^(all|every|everyone|everybody|other)\b/.test(lower) ||
+    lower === "everyone" ||
+    lower === "everybody"
+  ) {
+    return true;
+  }
+  return corpus.includes(lower);
+}
+
+function sentenceMentionsFact(
+  sentence: string,
+  actor: string | null,
+  action: string | null,
+  value: string | null,
+): boolean {
+  if (actor && includesPhrase(sentence, actor)) return true;
+  if (action && includesPhrase(sentence, action)) return true;
+  if (
+    value &&
+    (containsNormalizedTime(sentence, value) || includesPhrase(sentence, value))
+  ) {
+    return true;
+  }
+  return false;
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import type { Check } from "@/lib/domain";
 import type { TextMark } from "./marks";
+import type { SpokenRange } from "./useListen";
 
 type AdaptedTextProps = {
   text: string;
@@ -13,6 +14,10 @@ type AdaptedTextProps = {
   originalText: string;
   /** True while adapt() is in flight — reserves space with a skeleton. */
   working?: boolean;
+  /** Word currently being read aloud, in `text` coordinates. */
+  spoken?: SpokenRange | null;
+  /** Source evidence to highlight in the original view (selected check). */
+  originalHighlight?: { text: string; caution: boolean } | null;
 };
 
 const READING_STYLE = {
@@ -27,6 +32,9 @@ const READING_STYLE = {
 /** Per-line entrance delay so the note "lands" instead of popping in. */
 const LINE_STAGGER_MS = 45;
 
+export const SPOKEN_WORD_ID = "adapted-spoken-word";
+export const ORIGINAL_EVIDENCE_ID = "original-evidence";
+
 export function AdaptedText({
   text,
   marks,
@@ -35,7 +43,18 @@ export function AdaptedText({
   showingOriginal,
   originalText,
   working = false,
+  spoken = null,
+  originalHighlight = null,
 }: AdaptedTextProps) {
+  // Keep the spoken word in view without yanking the page around.
+  useEffect(() => {
+    if (!spoken || showingOriginal) return;
+    const el = document.getElementById(SPOKEN_WORD_ID);
+    if (!el) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+  }, [spoken, showingOriginal]);
+
   if (showingOriginal) {
     return (
       <p
@@ -43,8 +62,9 @@ export function AdaptedText({
         className="font-reading animate-in fade-in-0 duration-300 fill-mode-both motion-reduce:animate-none"
         style={READING_STYLE}
       >
-        {originalText ||
-          "Original source is held by the adapter. Paste source text to keep a local copy."}
+        {originalText
+          ? renderOriginal(originalText, originalHighlight)
+          : "Original source is held by the adapter. Paste source text to keep a local copy."}
       </p>
     );
   }
@@ -63,16 +83,55 @@ export function AdaptedText({
           fontStyle: "italic",
         }}
       >
-        Adapted text will appear on this paper once you run Adapt.
+        Clarified text will appear on this paper once you run Clarify.
       </p>
     );
   }
 
   return (
     <p key={text} className="font-reading" style={READING_STYLE}>
-      {renderLines(text, marks, selectedIndex, onSelectMark)}
+      {renderLines(text, marks, selectedIndex, onSelectMark, spoken)}
     </p>
   );
+}
+
+/** Original view: highlight the selected check's evidence sentence, if it occurs. */
+function renderOriginal(
+  original: string,
+  highlight: { text: string; caution: boolean } | null,
+): ReactNode {
+  if (!highlight || !highlight.text.trim()) return original;
+  const needle = highlight.text.trim();
+  let start = original.indexOf(needle);
+  if (start === -1) {
+    start = original.toLowerCase().indexOf(needle.toLowerCase());
+  }
+  if (start === -1) return original;
+  const end = start + needle.length;
+  return [
+    original.slice(0, start),
+    <mark
+      key="evidence"
+      id={ORIGINAL_EVIDENCE_ID}
+      className="animate-in fade-in-0 duration-300 fill-mode-both motion-reduce:animate-none"
+      style={{
+        background: highlight.caution
+          ? "color-mix(in srgb, var(--color-warning) 26%, var(--color-paper-raised))"
+          : "color-mix(in srgb, var(--color-action) 20%, var(--color-paper-raised))",
+        color: "inherit",
+        borderRadius: "0.15rem",
+        padding: "0.05em 0.12em",
+        boxDecorationBreak: "clone",
+        WebkitBoxDecorationBreak: "clone",
+        boxShadow: highlight.caution
+          ? "0 0 0 2px var(--color-warning-border)"
+          : "0 0 0 2px var(--color-action-border)",
+      }}
+    >
+      {original.slice(start, end)}
+    </mark>,
+    original.slice(end),
+  ];
 }
 
 /** Three reading-width bars in place of the note; keeps layout stable while adapting. */
@@ -112,6 +171,7 @@ function renderLines(
   marks: TextMark[],
   selectedIndex: number | null,
   onSelectMark: (checkIndex: number) => void,
+  spoken: SpokenRange | null,
 ): ReactNode {
   const lines = text.split("\n");
   const nodes: ReactNode[] = [];
@@ -144,6 +204,7 @@ function renderLines(
           onSelectMark,
           marks,
           lineStart,
+          spoken,
         )}
       </span>,
     );
@@ -155,6 +216,42 @@ function renderLines(
   return nodes;
 }
 
+/**
+ * Plain text with the spoken word wrapped, if the spoken range falls inside
+ * this slice. `absStart` is the slice's offset in the full text.
+ */
+function renderPlain(
+  slice: string,
+  absStart: number,
+  spoken: SpokenRange | null,
+  keyPrefix: string,
+): ReactNode {
+  if (!spoken) return slice;
+  const absEnd = absStart + slice.length;
+  if (spoken.end <= absStart || spoken.start >= absEnd) return slice;
+  const s = Math.max(spoken.start, absStart) - absStart;
+  const e = Math.min(spoken.end, absEnd) - absStart;
+  if (e <= s) return slice;
+  return [
+    slice.slice(0, s),
+    <span
+      key={`${keyPrefix}-spoken`}
+      id={spoken.start >= absStart ? SPOKEN_WORD_ID : undefined}
+      className="adapted-spoken"
+      style={{
+        background: "color-mix(in srgb, var(--color-action) 22%, transparent)",
+        borderRadius: "0.2rem",
+        boxShadow: "0 0 0 3px color-mix(in srgb, var(--color-action) 22%, transparent)",
+        transition:
+          "background-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease",
+      }}
+    >
+      {slice.slice(s, e)}
+    </span>,
+    slice.slice(e),
+  ];
+}
+
 function renderMarked(
   text: string,
   marks: TextMark[],
@@ -162,15 +259,23 @@ function renderMarked(
   onSelectMark: (checkIndex: number) => void,
   allMarks: TextMark[],
   lineStart: number,
+  spoken: SpokenRange | null,
 ): ReactNode {
-  if (marks.length === 0) return text;
+  if (marks.length === 0) return renderPlain(text, lineStart, spoken, "line");
 
   const nodes: ReactNode[] = [];
   let cursor = 0;
 
   marks.forEach((mark, i) => {
     if (mark.start > cursor) {
-      nodes.push(text.slice(cursor, mark.start));
+      nodes.push(
+        renderPlain(
+          text.slice(cursor, mark.start),
+          lineStart + cursor,
+          spoken,
+          `gap-${i}`,
+        ),
+      );
     }
     const caution =
       mark.status === "warning" || mark.status === "repair_required";
@@ -224,13 +329,22 @@ function renderMarked(
             "background-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease",
         }}
       >
-        {text.slice(mark.start, mark.end)}
+        {renderPlain(
+          text.slice(mark.start, mark.end),
+          lineStart + mark.start,
+          spoken,
+          `mark-${i}`,
+        )}
       </mark>,
     );
     cursor = mark.end;
   });
 
-  if (cursor < text.length) nodes.push(text.slice(cursor));
+  if (cursor < text.length) {
+    nodes.push(
+      renderPlain(text.slice(cursor), lineStart + cursor, spoken, "tail"),
+    );
+  }
   return nodes;
 }
 
@@ -241,11 +355,11 @@ export function statusLabel(
   detailLabel: string,
   wordingLabel: string,
 ): string {
-  if (working) return "Adapting…";
+  if (working) return "Clarifying…";
   if (listening) return "Reading aloud…";
   if (!overall) return "Paste a source, or use an example.";
   if (overall === "warning" || overall === "repair_required") {
     return "Review a flagged claim against the source.";
   }
-  return `Adapted · ${detailLabel} · ${wordingLabel}`;
+  return `Clarified · ${detailLabel} · ${wordingLabel}`;
 }

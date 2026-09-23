@@ -35,7 +35,7 @@ export function GetStarted() {
                   Web app
                 </h3>
                 <p className="mt-2 leading-relaxed text-pretty text-ink-muted">
-                  Set detail, wording, delivery, and browser behavior — then
+                  Set detail, wording, delivery, and browser behavior, then
                   read in the workspace. Nothing to install.
                 </p>
               </div>
@@ -66,7 +66,7 @@ export function GetStarted() {
                 </h3>
                 <p className="mt-2 leading-relaxed text-pretty text-ink-muted">
                   A thin add-on for pages you already have open. Auto-Adapt is
-                  explicit opt-in — never silent.
+                  explicit opt-in, never silent.
                 </p>
               </div>
               <ol className="m-0 flex list-none flex-col gap-1.5 rounded-lg bg-paper p-4 text-sm leading-relaxed text-ink-muted">
@@ -94,7 +94,7 @@ export function GetStarted() {
             <p className="flex items-start justify-center gap-2 text-sm text-ink-muted">
               <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
               <span>
-                Not in the Chrome Web Store yet — load it unpacked for now.
+                Not in the Chrome Web Store yet; load it unpacked for now.
               </span>
             </p>
           </Reveal>

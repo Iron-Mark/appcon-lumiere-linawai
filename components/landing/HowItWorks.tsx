@@ -6,7 +6,7 @@ const STEPS = [
   {
     icon: BookOpen,
     label: "Read",
-    description: "Open any article, memo, or PDF — Linaw quietly reads it with you.",
+    description: "Open any article, memo, or PDF. Linaw quietly reads it with you.",
   },
   {
     icon: SlidersHorizontal,
@@ -28,7 +28,7 @@ export function HowItWorks() {
           id="how-title"
           eyebrow="How the web app works"
           title="Three steps, zero guesswork."
-          description="Choose preferences, adapt a notice, then review Meaning Check — the original stays one step away."
+          description="Choose preferences, adapt a notice, then review Meaning Check. The original stays one step away."
         />
         <ol className="mt-12 grid list-none gap-10 p-0 md:grid-cols-3 md:gap-6">
           {STEPS.map((step, i) => (

@@ -6,13 +6,13 @@ Collect the user’s default communication preferences in four calm steps, persi
 
 ## Ownership
 
-- Directories: `components/onboarding/`, `app/page.tsx`
+- Directories: `components/onboarding/`, `app/onboarding/`
 - Do not edit `lib/domain/`, `lib/storage/`, or `components/sindi/` contracts—consume them.
-- Wave 0 left `app/page.tsx` as a placeholder; this track replaces that page.
+- **Route gap (landing track):** `/` is now the public landing (`components/landing/`, `app/page.tsx`). Onboarding ships at `/onboarding`. Ownership maps that still list only `app/page.tsx` for this track are stale until updated in `docs/AGENTS.md` / phase README.
 
 ## User-visible behavior
 
-Route: `/`
+Route: `/onboarding` (entry from landing CTA). Not `/`.
 
 Four steps, one preference dimension each:
 

@@ -2,7 +2,12 @@
 
 import type { Check } from "@/lib/domain";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, CheckCircle2, ShieldCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  CircleDashed,
+  ShieldCheck,
+} from "lucide-react";
 import { Sindi, type SindiState } from "@/components/sindi";
 
 type MeaningCheckRailProps = {
@@ -24,13 +29,23 @@ const LAYER_LABELS: Record<string, string> = {
   "Deterministic fact compare": "Dates, times, and numbers match",
   "Actor–value relationships": "Who and when stay paired",
   "Actor-value relationships": "Who and when stay paired",
-  "Semantic verification (NLI): neutral": "No contradiction found",
+  "Semantic verification (NLI): neutral": "Semantic check",
   "Critical fact coverage": "Key facts are all present",
 };
 
 function readerLabel(claim: string): { label: string; layer?: string } {
   const mapped = LAYER_LABELS[claim.trim()];
   return mapped ? { label: mapped, layer: claim } : { label: claim };
+}
+
+/**
+ * A layer that did not actually run reports itself with this reason.
+ * It must not read as a pass — the UI shows it as "not run".
+ */
+const NOT_RUN_REASON = "Semantic check not connected.";
+
+function layerNotRun(check: Check): boolean {
+  return check.reason.trim() === NOT_RUN_REASON;
 }
 
 /** Ray at a size that registers; overrides the mascot's inline 40px slot. */
@@ -52,6 +67,8 @@ export function MeaningCheckRail({
   const hasResults = checks != null && checks.length > 0 && !loading;
   const caution =
     overallStatus === "warning" || overallStatus === "repair_required";
+  const skippedLayers = hasResults ? checks.filter(layerNotRun).length : 0;
+  const ranCount = hasResults ? checks.length - skippedLayers : 0;
 
   return (
     <aside
@@ -145,6 +162,21 @@ export function MeaningCheckRail({
                 Review flagged claims against the source.
               </p>
             ) : null}
+            {skippedLayers > 0 ? (
+              <p
+                style={{
+                  margin: "0.55rem 0 0",
+                  fontSize: "0.8125rem",
+                  lineHeight: 1.45,
+                  color: "var(--color-ink-muted)",
+                }}
+              >
+                {ranCount} of {checks.length} checks ran in this build.{" "}
+                {skippedLayers === 1
+                  ? "One layer is not connected yet."
+                  : `${skippedLayers} layers are not connected yet.`}
+              </p>
+            ) : null}
           </div>
           <ul
             style={{
@@ -158,12 +190,14 @@ export function MeaningCheckRail({
           >
             {checks.map((check, index) => {
               const selected = selectedIndex === index;
+              const notRun = layerNotRun(check);
               const cardCaution =
-                check.status === "warning" ||
-                check.status === "repair_required";
-              const quietPass = check.status === "pass" && !selected;
+                !notRun &&
+                (check.status === "warning" ||
+                  check.status === "repair_required");
+              const quietPass = !notRun && check.status === "pass" && !selected;
               const { label, layer } = readerLabel(check.claim);
-              const showDetail = selected || cardCaution;
+              const showDetail = !notRun && (selected || cardCaution);
 
               return (
                 <li
@@ -176,13 +210,20 @@ export function MeaningCheckRail({
                   <button
                     type="button"
                     id={`meaning-check-card-${index}`}
-                    onClick={() => onSelect(selected ? null : index)}
-                    aria-pressed={selected}
+                    onClick={() => {
+                      if (notRun) return;
+                      onSelect(selected ? null : index);
+                    }}
+                    aria-pressed={notRun ? undefined : selected}
+                    aria-disabled={notRun || undefined}
                     className={cn(
                       "font-ui flex w-full min-h-11 cursor-pointer flex-col text-left text-ink",
                       "rounded-lg border transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out motion-reduce:transition-none",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 active:translate-y-px",
                       showDetail ? "gap-2 px-4 py-3.5" : "gap-1 px-3.5 py-3",
+                      // Not run: visibly inert, never confused with a pass.
+                      notRun &&
+                        "cursor-default border-dashed border-ink-subtle/40 bg-transparent opacity-80 active:translate-y-0",
                       // Quiet pass: still clearly a live control.
                       quietPass &&
                         "border-paper-inset border-l-[3px] border-l-pass/45 bg-transparent hover:border-ink-subtle/50 hover:border-l-pass hover:bg-paper-inset/70",
@@ -206,21 +247,27 @@ export function MeaningCheckRail({
                         fontWeight: 600,
                         letterSpacing: "0.04em",
                         textTransform: "uppercase",
-                        color: cardCaution
-                          ? "var(--color-warning)"
-                          : "var(--color-pass)",
+                        color: notRun
+                          ? "var(--color-ink-subtle)"
+                          : cardCaution
+                            ? "var(--color-warning)"
+                            : "var(--color-pass)",
                       }}
                     >
-                      {cardCaution ? (
+                      {notRun ? (
+                        <CircleDashed size={15} strokeWidth={2} aria-hidden />
+                      ) : cardCaution ? (
                         <AlertTriangle size={15} strokeWidth={2} aria-hidden />
                       ) : (
                         <CheckCircle2 size={15} strokeWidth={2} aria-hidden />
                       )}
-                      {check.status === "repair_required"
-                        ? "Needs review"
-                        : check.status === "warning"
-                          ? "Warning"
-                          : "Pass"}
+                      {notRun
+                        ? "Not run"
+                        : check.status === "repair_required"
+                          ? "Needs review"
+                          : check.status === "warning"
+                            ? "Warning"
+                            : "Pass"}
                     </span>
                     <span
                       style={{
@@ -240,6 +287,17 @@ export function MeaningCheckRail({
                         }}
                       >
                         {layer}
+                      </span>
+                    ) : null}
+                    {notRun ? (
+                      <span
+                        style={{
+                          fontSize: "0.8125rem",
+                          lineHeight: 1.45,
+                          color: "var(--color-ink-muted)",
+                        }}
+                      >
+                        {check.reason} Not counted toward the result.
                       </span>
                     ) : null}
                     {showDetail && check.reason ? (
@@ -334,7 +392,7 @@ function EmptyRail({
               color: "var(--color-ink-muted)",
             }}
           >
-            Checks will appear here after you adapt a note.
+            Checks will appear here after you clarify a note.
           </p>
         )}
       </div>

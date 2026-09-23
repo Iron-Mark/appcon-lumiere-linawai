@@ -24,11 +24,11 @@ Define **Ray**, a small sun guide for clarity (“Less confusion. More clarity.�
 | Sheet look | Product `state` | Motion / look | Default line (one short sentence) |
 | --- | --- | --- | --- |
 | **Default** — calm smile, ready to help | `prompt`, `reading` | Soft presence; `reading` may shrink so the note leads | `prompt`: names the preference just chosen when applicable; otherwise a short prompt helper. `reading`: minimal or empty |
-| **Processing** — working behind the scenes | `working` | Pill rays + cream motion arcs rotate (~3s loop); arcs pulse ~240ms opacity. Face fixed (closer dots, no mouth). **Reduced motion** → still frame (arcs visible, no spin/pulse) | e.g. “Adapting…” |
+| **Processing** — working behind the scenes | `working` | Pill rays + cream motion arcs rotate (~3s loop); arcs pulse ~240ms opacity with staggered delays. Face fixed (closer dots, no mouth). **Reduced motion** → still frame (arcs visible, no spin/pulse) | e.g. “Adapting…” |
 | **Success** — information is clearer now | `pass` | Happy closed eyes (⌢); six cream bloom lines between pills; static; no confetti | “No issue found in these checks.” |
 | **Empty** — a fresh start | `empty` | Peaceful closed eyes (⌣); faintly softer smile; rays slightly dimmed; static | e.g. “A fresh start, whenever you're ready.” |
 | **Listening** (product iteration) | `listening` | Softer open eyes (highlights); top/bottom rays clear; side rays quieter and scale/opacity pulse ~280ms. Stops when speech stops; **reduced motion** → still quieter sides | e.g. “Listening…” / reading aloud cue |
-| **Warning** (product iteration) | `warning` | Soft inward brows, slightly oval eyes, wavy concerned mouth; gentle tilt inside the SVG (not layout). **Reduced motion** → fixed slight tilt | Cautious line from §12, e.g. “The time appears to be attached to the wrong group.” or “Important condition may have changed. Review source.” |
+| **Warning** (product iteration) | `warning` | Soft inward brows, slightly oval eyes, wavy concerned mouth; gentle tilt/sway inside the SVG (not layout). **Reduced motion** → fixed slight tilt | Cautious line from §12, e.g. “The time appears to be attached to the wrong group.” or “Important condition may have changed. Review source.” |
 
 Motion uses **transform/opacity only** and must not change layout bounds. Duration 150–300ms for short loops (spin may be slower). Honor `prefers-reduced-motion`.
 

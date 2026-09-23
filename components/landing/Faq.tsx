@@ -8,11 +8,11 @@ import { SectionHeading } from "./SectionHeading";
 const FAQS = [
   {
     q: "How does Linaw know something important was lost?",
-    a: "Before adapting, Linaw extracts the load-bearing parts of the source — conditions, quantities, deadlines, negations, and who-does-what. Every adapted view is then checked against that list, and anything missing or changed is flagged with the original phrase.",
+    a: "Before adapting, Linaw extracts the load-bearing parts of the source: conditions, quantities, deadlines, negations, and who-does-what. Every adapted view is then checked against that list, and anything missing or changed is flagged with the original phrase.",
   },
   {
     q: "Do I have to tell anyone I need help reading?",
-    a: "No. There is no diagnosis, no special mode, and no profile question. Linaw is designed so anyone can use it for any reason — tired eyes, a second language, or just a long memo.",
+    a: "No. There is no diagnosis, no special mode, and no profile question. Linaw is designed so anyone can use it for any reason: tired eyes, a second language, or just a long memo.",
   },
   {
     q: "What does Taglish-aware mean?",
@@ -20,7 +20,7 @@ const FAQS = [
   },
   {
     q: "Does it work on school or office computers?",
-    a: "Yes. If your device blocks extensions, the web app gives you the same views and verification — set your preferences in onboarding, then read in the workspace.",
+    a: "Yes. If your device blocks extensions, the web app gives you the same views and verification. Set your preferences in onboarding, then read in the workspace.",
   },
   {
     q: "Is Linaw free?",

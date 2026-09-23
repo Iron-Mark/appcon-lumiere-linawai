@@ -38,8 +38,8 @@ describe("Fidelity Guard — seeded relationship corruption", () => {
     expect(warning?.reason).toBe(REASON_WRONG_GROUP);
   });
 
-  it("pipeline overallStatus is warning with the expected reason", () => {
-    const result = runFidelityGuard({
+  it("pipeline overallStatus is warning with the expected reason", async () => {
+    const result = await runFidelityGuard({
       source,
       adaptedText: corruption.adaptedText,
       meaningMap: goldMeaningMap,
@@ -56,8 +56,8 @@ describe("Fidelity Guard — seeded relationship corruption", () => {
     ).toBe(true);
   });
 
-  it("NLI slot stays neutral and disconnected (no model call)", () => {
-    const nli = runNliSlot({
+  it("NLI slot stays neutral and disconnected (no model call)", async () => {
+    const nli = await runNliSlot({
       source,
       adaptedText: corruption.adaptedText,
     });
@@ -67,8 +67,8 @@ describe("Fidelity Guard — seeded relationship corruption", () => {
     expect(nli.check.claim.toLowerCase()).toContain("neutral");
   });
 
-  it("never uses forbidden certainty copy", () => {
-    const result = runFidelityGuard({
+  it("never uses forbidden certainty copy", async () => {
+    const result = await runFidelityGuard({
       source,
       adaptedText: corruption.adaptedText,
       meaningMap: goldMeaningMap,
