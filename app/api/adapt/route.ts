@@ -10,6 +10,10 @@ import {
 import { modelCacheKey, readModelCache, writeModelCache } from "./cache";
 import { adaptWithModel, modelConfigured, readModelProviders } from "./model";
 
+/** Gateway abort is 75s. 90s lets the route return fixture instead of a platform kill. */
+export const maxDuration = 90;
+export const runtime = "nodejs";
+
 /**
  * Adapt POST handler.
  *

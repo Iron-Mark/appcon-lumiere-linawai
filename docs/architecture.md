@@ -110,11 +110,13 @@ flowchart LR
 
 ## Adapt path
 
-`POST /api/adapt` validates `AdaptRequestSchema`. Seeded failure source always uses the fixture. Otherwise Gemini, then OpenAI-compatible gateway, then fixture. First grounded non-empty `adaptedText` wins.
+`POST /api/adapt` validates `AdaptRequestSchema`. Seeded failure source always uses the fixture. Otherwise Gemini, then the OpenAI-compatible gateway (Pandev), then the fixture. First grounded non-empty `adaptedText` wins.
+
+A successful model answer is kept in process memory (`app/api/adapt/cache.ts`), keyed by normalized source plus detail and wording. Delivery is not part of the key, so Read and Listen share one answer. Cap 50, oldest dropped. Not written to disk. A restart clears it. A hit returns the same body with header `x-linaw-adapter: model:cache` and `adapter: "model"`. Fixture answers and the seeded example are not stored.
 
 `GET /api/adapt` → `{ adapter, providers }` for the composer disclosure.
 
-Response: `adaptedText`, `meaningMap`, `checks[]`, `overallStatus`, `adapter: "model" | "fixture"`. Header `x-linaw-adapter: model:gemini | model:openai-compatible | fixture`. `{ error }` → 400 → `AdaptRequestError`. Network / invalid body → client fixture, labelled `adapter: "fixture"`. Source is not logged.
+Response: `adaptedText`, `meaningMap`, `checks[]`, `overallStatus`, `adapter: "model" | "fixture"`. Header `x-linaw-adapter: model:gemini | model:openai-compatible | model:cache | fixture`. `{ error }` → 400 → `AdaptRequestError`. Network / invalid body → client fixture, labelled `adapter: "fixture"`. Source is not logged.
 
 | Order | Provider | Env | Call |
 | --- | --- | --- | --- |
@@ -168,7 +170,7 @@ flowchart TD
 | `/settings` | preferences + optional local profile |
 | `/home` | redirects to `/content` |
 | `/todo` | backlog |
-| `extension/` | MV3; same `adapt()`. `POST /api/adapt` is **relative to the host page**, so third-party origins fall through to the fixture |
+| `extension/` | MV3; same `adapt()`. The service worker POSTs to `http://127.0.0.1:3000` then `http://localhost:3000`. A model answer replaces the main article (selection only if it sits inside that article; Auto-Clarify replaces the whole article). A fixture answer does not. **Page as it was** restores the original words |
 
 Share: `/read?s=<base64url>`, ≤ 4,000 source chars. Recipient's own preferences apply. PDF/text parse is client-side (`readSourceFile.ts`). Ungrounded map (no evidence substring in the pasted source) is shown as not produced from that text.
 

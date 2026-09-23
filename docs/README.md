@@ -4,7 +4,7 @@
 
 Linaw AI is an adaptive information platform: a web app and Chrome companion that presents important messages the way you prefer—detail, wording, and delivery—then runs a **Meaning Check** so critical facts, conditions, and relationships are less likely to change silently.
 
-This repository is a single Next.js app at the root. Adaptation defaults to the in-browser fixture. `POST /api/adapt` exists; the client in `lib/adapt/http.ts` calls that route and falls back to the fixture when no model key is set. No model key is committed to git. Do not add other API routes.
+This repository is a single Next.js app at the root. `POST /api/adapt` tries Gemini, then the OpenAI-compatible gateway, then the offline fixture. A successful model answer is cached in server memory. The extension asks that same route on the local app; if the app is down, the panel uses the in-browser fixture and does not replace the page. No model key is committed to git. Do not add other API routes.
 
 ## Competition brief
 

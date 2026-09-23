@@ -12,6 +12,8 @@ import {
   pageFocusBlocks,
   releasePageReadingHold,
   setPageFocus,
+  shouldReplacePageWords,
+  showClarifiedText,
   syncPageReading,
 } from "./page-reading";
 
@@ -113,5 +115,40 @@ describe("syncPageReading", () => {
     expect(document.querySelector("article")?.hasAttribute("data-linaw-page-reading")).toBe(
       true,
     );
+  });
+});
+
+describe("showClarifiedText", () => {
+  it("replaces the article with a model answer and restores the original words", () => {
+    const article = mountArticle();
+    const before = article.textContent ?? "";
+
+    showClarifiedText(
+      article,
+      "Confirm your seat by Thursday at 5 PM.\n- Mentors arrive at 8:30 AM\n- Others arrive at 9:00 AM",
+    );
+
+    expect(article.querySelector("script")).toBeNull();
+    expect(article.querySelectorAll("p")).toHaveLength(1);
+    expect(article.querySelectorAll("li")).toHaveLength(2);
+    expect(article.textContent).toContain("Confirm your seat");
+    expect(article.textContent).not.toBe(before);
+
+    showClarifiedText(article, "A second model answer.");
+    expect(article.textContent).toContain("A second model answer.");
+
+    holdOffPageReading();
+    expect(article.textContent).toBe(before);
+  });
+
+  it("does not change the article for a fixture answer", () => {
+    const article = mountArticle();
+    const before = article.textContent;
+
+    expect(shouldReplacePageWords("fixture", true)).toBe(false);
+    expect(shouldReplacePageWords(undefined, true)).toBe(false);
+    expect(shouldReplacePageWords("model", false)).toBe(false);
+    expect(shouldReplacePageWords("model", true)).toBe(true);
+    expect(article.textContent).toBe(before);
   });
 });
