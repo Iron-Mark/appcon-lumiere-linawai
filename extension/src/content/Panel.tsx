@@ -299,7 +299,11 @@ export function Panel({
       )}
 
       {/* Status Pill: Saved preferences / Meaning checked + summary + Settings gear */}
-      <div className="linaw-status-pill">
+      <div
+        className={`linaw-status-pill ${
+          pillInfo.isWarning ? "is-warning" : "is-pass"
+        }`}
+      >
         <div className="linaw-status-pill-left">
           <span
             className={`linaw-status-pill-badge ${
@@ -525,7 +529,7 @@ export function Panel({
         </section>
       )}
 
-      {/* Bottom Action Bar: Outlined [📄 Copy] and Solid accent [▶ Listen] */}
+      {/* Bottom Action Bar: [Copy] with checkmark feedback and Primary [Listen] with SVG play */}
       {!isCurrentOriginDisabled && (
         <div className="linaw-action-bar">
           <button
@@ -545,8 +549,44 @@ export function Panel({
               });
             }}
           >
-            <span className="linaw-btn-icon">📄</span>
-            <span>{copied ? "Copied! ✓" : "Copy"}</span>
+            {copied ? (
+              <>
+                <svg
+                  className="linaw-btn-svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#16a34a"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>Copied!</span>
+              </>
+            ) : (
+              <>
+                <svg
+                  className="linaw-btn-svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                <span>Copy</span>
+              </>
+            )}
           </button>
 
           <button
@@ -562,8 +602,35 @@ export function Panel({
               }
             }}
           >
-            <span className="linaw-btn-icon">{listening ? "⏹" : "▶"}</span>
-            <span>{listening ? "Stop" : "Listen"}</span>
+            {listening ? (
+              <>
+                <svg
+                  className="linaw-btn-svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <rect x="5" y="5" width="14" height="14" rx="2" />
+                </svg>
+                <span>Stop</span>
+              </>
+            ) : (
+              <>
+                <svg
+                  className="linaw-btn-svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <polygon points="6 4 20 12 6 20 6 4" />
+                </svg>
+                <span>Listen</span>
+              </>
+            )}
           </button>
         </div>
       )}
