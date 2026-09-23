@@ -81,6 +81,16 @@ Forbidden shortcuts:
 - collapsing Fidelity Guard layers into one opaque check;
 - inventing a preference shape only the fixture understands.
 
+## Branches
+
+| Branch | Role |
+| --- | --- |
+| `main` | Production. Default on GitHub. |
+| `dev` | Integration. Features merge here; promote `dev` → `main` for production. |
+| `feat/short-name` | Feature work. Cut from `dev`, open PRs into `dev` only. |
+
+Flow: `feat/*` → `dev` → `main`. Do not open feature PRs straight to `main`.
+
 ## Spec workflow
 
 1. Read `spec/AGENTS.md`.
