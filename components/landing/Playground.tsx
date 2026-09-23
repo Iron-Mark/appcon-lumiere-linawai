@@ -282,9 +282,9 @@ export function Playground() {
 
           <aside
             aria-labelledby="checks-title"
-            className="flex flex-col gap-4 rounded-xl border border-border bg-paper-raised p-6 shadow-[0_1px_0_color-mix(in_srgb,var(--color-ink)_5%,transparent)]"
+            className="flex flex-col gap-4 lg:pt-2"
           >
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
               <h3 id="checks-title" className="font-reading m-0 font-semibold text-ink">
                 Meaning Check
               </h3>
@@ -293,15 +293,15 @@ export function Playground() {
               </p>
             </div>
 
-            <ul className="flex list-none flex-col gap-2 p-0">
+            <ul className="flex list-none flex-col divide-y divide-border border-t border-border p-0">
               {CHECKS.map((check) => {
                 const flagged = isFlagged && check.id === "condition";
                 return (
                   <li
                     key={check.id}
                     className={cn(
-                      "flex items-start gap-3 rounded-xl border p-3 transition-colors",
-                      flagged ? "border-warning-border/50 bg-warning-soft" : "border-border bg-background",
+                      "flex items-start gap-3 py-3 transition-colors",
+                      flagged && "bg-warning-soft/50 -mx-2 px-2",
                     )}
                   >
                     {flagged ? (
@@ -318,7 +318,7 @@ export function Playground() {
               })}
             </ul>
 
-            <label className="mt-auto flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-dashed border-border p-3 text-sm text-ink">
+            <label className="mt-auto flex cursor-pointer items-center justify-between gap-4 border-t border-dashed border-border pt-4 text-sm text-ink">
               <span>Simulate a careless summary</span>
               <span className="relative inline-flex">
                 <input

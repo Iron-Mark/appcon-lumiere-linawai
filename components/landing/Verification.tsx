@@ -77,11 +77,11 @@ export function Verification() {
         </Reveal>
 
         <Reveal delay={160}>
-          <dl className="font-ui mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-3">
+          <dl className="font-ui mx-auto mt-10 grid max-w-3xl divide-y divide-border border-t border-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             {CHECK_TYPES.map(({ term, detail }) => (
               <div
                 key={term}
-                className="flex flex-col gap-1 rounded-xl border border-border bg-paper-raised px-5 py-4 text-center shadow-[0_1px_0_color-mix(in_srgb,var(--color-ink)_5%,transparent)]"
+                className="flex flex-col gap-1 px-5 py-4 text-center sm:py-5"
               >
                 <dt className="font-semibold text-ink">{term}</dt>
                 <dd className="m-0 text-sm text-ink-muted">{detail}</dd>

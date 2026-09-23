@@ -12,7 +12,6 @@ import {
 import type { ReactNode } from "react";
 import { Reveal } from "./Reveal";
 import { SectionHeading } from "./SectionHeading";
-import { cn } from "@/lib/utils";
 
 const VIEWS = [
   { icon: FileText, name: "Full", note: "The original, untouched" },
@@ -21,26 +20,23 @@ const VIEWS = [
   { icon: Headphones, name: "Listen", note: "Read aloud at your pace" },
 ];
 
-function FeatureCard({
-  className,
+function FeatureBlock({
   children,
   delay,
   href,
   linkLabel,
+  className,
 }: {
-  className?: string;
   children: ReactNode;
   delay?: number;
   href?: string;
   linkLabel?: string;
+  className?: string;
 }) {
   return (
     <Reveal
       delay={delay}
-      className={cn(
-        "font-ui flex flex-col gap-4 rounded-xl border border-border bg-paper-raised p-6 shadow-[0_1px_0_color-mix(in_srgb,var(--color-ink)_5%,transparent)] transition-[border-color,box-shadow] hover:border-action-border/60 hover:shadow-[0_2px_8px_color-mix(in_srgb,var(--color-ink)_6%,transparent)] md:p-7",
-        className,
-      )}
+      className={`font-ui flex flex-col gap-4 ${className ?? ""}`}
     >
       {children}
       {href && linkLabel ? (
@@ -81,8 +77,8 @@ export function Features() {
           description="Detail, wording, delivery, and browser behavior: preference language only. Linaw adapts without diagnosing anyone."
         />
 
-        <div className="mt-12 grid gap-4 md:grid-cols-3">
-          <FeatureCard
+        <div className="mt-12 grid gap-10 md:grid-cols-3 md:gap-x-8 md:gap-y-12">
+          <FeatureBlock
             className="md:col-span-2 md:row-span-2"
             href="#try-it"
             linkLabel="Try all four views"
@@ -95,14 +91,14 @@ export function Features() {
                 changes, only the shape it takes.
               </p>
             </div>
-            <ul className="mt-auto grid list-none gap-3 p-0 pt-4 sm:grid-cols-2">
+            <ul className="mt-2 grid list-none gap-6 p-0 sm:grid-cols-2">
               {VIEWS.map((view) => (
                 <li
                   key={view.name}
-                  className="flex min-h-11 items-center gap-3 rounded-lg border border-border bg-paper p-4 transition-colors hover:border-action-border/50"
+                  className="flex min-h-11 items-start gap-3"
                 >
                   <view.icon
-                    className="size-5 shrink-0 text-ink/70"
+                    className="mt-0.5 size-5 shrink-0 text-action"
                     strokeWidth={1.75}
                     aria-hidden="true"
                   />
@@ -113,9 +109,9 @@ export function Features() {
                 </li>
               ))}
             </ul>
-          </FeatureCard>
+          </FeatureBlock>
 
-          <FeatureCard delay={60} href="#verification" linkLabel="See Meaning Check">
+          <FeatureBlock delay={60} href="#verification" linkLabel="See Meaning Check">
             <FeatureIcon icon={ShieldCheck} />
             <div>
               <h3 className="font-reading text-lg font-semibold text-ink">Meaning Check</h3>
@@ -124,9 +120,9 @@ export function Features() {
                 so you can review the source, not trust a rewrite blindly.
               </p>
             </div>
-          </FeatureCard>
+          </FeatureBlock>
 
-          <FeatureCard delay={120} href="#try-it" linkLabel="Try Taglish in the demo">
+          <FeatureBlock delay={120} href="#try-it" linkLabel="Try Taglish in the demo">
             <FeatureIcon icon={Languages} />
             <div>
               <h3 className="font-reading text-lg font-semibold text-ink">Taglish-aware</h3>
@@ -135,11 +131,11 @@ export function Features() {
                 English, Tagalog, or both.
               </p>
             </div>
-          </FeatureCard>
+          </FeatureBlock>
 
-          <FeatureCard
+          <FeatureBlock
             delay={180}
-            className="md:col-span-3 md:flex-row md:items-center md:gap-6"
+            className="md:col-span-3 md:flex-row md:items-center md:gap-6 md:border-t md:border-border md:pt-10"
             href="/onboarding"
             linkLabel="Open Linaw — no special mode"
           >
@@ -151,7 +147,7 @@ export function Features() {
                 use it, so no one has to identify as struggling to use it.
               </p>
             </div>
-          </FeatureCard>
+          </FeatureBlock>
         </div>
       </div>
     </section>

@@ -50,7 +50,7 @@ import { ErrorToast } from "./ErrorToast";
 import { ModeBar } from "./ModeBar";
 import { buildShareLink } from "./shareLink";
 import { MeaningCheckRail } from "./MeaningCheckRail";
-import { NoteCard } from "./NoteCard";
+import { NoteCard, type NoteView } from "./NoteCard";
 import { buildMarks, warningLineForChecks } from "./marks";
 import { statusLabel } from "./AdaptedText";
 import { useListen } from "./useListen";
@@ -64,6 +64,9 @@ import {
 } from "./readSourceFile";
 
 const ADAPT_FAILED_MESSAGE = "Could not clarify this note.";
+/** Layout choice for the note (text / at a glance / one at a time). */
+const VIEW_STORAGE_KEY = "linaw.read.view";
+const NOTE_VIEW_VALUES: NoteView[] = ["text", "glance", "focus"];
 /** Draft survives a reload during a demo; cleared when the source is cleared. */
 const DRAFT_STORAGE_KEY = "linaw.read.draft";
 
@@ -218,10 +221,9 @@ export function ReadingWorkspace({
     setResultsRevealed(true);
     void runAdaptRef.current?.(failed.source, failed.prefs, failed.options);
   }, []);
-  const errorAction =
-    error === ADAPT_FAILED_MESSAGE && failedRunRef.current
-      ? { label: "Retry", onClick: retryAdapt }
-      : null;
+  const errorAction = error && failedRunRef.current
+    ? { label: "Retry", onClick: retryAdapt }
+    : null;
 
   const prefersReducedMotion = () =>
     typeof window !== "undefined" &&
@@ -284,12 +286,16 @@ export function ReadingWorkspace({
         if (shouldListen && response.adaptedText.trim()) {
           startListen(response.adaptedText);
         }
-      } catch {
+      } catch (err) {
         if (generation !== adaptGeneration.current) return;
         setWorking(false);
         // Keep the exact failed request so the toast can offer Retry.
         failedRunRef.current = { source, prefs, options };
-        setError(ADAPT_FAILED_MESSAGE);
+        const message =
+          err instanceof Error && err.message.trim()
+            ? err.message.trim()
+            : ADAPT_FAILED_MESSAGE;
+        setError(message);
         if (!resultRef.current) {
           setResultsRevealed(false);
         }
@@ -431,6 +437,27 @@ export function ReadingWorkspace({
     return () => {
       if (noteCopiedTimerRef.current) clearTimeout(noteCopiedTimerRef.current);
     };
+  }, []);
+
+  /** Note layout — remembered across sessions like the other reading choices. */
+  const [noteView, setNoteView] = useState<NoteView>("text");
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(VIEW_STORAGE_KEY);
+      if (raw && (NOTE_VIEW_VALUES as string[]).includes(raw)) {
+        setNoteView(raw as NoteView);
+      }
+    } catch {
+      // Fine — default to text.
+    }
+  }, []);
+  const onNoteViewChange = useCallback((next: NoteView) => {
+    setNoteView(next);
+    try {
+      window.localStorage.setItem(VIEW_STORAGE_KEY, next);
+    } catch {
+      // Best effort.
+    }
   }, []);
 
   /** Narrow screens: the rail stacks below the note; take the reader there. */
@@ -1393,7 +1420,7 @@ export function ReadingWorkspace({
                   <strong style={{ fontWeight: 600 }}>
                     This note was not produced from your text.
                   </strong>{" "}
-                  The adapter returned the built-in example instead — the
+                  The adapter returned the built-in example instead. The
                   live model may be unavailable or not connected in this
                   build. The checks below refer to that example, not to what
                   you pasted.
@@ -1422,6 +1449,13 @@ export function ReadingWorkspace({
               spoken={spoken}
               originalHighlight={originalHighlight}
               onJumpToChecks={jumpToChecks}
+              view={noteView}
+              onViewChange={onNoteViewChange}
+              meaningMap={result?.meaningMap ?? null}
+              checks={result?.checks ?? null}
+              onSelectCheck={onSelectCheck}
+              onSpeakText={(text) => startListen(text)}
+              onStopSpeaking={stopListen}
             />
             {result && !working ? (
               <div
