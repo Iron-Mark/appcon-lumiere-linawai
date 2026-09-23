@@ -43,7 +43,10 @@ export async function getPreferences(): Promise<ExtensionPreferences> {
   const wording: Wording = raw.wording === "original" ? "original" : "plain";
   const delivery: Delivery = raw.delivery === "listen" ? "listen" : "read";
   const browserBehavior: BrowserBehavior =
-    raw.browserBehavior === "auto_adapt" ? "auto_adapt" : "manual";
+    raw.browserBehavior === "auto_adapt" ||
+    (raw.browserBehavior as unknown as string) === "auto"
+      ? "auto_adapt"
+      : "manual";
   const disabledOrigins: string[] = Array.isArray(raw.disabledOrigins)
     ? raw.disabledOrigins.filter((item): item is string => typeof item === "string")
     : [];
@@ -140,11 +143,14 @@ export async function savePreferences(
   return updatePreferences(preferences);
 }
 
-/** Auto-Adapt is on only when the user explicitly chose auto_adapt. */
+/** Auto-Adapt is on only when the user explicitly chose auto_adapt or auto. */
 export function isAutoAdaptEnabled(
   preferences?: { browserBehavior?: string } | null,
 ): boolean {
-  return preferences?.browserBehavior === "auto_adapt";
+  return (
+    preferences?.browserBehavior === "auto_adapt" ||
+    preferences?.browserBehavior === "auto"
+  );
 }
 
 /**

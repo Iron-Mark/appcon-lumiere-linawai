@@ -263,6 +263,22 @@ function updateFab() {
   }
 }
 
+async function handleTextSelection() {
+  if (state.disabled) return;
+  const selection = getCurrentSelectionText();
+  if (selection && selection.length > 20) {
+    try {
+      await chrome.runtime.sendMessage({
+        type: "LINAW_TEXT_SELECTED",
+        text: selection,
+      });
+    } catch {
+      // Background worker might be idle or asleep
+    }
+    await chrome.storage.local.set({ pendingSourceText: selection });
+  }
+}
+
 async function openWithSource(source: string) {
   if (state.disabled) return;
   const trimmed = source.trim();
@@ -277,11 +293,22 @@ async function openWithSource(source: string) {
 async function openWithSelection() {
   const selection = getCurrentSelectionText();
   if (!selection) return;
+  if (selection.length > 20) {
+    try {
+      await chrome.runtime.sendMessage({
+        type: "LINAW_TEXT_SELECTED",
+        text: selection,
+      });
+    } catch {
+      // Ignore
+    }
+    await chrome.storage.local.set({ pendingSourceText: selection });
+  }
   await openWithSource(selection);
 }
 
 /**
- * Auto-Adapt only after explicit opt-in (browserBehavior === auto_adapt)
+ * Auto-Adapt only after explicit opt-in (browserBehavior === auto_adapt or auto)
  * and when this origin is not disabled. Never sends page text before consent.
  */
 async function maybeAutoAdapt() {
@@ -290,18 +317,38 @@ async function maybeAutoAdapt() {
   if (!isAutoAdaptEnabled(state.preferences)) return;
   const text = extractMainReadableText();
   if (!text) return;
+  await chrome.storage.local.set({ pendingSourceText: text });
+  try {
+    await chrome.runtime.sendMessage({
+      type: "LINAW_TEXT_SELECTED",
+      text,
+    });
+  } catch {
+    // service worker may be starting up
+  }
   await openWithSource(text);
 }
 
 async function bootstrap() {
-  state.disabled = await isOriginDisabled(location.origin);
+  const origin = window.location.origin;
+  state.disabled = await isOriginDisabled(origin);
 
-  // Seed chrome.storage with the same schema; Auto-Adapt stays manual until opt-in.
+  // If disabled, do not attach listeners or perform automatic extraction
+  if (state.disabled) {
+    return;
+  }
+
+  // Seed chrome.storage with default preferences if not yet present
   const raw = await chrome.storage.local.get("linaw.preferences.v1");
   if (raw["linaw.preferences.v1"] == null) {
     await savePreferences(DEFAULT_PREFERENCES);
   }
   state.preferences = await loadPreferences();
+
+  // Listen for text selection (mouseup); if length > 20, notify background and store
+  document.addEventListener("mouseup", () => {
+    void handleTextSelection();
+  });
 
   document.addEventListener("selectionchange", () => {
     updateFab();
@@ -315,9 +362,12 @@ async function bootstrap() {
     return undefined;
   });
 
-  if (!state.disabled) {
+  // If browserBehavior === "auto", extract readable article/main text on page load as default content;
+  // if "manual", strictly wait for user selection.
+  if (isAutoAdaptEnabled(state.preferences)) {
     void maybeAutoAdapt();
   }
 }
 
 void bootstrap();
+

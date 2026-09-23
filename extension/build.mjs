@@ -6,7 +6,7 @@
  *   node extension/build.mjs
  */
 import * as esbuild from "../node_modules/esbuild/lib/main.js";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -93,11 +93,16 @@ await esbuild.build({
   outfile: path.join(__dirname, "dist/content.js"),
 });
 
+const backgroundEntry = existsSync(path.join(__dirname, "src/background/index.ts"))
+  ? path.join(__dirname, "src/background/index.ts")
+  : path.join(__dirname, "src/background.ts");
+
 await esbuild.build({
   ...shared,
-  entryPoints: [path.join(__dirname, "src/background.ts")],
+  entryPoints: [backgroundEntry],
   outfile: path.join(__dirname, "dist/background.js"),
 });
+
 
 // Touch require so tooling notices node resolution stayed local to the monorepo.
 void require.resolve("../node_modules/esbuild/package.json");
