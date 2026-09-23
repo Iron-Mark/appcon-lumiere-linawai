@@ -34,22 +34,22 @@ export function HowItWorks() {
           title="Three steps, zero guesswork."
           description="Choose preferences, adapt a notice, then review Meaning Check. The original stays one step away."
         />
-        <ol className="mt-12 grid list-none gap-6 p-0 md:grid-cols-3 md:gap-5">
+        <ol className="mt-12 grid list-none gap-0 divide-y divide-border p-0 md:grid-cols-3 md:divide-x md:divide-y-0">
           {STEPS.map((step, i) => (
             <Reveal
               as="li"
               key={step.label}
               delay={i * 80}
-              className="relative flex flex-col gap-4 rounded-xl border border-border bg-paper-raised p-6 shadow-[0_1px_0_color-mix(in_srgb,var(--color-ink)_5%,transparent)] md:p-7"
+              className="relative flex flex-col gap-4 py-8 md:px-8 md:py-0 md:first:pl-0 md:last:pr-0"
             >
               <div className="flex items-center gap-3">
                 <span
                   aria-hidden="true"
-                  className="font-ui text-xs font-semibold tabular-nums tracking-wider text-ink-subtle"
+                  className="font-reading text-3xl font-semibold tabular-nums leading-none text-ink-subtle"
                 >
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <span className="flex size-11 items-center justify-center rounded-lg border border-border bg-paper">
+                <span className="flex size-11 items-center justify-center rounded-lg bg-action-soft">
                   <step.icon
                     className="size-5 text-action"
                     strokeWidth={1.75}
@@ -59,7 +59,7 @@ export function HowItWorks() {
                 {i < STEPS.length - 1 ? (
                   <span
                     aria-hidden="true"
-                    className="absolute top-1/2 -right-3 hidden -translate-y-1/2 items-center md:flex"
+                    className="absolute top-1/2 right-0 z-10 hidden size-7 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full bg-paper md:flex"
                   >
                     <ChevronRight className="size-4 text-ink-subtle" />
                   </span>
@@ -77,13 +77,6 @@ export function HowItWorks() {
             </Reveal>
           ))}
         </ol>
-        <p className="font-ui mt-10 text-center text-base leading-relaxed text-ink-muted">
-          See it in action —{" "}
-          <a href="#try-it" className="landing-inline-link">
-            try the live demo
-          </a>
-          .
-        </p>
       </div>
     </section>
   );

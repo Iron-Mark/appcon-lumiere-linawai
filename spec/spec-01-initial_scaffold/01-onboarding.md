@@ -21,7 +21,7 @@ Four steps, one preference dimension each:
 | 1 | Detail | Full · Key Points | `full` · `key_points` |
 | 2 | Wording | Original · Plain Language | `original` · `plain` |
 | 3 | Delivery | Read · Listen | `read` · `listen` |
-| 4 | Browser behavior | Auto-Adapt · Manual | `auto_adapt` · `manual` |
+| 4 | Browser behavior | Auto-Clarify · Manual | `auto_adapt` · `manual` |
 
 Chrome pattern (Duolingo-inspired):
 

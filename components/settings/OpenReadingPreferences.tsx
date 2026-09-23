@@ -10,6 +10,7 @@ import {
   type Wording,
 } from "@/lib/domain";
 import { preferenceStore } from "@/lib/storage/preferences";
+import { LINAW_PREFERENCES_CHANGED_EVENT } from "@/lib/storage/preferences-sync";
 import { ReadingPreferencesDialog } from "@/components/read/ModeBar";
 
 /**
@@ -29,8 +30,17 @@ export function OpenReadingPreferences() {
       if (stored) setPreferences(stored);
       setReady(true);
     })();
+
+    const onExternalPrefs = (event: Event) => {
+      const detail = (event as CustomEvent<Preferences>).detail;
+      if (!detail || cancelled) return;
+      setPreferences(detail);
+    };
+    window.addEventListener(LINAW_PREFERENCES_CHANGED_EVENT, onExternalPrefs);
+
     return () => {
       cancelled = true;
+      window.removeEventListener(LINAW_PREFERENCES_CHANGED_EVENT, onExternalPrefs);
     };
   }, []);
 

@@ -2,28 +2,30 @@
 
 ## Status
 
-**Planned, not started.** Do not implement this phase until the team explicitly turns the model on. Default runtime stays the in-browser fixture.
+**Wired, off unless a key is set.** Default runtime is the fixture, on the server and as the in-browser fallback. Do not commit a key.
 
 ## Purpose
 
-Replace the fixture-backed `adapt()` implementation with a live Gemini call behind the same client port, without changing UI callers or adding an API route.
+Call Gemini from `POST /api/adapt` only when `GEMINI_API_KEY` is set, behind the same `adapt()` port. An OpenAI-compatible gateway is the second provider. If neither is configured, or the model call fails, the route runs the fixture.
 
-## Ownership (when started)
+## Ownership
 
 | File | Action |
 | --- | --- |
-| `lib/adapt/http.ts` | **Add** — Gemini extraction + adaptation (AI SDK / gemini-3.8-flash when wired) |
-| `lib/adapt/index.ts` | **Switch selector** from `./fixture` to `./http` |
-| `lib/adapt/prompts.ts` | **Reuse** — system/user prompt builders already live here; do not duplicate a long prompt dump in this spec |
-| `lib/adapt/port.ts` | Unchanged — `AdaptFn` shape |
-| UI / extension | Keep calling `adapt()` via `lib/adapt` only |
+| `app/api/adapt/route.ts` | **Exists.** Fixture by default. Model only when `modelConfigured()` is true. Seeded failure source always uses the fixture. |
+| `app/api/adapt/model.ts` | **Exists.** Gemini, then the gateway. No source text in logs. Keys stay in the process. |
+| `lib/adapt/http.ts` | **Exists.** Client posts to `/api/adapt` and falls back to the fixture. |
+| `lib/adapt/index.ts` | Re-exports `adapt()` from `./http`. |
+| `lib/adapt/prompts.ts` | Prompt builders. Do not paste a second copy into this spec. |
+| `lib/adapt/port.ts` | Unchanged `AdaptFn` shape. |
+| UI / extension | Keep calling `adapt()` via `lib/adapt` only. The reading screen says when text will be sent to a model. |
 
 ## Architecture constraints
 
-- UI keeps calling `adapt()`. Callers never import `http.ts` or `fixture.ts` directly.
-- No `app/api` route. Client port stays the integration surface.
-- No monorepo split. Single-repo seam under `lib/adapt/`.
-- Prompts: point at [`lib/adapt/prompts.ts`](../../lib/adapt/prompts.ts) (`GENERATIVE_SYSTEM_PROMPT`, `VERIFICATION_SYSTEM_PROMPT`, `buildGenerativePrompt`, `buildVerificationPrompt`, `buildRepairPrompt`). Do not paste full prompt text into this folder.
+- UI keeps calling `adapt()`. Callers never import `http.ts`, `fixture.ts`, or `model.ts` directly.
+- No API route besides `app/api/adapt`.
+- No monorepo split.
+- Prompts: point at [`lib/adapt/prompts.ts`](../../lib/adapt/prompts.ts). Do not paste full prompt text into this folder.
 
 ## Must keep
 
@@ -33,21 +35,21 @@ Replace the fixture-backed `adapt()` implementation with a live Gemini call behi
 
 ## Cost warning
 
-A live Gemini call **spends tokens**. Until the team turns the model on, the default remains the in-browser fixture selected from `lib/adapt/index.ts`.
+A live Gemini call spends tokens. With an empty key, `/api/adapt` does not call a model.
 
 ## Acceptance checks (when implementation is authorized)
 
-- [ ] `lib/adapt/http.ts` exists and satisfies `AdaptFn`.
-- [ ] `lib/adapt/index.ts` selects `./http` only after explicit team go-ahead; otherwise fixture remains default.
-- [ ] UI and extension still import only from `lib/adapt` (index).
-- [ ] Prompts are imported from `lib/adapt/prompts.ts`, not redefined elsewhere.
-- [ ] No new `app/api` adapt route.
-- [ ] Campus-pilot / seeded warning behavior remains available for offline and CI checks.
-- [ ] Live path documents that each call spends tokens.
+- [x] `lib/adapt/http.ts` posts to `/api/adapt` and falls back to the fixture.
+- [x] With no key, the route stays on the fixture.
+- [x] UI and extension import `adapt()` from `lib/adapt` (index).
+- [x] Prompts are imported from `lib/adapt/prompts.ts`, not redefined in the route.
+- [x] The only adapt route is `app/api/adapt`.
+- [x] The seeded warning example always uses the fixture.
+- [x] The reading screen says when text will be sent to a model. Each live call spends tokens.
 
 ## Out of scope
 
-- Implementing `http.ts` or switching the selector in this documentation-only phase.
+- Putting a model key in git, or calling Gemini when the key is empty.
 - Adding `app/api`, a monorepo, or a second public adapt entrypoint.
 - Duplicating prompt bodies into the spec folder.
 - DeBERTa NLI, repair regeneration beyond reusing existing prompt builders, preference sync, or saved source content (see `spec-01` `09-backend-todo.md`).

@@ -4,7 +4,7 @@ status: CANONICAL FINAL PROJECT CONTEXT
 version: 1.0
 event: APPCON 2026 — Virtual AI Matsuri
 sub_theme: Adaptive Information Communication System
-tagline: Adapt the format. Preserve the meaning.
+tagline: Clarify the format. Preserve the meaning.
 business_model: B2B2C
 ---
 
@@ -35,7 +35,7 @@ The main technical differentiator is **not summarization or text-to-speech by it
 
 The product principle is:
 
-> **Adapt the format. Preserve the meaning.**
+> **Clarify the format. Preserve the meaning.**
 
 The business model is primarily **B2B2C**:
 
@@ -57,7 +57,7 @@ For the hackathon, the product remains deliberately narrow: **one strong adaptiv
 
 ## Tagline
 
-> **Adapt the format. Preserve the meaning.**
+> **Clarify the format. Preserve the meaning.**
 
 ## One-Sentence Pitch
 
@@ -271,7 +271,7 @@ The purpose is **preference selection**, not diagnosis.
 
 ### Preference Dimension 4 — Browser Behavior
 
-**Auto-Adapt**
+**Auto-Clarify**
 - when explicitly enabled by the user, eligible webpage content can be adapted automatically using the saved profile.
 
 **Manual**
@@ -357,7 +357,7 @@ and replace it with:
 
 ## Extension Behavior
 
-When Auto-Adapt is enabled:
+When Auto-Clarify is enabled:
 
 1. the user opens an eligible content page;
 2. the extension extracts the main readable content;
@@ -376,7 +376,7 @@ For the hackathon, use a reliable injected overlay or reading panel rather than 
 
 The extension can show:
 
-- “Adapted by Linaw”;
+- “Clarified by Linaw”;
 - current mode;
 - Full / Key Points;
 - Original / Plain;
@@ -388,11 +388,11 @@ The extension can show:
 
 ## Privacy/Control
 
-Auto-Adapt must be explicit opt-in.
+Auto-Clarify must be explicit opt-in.
 
 The user must be able to:
 
-- turn Auto-Adapt off globally;
+- turn Auto-Clarify off globally;
 - disable it per site;
 - use manual selection instead;
 - see when page text is being processed.
@@ -1279,7 +1279,7 @@ Keep the architecture understandable:
 
 ## Core Message
 
-> **Adapt the format. Preserve the meaning.**
+> **Clarify the format. Preserve the meaning.**
 
 ## End-User Message
 
@@ -1461,7 +1461,7 @@ Show Linaw adapting content on an existing webpage using the saved profile.
 - Manifest V3;
 - use saved/default Linaw preference;
 - page text or selected-text ingestion;
-- automatic adaptation when Auto-Adapt is enabled;
+- automatic adaptation when Auto-Clarify is enabled;
 - manual override;
 - injected reading panel/overlay;
 - Show Original;
@@ -1534,7 +1534,7 @@ Example:
 User preference:
 
 > Key Points + Plain Language + Read  
-> Auto-Adapt enabled
+> Auto-Clarify enabled
 
 ### 2. Show Original
 
@@ -1665,7 +1665,7 @@ If verification fails or cannot run:
 
 The extension can process sensitive webpage content, so:
 
-- Auto-Adapt is opt-in;
+- Auto-Clarify is opt-in;
 - clearly explain that page text may be sent for AI processing;
 - provide per-site disabling;
 - do not persist page content by default;
@@ -1961,7 +1961,7 @@ If time becomes limited, follow this order:
 5. **Onboarding preferences**
 6. **Listen**
 7. **Chrome extension manual flow**
-8. **Chrome Auto-Adapt**
+8. **Chrome Auto-Clarify**
 9. **NLI verifier**
 10. **extra polish**
 
@@ -2080,7 +2080,7 @@ AI transformations can remove or alter critical meaning.
 
 ## Tagline
 
-> **Adapt the format. Preserve the meaning.**
+> **Clarify the format. Preserve the meaning.**
 
 ---
 
@@ -2096,7 +2096,7 @@ Unless manually changed by the team after reviewing this file:
 6. The extension uses the **same backend and AI pipeline**.
 7. Personalization begins with **user-selected preferences**, not cognitive diagnosis.
 8. The core modes are **Full / Key Points, Original / Plain Language, Read / Listen**.
-9. Auto-Adapt is **user-enabled and adjustable**.
+9. Auto-Clarify is **user-enabled and adjustable**.
 10. The original source remains authoritative and accessible.
 11. The main differentiator is **meaning preservation**, not the number of formats.
 12. The internal representation is the **Meaning Map**.
@@ -2223,4 +2223,4 @@ It becomes:
 
 > **Linaw AI is an AI-powered adaptive information platform that remembers how a user prefers to receive information, applies those preferences in a web app and browser companion, and checks adapted content against the original so important actions, deadlines, numbers, conditions, exceptions, and relationships are less likely to be silently changed or lost.**
 
-> **Adapt the format. Preserve the meaning.**
+> **Clarify the format. Preserve the meaning.**

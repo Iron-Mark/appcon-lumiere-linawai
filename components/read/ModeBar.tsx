@@ -87,6 +87,7 @@ export function ReadingPreferencesDialog({
             options={[
               { value: "original", label: "Original" },
               { value: "plain", label: "Plain Language" },
+              { value: "taglish", label: "Taglish" },
             ]}
           />
           <PreferenceQuestion
@@ -141,7 +142,7 @@ const PREFERENCE_SUMMARY: {
   delivery: Record<Delivery, string>;
 } = {
   detail: { full: "Full", key_points: "Key Points" },
-  wording: { original: "Original", plain: "Plain Language" },
+  wording: { original: "Original", plain: "Plain Language", taglish: "Taglish" },
   delivery: { read: "Read", listen: "Listen" },
 };
 

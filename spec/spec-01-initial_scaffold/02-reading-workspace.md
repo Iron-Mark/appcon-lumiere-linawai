@@ -16,7 +16,7 @@ Route: `/read`
 
 Layout (Granola note-card inspired):
 
-- Title (e.g. session or “Adapted note”).
+- Title (e.g. session or “Clarified note”).
 - One status line (adaptation overall status or short working copy)—not a dashboard of stats.
 - Adapted text in a short measure (~65ch) on warm paper using **Lora**.
 - Original source is **one action away** (e.g. “Show original”), not a permanent dual-pane that dominates.

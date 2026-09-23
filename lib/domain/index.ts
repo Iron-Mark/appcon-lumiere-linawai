@@ -31,6 +31,8 @@ export {
 export {
   AdaptRequestSchema,
   AdaptResponseSchema,
+  AdapterKindSchema,
   type AdaptRequest,
   type AdaptResponse,
+  type AdapterKind,
 } from "./adapt";

@@ -2,20 +2,34 @@
 
 import type { ReactNode } from "react";
 import {
+  AlignLeft,
   ArrowDown,
   Ear,
   FileText,
   Gauge,
+  LayoutList,
   Pause,
   Play,
   RotateCcw,
   Square,
+  StepForward,
 } from "lucide-react";
-import type { Check } from "@/lib/domain";
+import type { Check, MeaningMap } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import { AdaptedText } from "./AdaptedText";
+import { FocusView } from "./FocusView";
+import { GlanceView } from "./GlanceView";
 import type { TextMark } from "./marks";
 import type { ListenRate, SpokenRange } from "./useListen";
+
+/** How the note is laid out. Same facts, same checks — different shape. */
+export type NoteView = "text" | "glance" | "focus";
+
+export const NOTE_VIEWS: { id: NoteView; label: string; hint: string }[] = [
+  { id: "text", label: "Text", hint: "The note as prose" },
+  { id: "glance", label: "At a glance", hint: "When, who, and the rules — as a layout" },
+  { id: "focus", label: "One at a time", hint: "One step per screen" },
+];
 
 type NoteCardProps = {
   title: string;
@@ -42,6 +56,15 @@ type NoteCardProps = {
   originalHighlight?: { text: string; caution: boolean } | null;
   /** Narrow screens: jump to the Meaning Check rail (stacked below). */
   onJumpToChecks?: () => void;
+  /** Layout of the note; needs the Meaning Map + checks for the non-prose views. */
+  view?: NoteView;
+  onViewChange?: (view: NoteView) => void;
+  meaningMap?: MeaningMap | null;
+  checks?: Check[] | null;
+  onSelectCheck?: (index: number | null) => void;
+  /** Focus view reads one step aloud through the parent's speech engine. */
+  onSpeakText?: (text: string) => void;
+  onStopSpeaking?: () => void;
 };
 
 export function NoteCard({
@@ -66,11 +89,22 @@ export function NoteCard({
   spoken = null,
   originalHighlight = null,
   onJumpToChecks,
+  view = "text",
+  onViewChange,
+  meaningMap = null,
+  checks = null,
+  onSelectCheck,
+  onSpeakText,
+  onStopSpeaking,
 }: NoteCardProps) {
   const caution =
     overallStatus === "warning" || overallStatus === "repair_required";
   const pass = overallStatus === "pass" && !working;
   const rateLabel = `${listenRate}×`;
+  const hasStructure =
+    Boolean(meaningMap && checks && adaptedText.trim()) && !working;
+  const showSwitcher = Boolean(onViewChange) && hasStructure && !showingOriginal;
+  const activeView: NoteView = showingOriginal || !hasStructure ? "text" : view;
 
   return (
     <article
@@ -242,20 +276,90 @@ export function NoteCard({
         ) : null}
       </header>
 
-      <AdaptedText
-        text={adaptedText}
-        marks={marks}
-        selectedIndex={selectedIndex}
-        onSelectMark={onSelectMark}
-        showingOriginal={showingOriginal}
-        originalText={originalText}
-        working={working}
-        spoken={listening ? spoken : null}
-        originalHighlight={originalHighlight}
-      />
+      {showSwitcher ? (
+        <div
+          role="tablist"
+          aria-label="How to lay out the note"
+          className="note-view-switcher font-ui"
+          style={{
+            display: "inline-flex",
+            alignSelf: "flex-start",
+            gap: "0.15rem",
+            padding: "0.2rem",
+            borderRadius: "0.7rem",
+            background: "var(--color-paper-inset)",
+            marginTop: "-0.35rem",
+          }}
+        >
+          {NOTE_VIEWS.map((v) => {
+            const active = activeView === v.id;
+            const Icon =
+              v.id === "text" ? AlignLeft : v.id === "glance" ? LayoutList : StepForward;
+            return (
+              <button
+                key={v.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                title={v.hint}
+                onClick={() => onViewChange?.(v.id)}
+                className={cn(
+                  "inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-[0.5rem] px-3 text-[0.8125rem] font-medium transition-[background-color,color,box-shadow] duration-150 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+                  active
+                    ? "bg-paper-raised text-ink shadow-[0_1px_2px_color-mix(in_srgb,var(--color-ink)_10%,transparent)]"
+                    : "text-ink-muted hover:text-ink",
+                )}
+              >
+                <Icon
+                  aria-hidden
+                  className={cn("size-4", active ? "text-action" : "text-ink-subtle")}
+                  strokeWidth={2}
+                />
+                {v.label}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {activeView === "glance" && meaningMap && checks ? (
+        <GlanceView
+          meaningMap={meaningMap}
+          checks={checks}
+          adaptedText={adaptedText}
+          selectedIndex={selectedIndex}
+          onSelectCheck={(i) => onSelectCheck?.(i)}
+        />
+      ) : activeView === "focus" && meaningMap && checks ? (
+        <FocusView
+          adaptedText={adaptedText}
+          meaningMap={meaningMap}
+          checks={checks}
+          onSelectCheck={(i) => onSelectCheck?.(i)}
+          onSpeak={(t) => onSpeakText?.(t)}
+          onStopSpeaking={() => onStopSpeaking?.()}
+          speaking={listening}
+        />
+      ) : (
+        <AdaptedText
+          text={adaptedText}
+          marks={marks}
+          selectedIndex={selectedIndex}
+          onSelectMark={onSelectMark}
+          showingOriginal={showingOriginal}
+          originalText={originalText}
+          working={working}
+          spoken={listening ? spoken : null}
+          originalHighlight={originalHighlight}
+        />
+      )}
       <style>{`
         @media (max-width: 860px) {
           .note-jump-checks { display: inline-flex !important; }
+        }
+        @media (max-width: 420px) {
+          .note-view-switcher { display: flex !important; width: 100%; }
+          .note-view-switcher > button { flex: 1 1 0; justify-content: center; padding-inline: 0.5rem; }
         }
       `}</style>
     </article>

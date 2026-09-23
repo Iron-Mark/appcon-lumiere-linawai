@@ -157,7 +157,7 @@ function SidePanelApp() {
       <Panel
         source={
           source ||
-          "Select text on the webpage to adapt, or use the settings to manage preferences."
+          "Select text on the webpage to clarify, or use the settings to manage preferences."
         }
         preferences={preferences}
         origin={origin}

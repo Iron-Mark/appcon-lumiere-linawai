@@ -14,7 +14,9 @@ import {
 import {
   adapt,
   FLAGGED_SAMPLE_SOURCE,
+  getAdapterInfo,
   getDevelopmentSampleSource,
+  type AdapterInfo,
 } from "@/lib/adapt";
 import { SignInDialog } from "@/components/auth";
 import { authStore } from "@/lib/auth";
@@ -33,6 +35,7 @@ import {
   type Wording,
 } from "@/lib/domain";
 import { preferenceStore } from "@/lib/storage/preferences";
+import { LINAW_PREFERENCES_CHANGED_EVENT } from "@/lib/storage/preferences-sync";
 import { Sindi, type SindiState } from "@/components/sindi";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,7 +53,7 @@ import { ErrorToast } from "./ErrorToast";
 import { ModeBar } from "./ModeBar";
 import { buildShareLink } from "./shareLink";
 import { MeaningCheckRail } from "./MeaningCheckRail";
-import { NoteCard } from "./NoteCard";
+import { NoteCard, type NoteView } from "./NoteCard";
 import { buildMarks, warningLineForChecks } from "./marks";
 import { statusLabel } from "./AdaptedText";
 import { useListen } from "./useListen";
@@ -64,6 +67,9 @@ import {
 } from "./readSourceFile";
 
 const ADAPT_FAILED_MESSAGE = "Could not clarify this note.";
+/** Layout choice for the note (text / at a glance / one at a time). */
+const VIEW_STORAGE_KEY = "linaw.read.view";
+const NOTE_VIEW_VALUES: NoteView[] = ["text", "glance", "focus"];
 /** Draft survives a reload during a demo; cleared when the source is cleared. */
 const DRAFT_STORAGE_KEY = "linaw.read.draft";
 
@@ -171,8 +177,18 @@ export function ReadingWorkspace({
       }
       setPrefsReady(true);
     })();
+
+    const onExternalPrefs = (event: Event) => {
+      const detail = (event as CustomEvent<Preferences>).detail;
+      if (!detail || cancelled) return;
+      setPreferences(detail);
+      setHasStoredPrefs(true);
+    };
+    window.addEventListener(LINAW_PREFERENCES_CHANGED_EVENT, onExternalPrefs);
+
     return () => {
       cancelled = true;
+      window.removeEventListener(LINAW_PREFERENCES_CHANGED_EVENT, onExternalPrefs);
     };
   }, []);
 
@@ -218,10 +234,9 @@ export function ReadingWorkspace({
     setResultsRevealed(true);
     void runAdaptRef.current?.(failed.source, failed.prefs, failed.options);
   }, []);
-  const errorAction =
-    error === ADAPT_FAILED_MESSAGE && failedRunRef.current
-      ? { label: "Retry", onClick: retryAdapt }
-      : null;
+  const errorAction = error && failedRunRef.current
+    ? { label: "Retry", onClick: retryAdapt }
+    : null;
 
   const prefersReducedMotion = () =>
     typeof window !== "undefined" &&
@@ -284,12 +299,16 @@ export function ReadingWorkspace({
         if (shouldListen && response.adaptedText.trim()) {
           startListen(response.adaptedText);
         }
-      } catch {
+      } catch (err) {
         if (generation !== adaptGeneration.current) return;
         setWorking(false);
         // Keep the exact failed request so the toast can offer Retry.
         failedRunRef.current = { source, prefs, options };
-        setError(ADAPT_FAILED_MESSAGE);
+        const message =
+          err instanceof Error && err.message.trim()
+            ? err.message.trim()
+            : ADAPT_FAILED_MESSAGE;
+        setError(message);
         if (!resultRef.current) {
           setResultsRevealed(false);
         }
@@ -411,7 +430,7 @@ export function ReadingWorkspace({
     }
   }, [draftSource]);
 
-  /** Copy the clarified text itself — for pasting into a group chat or reply. */
+  /** Copy the clarified text itself, for pasting into a group chat or reply. */
   const [noteCopied, setNoteCopied] = useState(false);
   const noteCopiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onCopyNote = useCallback(async () => {
@@ -431,6 +450,44 @@ export function ReadingWorkspace({
     return () => {
       if (noteCopiedTimerRef.current) clearTimeout(noteCopiedTimerRef.current);
     };
+  }, []);
+
+  /**
+   * Who will handle the next adaptation. Asked once so the composer can say,
+   * before anything is sent, whether the text goes to a language model.
+   */
+  const [adapterInfo, setAdapterInfo] = useState<AdapterInfo | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void getAdapterInfo().then((info) => {
+      if (!cancelled) setAdapterInfo(info);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const modelWillBeUsed = adapterInfo?.adapter === "model";
+  const resultFromModel = result?.adapter === "model";
+
+  /** Note layout — remembered across sessions like the other reading choices. */
+  const [noteView, setNoteView] = useState<NoteView>("text");
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(VIEW_STORAGE_KEY);
+      if (raw && (NOTE_VIEW_VALUES as string[]).includes(raw)) {
+        setNoteView(raw as NoteView);
+      }
+    } catch {
+      // Fine — default to text.
+    }
+  }, []);
+  const onNoteViewChange = useCallback((next: NoteView) => {
+    setNoteView(next);
+    try {
+      window.localStorage.setItem(VIEW_STORAGE_KEY, next);
+    } catch {
+      // Best effort.
+    }
   }, []);
 
   /** Narrow screens: the rail stacks below the note; take the reader there. */
@@ -791,17 +848,26 @@ export function ReadingWorkspace({
   const detailLabel =
     preferences.detail === "full" ? "Full" : "Key Points";
   const wordingLabel =
-    preferences.wording === "original" ? "Original" : "Plain Language";
+    preferences.wording === "original"
+      ? "Original"
+      : preferences.wording === "taglish"
+        ? "Taglish"
+        : "Plain Language";
   const deliveryLabel =
     preferences.delivery === "listen" ? "Listen" : "Read";
 
-  const statusLine = statusLabel(
+  const baseStatusLine = statusLabel(
     result?.overallStatus ?? null,
     working,
     listening,
     detailLabel,
     wordingLabel,
   );
+  // The live model reasons before it answers; set expectations so the wait reads as work, not a hang.
+  const statusLine =
+    working && modelWillBeUsed
+      ? "Clarifying with the model… this can take up to a minute."
+      : baseStatusLine;
 
   /** Evidence of the selected check, highlighted in the original view (spec 03). */
   const originalHighlight = useMemo(() => {
@@ -1224,6 +1290,22 @@ export function ReadingWorkspace({
                 Clarify
               </Button>
             </div>
+            {modelWillBeUsed ? (
+              <p
+                className="font-ui"
+                style={{
+                  margin: 0,
+                  padding: "0 0.95rem 0.65rem",
+                  fontSize: "0.75rem",
+                  lineHeight: 1.45,
+                  color: "var(--color-ink-subtle)",
+                }}
+              >
+                When you clarify, this text is sent to a language model. Every
+                critical fact in the result is checked back against your text
+                before you see it.
+              </p>
+            ) : null}
           </div>
         ) : (
           <div className="source-composer-collapsed">
@@ -1393,10 +1475,9 @@ export function ReadingWorkspace({
                   <strong style={{ fontWeight: 600 }}>
                     This note was not produced from your text.
                   </strong>{" "}
-                  The adapter returned the built-in example instead — the
-                  live model may be unavailable or not connected in this
-                  build. The checks below refer to that example, not to what
-                  you pasted.
+                  {resultFromModel
+                    ? "The model's facts could not be traced back to what you pasted, so the checks below are not about your text. Try again, or review the original."
+                    : "The adapter returned the built-in example instead. The live model may be unavailable or not connected in this build. The checks below refer to that example, not to what you pasted."}
                 </p>
               </div>
             ) : null}
@@ -1422,6 +1503,13 @@ export function ReadingWorkspace({
               spoken={spoken}
               originalHighlight={originalHighlight}
               onJumpToChecks={jumpToChecks}
+              view={noteView}
+              onViewChange={onNoteViewChange}
+              meaningMap={result?.meaningMap ?? null}
+              checks={result?.checks ?? null}
+              onSelectCheck={onSelectCheck}
+              onSpeakText={(text) => startListen(text)}
+              onStopSpeaking={stopListen}
             />
             {result && !working ? (
               <div
@@ -1503,6 +1591,20 @@ export function ReadingWorkspace({
                     Shared with you — shown in your own reading preferences.
                   </p>
                 ) : null}
+                <p
+                  className="font-ui"
+                  style={{
+                    margin: 0,
+                    flexBasis: "100%",
+                    fontSize: "0.75rem",
+                    lineHeight: 1.45,
+                    color: "var(--color-ink-subtle)",
+                  }}
+                >
+                  {resultFromModel
+                    ? "Clarified by a language model from your text, then checked fact by fact against it."
+                    : "Clarified by the built-in offline adapter, then checked fact by fact against the source."}
+                </p>
                 {saveNotice && !alreadySaved ? (
                   <p
                     className="font-ui"

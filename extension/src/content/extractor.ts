@@ -1,5 +1,5 @@
 /**
- * Small deterministic main-content extractor for Auto-Adapt.
+ * Small deterministic main-content extractor for Auto-Clarify.
  * Prefer article/main landmarks; fall back to the densest paragraph cluster.
  * No network calls; does not send text — callers decide when to adapt().
  */
@@ -89,7 +89,7 @@ export function extractMainReadableText(doc: Document = document): string {
   // Page-wide paragraph cluster fallback
   const bodyParts = collectParagraphs(doc.body);
   if (bodyParts.length === 0) return "";
-  // Keep a bounded slice so Auto-Adapt stays light
+  // Keep a bounded slice so Auto-Clarify stays light
   return bodyParts.slice(0, 40).join("\n\n");
 }
 

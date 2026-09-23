@@ -41,12 +41,14 @@ export function SocialProof() {
           align="center"
         />
 
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
+        <div className="mt-12 grid divide-y divide-border md:grid-cols-3 md:divide-x md:divide-y-0">
           {USE_CASES.map((item, index) => (
-            <Reveal key={item.title} delay={index * 60}>
-              <article
-                className="font-ui flex h-full flex-col gap-4 rounded-xl border border-border bg-paper-raised p-6 shadow-[0_1px_0_color-mix(in_srgb,var(--color-ink)_5%,transparent)]"
-              >
+            <Reveal
+              key={item.title}
+              delay={index * 60}
+              className="md:px-8 md:first:pl-0 md:last:pr-0"
+            >
+              <article className="font-ui flex flex-col gap-4 py-8 md:py-0">
                 <span className="flex size-11 items-center justify-center rounded-lg bg-action-soft">
                   <item.icon
                     className="size-5 text-action"

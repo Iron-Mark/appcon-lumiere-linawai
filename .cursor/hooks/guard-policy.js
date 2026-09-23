@@ -19,8 +19,11 @@ const ALLOWED_ADAPT_FILES = new Set([
   "http.ts",
 ]);
 
-/** Only API route allowed in this scaffold. */
-const ALLOWED_API_ROUTE = "app/api/adapt/route.ts";
+/** Only adapt API files allowed in this scaffold. model.ts is not a second route. */
+const ALLOWED_API_FILES = new Set([
+  "app/api/adapt/route.ts",
+  "app/api/adapt/model.ts",
+]);
 
 function readStdin() {
   try {
@@ -103,11 +106,11 @@ function checkLooseSpec(rel) {
 
 function checkAppApi(rel) {
   if (!/^app\/api(\/|$)/i.test(rel)) return null;
-  if (rel.toLowerCase() === ALLOWED_API_ROUTE) return null;
+  if (ALLOWED_API_FILES.has(rel.toLowerCase())) return null;
   return {
     agent:
-      "Blocked: only `app/api/adapt/route.ts` is allowed under `app/api`. UI still calls `adapt()` from `lib/adapt` (selector may use `http.ts`). Do not add other API routes.",
-    user: "Linaw policy: only app/api/adapt/route.ts is allowed.",
+      "Blocked: only `app/api/adapt/route.ts` and `app/api/adapt/model.ts` are allowed under `app/api`. UI still calls `adapt()` from `lib/adapt`. Do not add other API routes. The model file runs only when a key is set.",
+    user: "Linaw policy: only the adapt route and its model helper are allowed.",
   };
 }
 

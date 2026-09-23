@@ -1,8 +1,8 @@
 # Spec 02 — Gemini adapt
 
-**Status: planned, not started.** Do not implement until the team explicitly turns the model on.
+**Status: wired, off unless a key is set.** Do not put a key in the repo. A live call spends tokens.
 
-Phase folder for wiring a live Gemini adaptation path through the existing client `adapt()` seam. Documentation only until that decision.
+Phase folder for the model path behind `POST /api/adapt`. With no `GEMINI_API_KEY` and no gateway env, the route runs the fixture.
 
 ## Spec wins
 
@@ -12,7 +12,7 @@ Until someone edits these files, implement against them. Product canon remains [
 
 | File | Purpose |
 | --- | --- |
-| [`01-gemini-http-adapt.md`](./01-gemini-http-adapt.md) | Planned `lib/adapt/http.ts` switch; constraints and acceptance |
+| [`01-gemini-http-adapt.md`](./01-gemini-http-adapt.md) | Route, model helper, and the rule that the fixture stays the default |
 
 ## Depends on
 

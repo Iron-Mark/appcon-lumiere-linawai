@@ -6,7 +6,7 @@ import { EvalCaseSchema } from "./schema";
 
 describe("evals fidelity corpus", () => {
   it(`registers ${EVAL_SOURCE_COUNT} sources toward the §14 growth target`, () => {
-    expect(EVAL_SOURCE_COUNT).toBe(20);
+    expect(EVAL_SOURCE_COUNT).toBe(24);
     expect(allEvalCases.map((c) => c.id)).toContain("campus-pilot-v0");
   });
 

@@ -1,6 +1,6 @@
 # Linaw AI
 
-**Adapt the format. Preserve the meaning.**
+**Clarify the format. Preserve the meaning.**
 
 Linaw AI is an adaptive information platform: a web app and Chrome companion that presents important messages the way you prefer—detail, wording, and delivery—then runs a **Meaning Check** so critical facts, conditions, and relationships are less likely to change silently.
 
@@ -44,17 +44,17 @@ Useful scripts:
 
 ## Using the app
 
-Onboarding finishes by taking you to `/read`. Preferences stay on your device (local storage). Meaning Check runs against the in-browser fixture—not a remote model.
+Onboarding finishes by taking you to `/read`. Preferences stay on your device (local storage). With no model key, Meaning Check runs against the fixture.
 
-## Do not call Gemini yet
+## Do not turn Gemini on
 
-Do not wire up Gemini or add `lib/adapt/http.ts` while exploring this scaffold. Live model calls spend tokens. The planned adapter work lives in [`spec/spec-02-gemini-adapt`](../spec/spec-02-gemini-adapt/). Until that phase is built, the model adapter also appears as unfinished work on [`/todo`](http://localhost:3000/todo).
+`POST /api/adapt` already exists. It stays on the fixture until `GEMINI_API_KEY` or the gateway env in [`.env.example`](../.env.example) is set. A live call spends tokens. Do not add a key, and do not add any other `app/api` route. Details: [`spec/spec-02-gemini-adapt`](../spec/spec-02-gemini-adapt/).
 
 ## Specs
 
 - Spec manager (index and rules): [`spec/AGENTS.md`](../spec/AGENTS.md)
 - Current phase: [`spec/spec-01-initial_scaffold/`](../spec/spec-01-initial_scaffold/)
-- Planned Gemini adapter: [`spec/spec-02-gemini-adapt/`](../spec/spec-02-gemini-adapt/)
+- Gemini adapter, off unless a key is set: [`spec/spec-02-gemini-adapt/`](../spec/spec-02-gemini-adapt/)
 
 Do not put loose notes or code in `spec/` itself—only numbered phase folders.
 
@@ -68,7 +68,7 @@ node extension/build.mjs
 
 Then in Chrome: open `chrome://extensions` → enable Developer mode → **Load unpacked** → select the `extension/` folder (the one with `manifest.json`).
 
-Auto-Adapt stays off until you turn it on. There is no Chrome Web Store listing; use Load unpacked only. More detail: [`extension/README.md`](../extension/README.md).
+Auto-Clarify stays off until you turn it on. There is no Chrome Web Store listing; use Load unpacked only. More detail: [`extension/README.md`](../extension/README.md).
 
 ## Development sample
 

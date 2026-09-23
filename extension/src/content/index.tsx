@@ -12,8 +12,8 @@ import {
   isAutoAdaptEnabled,
   isOriginDisabled,
   loadPreferences,
-  savePreferences,
 } from "../storage/preferences";
+import { startLinawPreferenceSync } from "./prefs-sync";
 
 const HOST_ID = "linaw-companion-root";
 
@@ -669,7 +669,7 @@ function renderPanel() {
           const wasAuto = isAutoAdaptEnabled(state.preferences);
           state.preferences = next;
           renderPanel();
-          // Only extract page text when the user newly opts into Auto-Adapt.
+          // Only extract page text when the user newly opts into Auto-Clarify.
           if (!wasAuto && isAutoAdaptEnabled(next)) {
             void maybeAutoAdapt();
           }
@@ -718,7 +718,7 @@ function updateFab() {
     btn.id = "linaw-fab-btn";
     btn.name = "linaw-fab-btn";
     btn.className = "linaw-fab";
-    btn.textContent = "Adapt with Linaw";
+    btn.textContent = "Clarify with Linaw";
 
     btn.addEventListener("click", () => {
       void openWithSelection();
@@ -788,7 +788,7 @@ async function openWithSelection() {
 }
 
 /**
- * Auto-Adapt only after explicit opt-in (browserBehavior === auto_adapt or auto)
+ * Auto-Clarify only after explicit opt-in (browserBehavior === auto_adapt or auto)
  * and when this origin is not disabled. Never sends page text before consent.
  */
 async function maybeAutoAdapt() {
@@ -814,16 +814,14 @@ async function bootstrap() {
   const origin = window.location.origin;
   state.disabled = await isOriginDisabled(origin);
 
+  // Preference sync with the Linaw web app (localhost) even when this origin is disabled.
+  startLinawPreferenceSync();
+
   // If disabled, do not attach listeners or perform automatic extraction
   if (state.disabled) {
     return;
   }
 
-  // Seed chrome.storage with default preferences if not yet present
-  const raw = await chrome.storage.local.get("linaw.preferences.v1");
-  if (raw["linaw.preferences.v1"] == null) {
-    await savePreferences(DEFAULT_PREFERENCES);
-  }
   state.preferences = await loadPreferences();
 
   // Listen for clicks outside the companion card to dismiss it
@@ -857,7 +855,7 @@ async function bootstrap() {
     return undefined;
   });
 
-  // If browserBehavior === "auto", extract readable article/main text on page load as default content;
+  // If browserBehavior is auto, extract readable article/main text on page load as default content;
   // if "manual", strictly wait for user selection.
   if (isAutoAdaptEnabled(state.preferences)) {
     void maybeAutoAdapt();
