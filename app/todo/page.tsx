@@ -11,9 +11,9 @@ type TodoRow = {
 
 const BACKEND_TODOS: TodoRow[] = [
   {
-    what: "Gemini extraction and adaptation over adapt() - not connected (spends tokens)",
+    what: "Gemini extraction and adaptation over adapt() - wired, off unless a key is set (spends tokens)",
     replace:
-      "app/api/adapt/route.ts and lib/adapt/http.ts run the local fixture pipeline; Gemini and lib/adapt/prompts.ts are still not wired",
+      "app/api/adapt/route.ts calls model.ts only when GEMINI_API_KEY or the gateway env is set; otherwise fixture.ts",
     spec: "05-client-port.md, spec-02-gemini-adapt",
   },
   {

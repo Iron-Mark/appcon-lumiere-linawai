@@ -498,7 +498,7 @@ function EmptyRail({
               color: "var(--color-ink-muted)",
             }}
           >
-            Checks will appear here after you clarify a note.
+            Checks will appear here after you adapt a note.
           </p>
         )}
       </div>

@@ -14,21 +14,14 @@ is, not as planned. Update it when the answer changes.
 | Optional device profile | — | `localStorage` (`linaw.auth.v1`): display name and email you type, plus titles of saved pieces. No password, no server account | **No** |
 | Share links (`/read?s=…`) | The source text is base64url-encoded **in the URL** | Wherever you paste the link: chat apps, browser history, server logs of whoever hosts the app | **Yes — by your action.** Treat a share link like forwarding the message itself. Links are capped at 4,000 characters |
 | Listen (read aloud) | Browser Web Speech API | Not stored | **Depends on the browser.** Some browsers synthesise speech locally; some (e.g. Chrome's network voices) send the text to the vendor's speech service. Choose a local voice if this matters |
-| Chrome extension | Content script reads only the text you select (or the page's main text when you turn Auto-Clarify on for that site); stored transiently in `chrome.storage.local` as `pendingSourceText` | Cleared when the panel consumes it | **No.** Same in-browser `adapt()` port as the web app |
+| Chrome extension | Content script reads only the text you select (or the page's main text when you turn Auto-Adapt on for that site); stored transiently in `chrome.storage.local` as `pendingSourceText` | Cleared when the panel consumes it | **No**, unless you turn on a model key. Same `adapt()` port as the web app |
 | Semantic verification (NLI layer) | Off by default. When `NLI_ENDPOINT` is set (Node-side: evals, CI), the source sentence and the claim are POSTed to that URL | Not stored by Linaw | **Only to the endpoint you configure.** The bundled `nli-service/` runs on localhost |
 
-There is no backend, no `app/api` route, no analytics, and no third-party script
-on the reading pages. Nothing is transmitted unless a row above says so.
+`POST /api/adapt` is the only server route. With no model key, that route runs the fixture on the Linaw server and does not call Gemini. There is no analytics script on the reading pages.
 
-## What changes when the model is turned on
+## When a model key is set
 
-`spec/spec-02-gemini-adapt/` is planned, not started. When the team switches
-`lib/adapt/index.ts` to the live path, **source text will be sent to Google's
-Gemini API** for adaptation and meaning-map extraction. Before that happens:
-
-- the Status table in [`README.md`](README.md) and this file must be updated;
-- the reading UI must say on screen that text is being sent to a model;
-- the API key stays in `.env` (git-ignored) — see [`.env.example`](.env.example).
+If `GEMINI_API_KEY` or the OpenAI-compatible gateway env is set, `/api/adapt` sends the source text to that provider for adaptation and meaning-map extraction. The reading screen says so before you adapt. The seeded failure example stays on the fixture. The key stays in `.env` (git-ignored). See [`.env.example`](.env.example). An empty key means the model is not called.
 
 ## Personal data and RA 10173
 

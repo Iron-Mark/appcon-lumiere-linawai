@@ -18,7 +18,7 @@ afterEach(() => {
 describe("adapt http client", () => {
   it("returns a schema-valid body from a successful /api/adapt response", async () => {
     const fixtureLike = {
-      adaptedText: "Clarified hello.",
+      adaptedText: "Adapted hello.",
       meaningMap: {
         sourceIntent: "A short greeting.",
         criticalFacts: [],
@@ -44,7 +44,7 @@ describe("adapt http client", () => {
     );
 
     const result = await adapt(validRequest);
-    expect(result.adaptedText).toBe("Clarified hello.");
+    expect(result.adaptedText).toBe("Adapted hello.");
     expect(result.overallStatus).toBe("pass");
   });
 

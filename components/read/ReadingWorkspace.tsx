@@ -14,7 +14,9 @@ import {
 import {
   adapt,
   FLAGGED_SAMPLE_SOURCE,
+  getAdapterInfo,
   getDevelopmentSampleSource,
+  type AdapterInfo,
 } from "@/lib/adapt";
 import { SignInDialog } from "@/components/auth";
 import { authStore } from "@/lib/auth";
@@ -64,7 +66,7 @@ import {
   SOURCE_UPLOAD_LIMITS_TEXT,
 } from "./readSourceFile";
 
-const ADAPT_FAILED_MESSAGE = "Could not clarify this note.";
+const ADAPT_FAILED_MESSAGE = "Could not adapt this note.";
 /** Layout choice for the note (text / at a glance / one at a time). */
 const VIEW_STORAGE_KEY = "linaw.read.view";
 const NOTE_VIEW_VALUES: NoteView[] = ["text", "glance", "focus"];
@@ -428,7 +430,7 @@ export function ReadingWorkspace({
     }
   }, [draftSource]);
 
-  /** Copy the clarified text itself — for pasting into a group chat or reply. */
+  /** Copy the adapted text itself, for pasting into a group chat or reply. */
   const [noteCopied, setNoteCopied] = useState(false);
   const noteCopiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onCopyNote = useCallback(async () => {
@@ -437,7 +439,7 @@ export function ReadingWorkspace({
     try {
       await navigator.clipboard.writeText(text);
       setNoteCopied(true);
-      setUploadStatus("Clarified note copied.");
+      setUploadStatus("Adapted note copied.");
       if (noteCopiedTimerRef.current) clearTimeout(noteCopiedTimerRef.current);
       noteCopiedTimerRef.current = setTimeout(() => setNoteCopied(false), 1600);
     } catch {
@@ -449,6 +451,23 @@ export function ReadingWorkspace({
       if (noteCopiedTimerRef.current) clearTimeout(noteCopiedTimerRef.current);
     };
   }, []);
+
+  /**
+   * Who will handle the next adaptation. Asked once so the composer can say,
+   * before anything is sent, whether the text goes to a language model.
+   */
+  const [adapterInfo, setAdapterInfo] = useState<AdapterInfo | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void getAdapterInfo().then((info) => {
+      if (!cancelled) setAdapterInfo(info);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const modelWillBeUsed = adapterInfo?.adapter === "model";
+  const resultFromModel = result?.adapter === "model";
 
   /** Note layout — remembered across sessions like the other reading choices. */
   const [noteView, setNoteView] = useState<NoteView>("text");
@@ -518,7 +537,7 @@ export function ReadingWorkspace({
     if (!result || activeSource === null || working) return;
     const source = activeSource.trim();
     if (draftSource.trim() !== source) {
-      setSaveNotice("Clarify this source before saving.");
+      setSaveNotice("Adapt this source before saving.");
       return;
     }
     const user = await authStore.getUser();
@@ -837,13 +856,18 @@ export function ReadingWorkspace({
   const deliveryLabel =
     preferences.delivery === "listen" ? "Listen" : "Read";
 
-  const statusLine = statusLabel(
+  const baseStatusLine = statusLabel(
     result?.overallStatus ?? null,
     working,
     listening,
     detailLabel,
     wordingLabel,
   );
+  // The live model reasons before it answers; set expectations so the wait reads as work, not a hang.
+  const statusLine =
+    working && modelWillBeUsed
+      ? "Adapting with the model… this can take up to a minute."
+      : baseStatusLine;
 
   /** Evidence of the selected check, highlighted in the original view (spec 03). */
   const originalHighlight = useMemo(() => {
@@ -1025,7 +1049,7 @@ export function ReadingWorkspace({
               color: "var(--color-ink-muted)",
             }}
           >
-            Clarify a message, then check the meaning.
+            Adapt a message, then check the meaning.
           </p>
         </div>
         <div style={{ marginLeft: "auto", minWidth: 0 }}>
@@ -1177,7 +1201,7 @@ export function ReadingWorkspace({
                 placeholder={
                   showEmptyPrompt
                     ? undefined
-                    : "Paste or enter the message to clarify…"
+                    : "Paste or enter the message to adapt…"
                 }
                 className={`font-ui source-well-textarea [field-sizing:fixed] block min-h-[11rem] max-h-72 w-full max-w-full flex-1 resize-none overflow-y-auto cursor-text rounded-none border-0 bg-transparent px-5 pb-4 pt-4 text-base leading-relaxed text-ink shadow-none placeholder:text-ink-muted focus-visible:border-0 focus-visible:ring-0 md:text-base ${
                   draftHasText ? "pr-14" : ""
@@ -1263,9 +1287,25 @@ export function ReadingWorkspace({
                 title="Ctrl+Enter / ⌘+Enter"
                 className="adapt-primary min-h-11 min-w-11 cursor-pointer px-5 font-ui text-[0.9375rem] font-semibold focus-visible:ring-2 focus-visible:ring-ring/60"
               >
-                Clarify
+                Adapt
               </Button>
             </div>
+            {modelWillBeUsed ? (
+              <p
+                className="font-ui"
+                style={{
+                  margin: 0,
+                  padding: "0 0.95rem 0.65rem",
+                  fontSize: "0.75rem",
+                  lineHeight: 1.45,
+                  color: "var(--color-ink-subtle)",
+                }}
+              >
+                When you adapt, this text is sent to a language model. Every
+                critical fact in the result is checked back against your text
+                before you see it.
+              </p>
+            ) : null}
           </div>
         ) : (
           <div className="source-composer-collapsed">
@@ -1300,7 +1340,7 @@ export function ReadingWorkspace({
                 }
                 className={`${result ? "" : "adapt-primary "}min-h-10 shrink-0 cursor-pointer px-4 font-ui text-[0.875rem] font-semibold whitespace-nowrap focus-visible:ring-2 focus-visible:ring-ring/60`}
               >
-                {result ? "Clarify again" : "Clarify"}
+                {result ? "Adapt again" : "Adapt"}
               </Button>
             </div>
           </div>
@@ -1321,7 +1361,7 @@ export function ReadingWorkspace({
         </p>
         {!draftHasText ? (
           <p id="adapt-disabled-reason" className="source-visually-hidden">
-            Clarify is unavailable until you enter, paste, or upload source text.
+            Adapt is unavailable until you enter, paste, or upload source text.
           </p>
         ) : null}
 
@@ -1349,7 +1389,7 @@ export function ReadingWorkspace({
           <div className="read-guide-heading">
             <p className="read-guide-eyebrow">How Linaw works</p>
             <p className="read-guide-lede font-reading">
-              Paste, clarify, then check the meaning held.
+              Paste, adapt, then check the meaning held.
             </p>
           </div>
           <ol className="read-guide-steps">
@@ -1359,7 +1399,7 @@ export function ReadingWorkspace({
                 body: "Plain text or a PDF, up to 30 pages long.",
               },
               {
-                title: "Clarify",
+                title: "Adapt",
                 body: "Rewritten to your detail and wording choices.",
               },
               {
@@ -1435,15 +1475,14 @@ export function ReadingWorkspace({
                   <strong style={{ fontWeight: 600 }}>
                     This note was not produced from your text.
                   </strong>{" "}
-                  The adapter returned the built-in example instead. The
-                  live model may be unavailable or not connected in this
-                  build. The checks below refer to that example, not to what
-                  you pasted.
+                  {resultFromModel
+                    ? "The model's facts could not be traced back to what you pasted, so the checks below are not about your text. Try again, or review the original."
+                    : "The adapter returned the built-in example instead. The live model may be unavailable or not connected in this build. The checks below refer to that example, not to what you pasted."}
                 </p>
               </div>
             ) : null}
             <NoteCard
-              title="Clarified note"
+              title="Adapted note"
               statusLine={statusLine}
               adaptedText={displayedText}
               originalText={originalForDisplay}
@@ -1526,7 +1565,7 @@ export function ReadingWorkspace({
                   variant="ghost"
                   onClick={() => void onCopyNote()}
                   disabled={!displayedText.trim()}
-                  aria-label="Copy the clarified note text"
+                  aria-label="Copy the adapted note text"
                   className="font-ui h-10 min-h-10 cursor-pointer gap-2 rounded-lg px-3 text-sm font-medium text-ink-muted hover:bg-paper-inset hover:text-ink focus-visible:ring-2 focus-visible:ring-focus"
                 >
                   {noteCopied ? (
@@ -1552,6 +1591,20 @@ export function ReadingWorkspace({
                     Shared with you — shown in your own reading preferences.
                   </p>
                 ) : null}
+                <p
+                  className="font-ui"
+                  style={{
+                    margin: 0,
+                    flexBasis: "100%",
+                    fontSize: "0.75rem",
+                    lineHeight: 1.45,
+                    color: "var(--color-ink-subtle)",
+                  }}
+                >
+                  {resultFromModel
+                    ? "Adapted by a language model from your text, then checked fact by fact against it."
+                    : "Adapted by the built-in offline adapter, then checked fact by fact against the source."}
+                </p>
                 {saveNotice && !alreadySaved ? (
                   <p
                     className="font-ui"
@@ -1573,7 +1626,7 @@ export function ReadingWorkspace({
                       color: "var(--color-ink-muted)",
                     }}
                   >
-                    Clarify this source before saving.
+                    Adapt this source before saving.
                   </p>
                 ) : null}
               </div>

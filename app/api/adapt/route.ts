@@ -1,16 +1,41 @@
 import {
   AdaptRequestSchema,
   AdaptResponseSchema,
+  type AdaptResponse,
 } from "@/lib/domain";
-import { adapt as runLocalAdapt } from "@/lib/adapt/fixture";
+import {
+  adapt as runLocalAdapt,
+  SEEDED_FAILURE_SOURCE,
+} from "@/lib/adapt/fixture";
+import { adaptWithModel, modelConfigured, readModelProviders } from "./model";
 
 /**
- * Local adapt POST handler. Runs the same offline pipeline as the fixture
- * (including fidelity). No model calls. Do not log source text.
+ * Adapt POST handler.
+ *
+ * Order: Gemini → OpenAI-compatible gateway → offline fixture. The response
+ * carries `adapter: "model" | "fixture"` so the reading UI can tell the reader
+ * whether their text was sent to a model, and a debug header names the
+ * provider. The seeded failure example always uses the fixture: it is a
+ * deliberately wrong adaptation that exists to show Meaning Check catching it.
+ *
+ * Source text is never logged.
  */
 
 function plainError(message: string, status: number): Response {
   return Response.json({ error: message }, { status });
+}
+
+function normalizeKey(text: string): string {
+  return text.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+/** Lets the UI say up front whether text will be sent to a model. */
+export async function GET(): Promise<Response> {
+  const providers = readModelProviders().map((p) => p.kind);
+  return Response.json({
+    adapter: providers.length > 0 ? "model" : "fixture",
+    providers,
+  });
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -25,8 +50,23 @@ export async function POST(request: Request): Promise<Response> {
   if (!parsed.success) {
     return plainError("The request did not match the expected shape.", 400);
   }
+  const input = parsed.data;
 
-  const result = await runLocalAdapt(parsed.data);
-  const response = AdaptResponseSchema.parse(result);
-  return Response.json(response);
+  const isSeededDemo =
+    normalizeKey(input.source) === normalizeKey(SEEDED_FAILURE_SOURCE);
+
+  if (!isSeededDemo && input.source.trim() && modelConfigured()) {
+    const viaModel = await adaptWithModel(input);
+    if (viaModel) {
+      return Response.json(AdaptResponseSchema.parse(viaModel.response), {
+        headers: { "x-linaw-adapter": `model:${viaModel.provider}` },
+      });
+    }
+  }
+
+  const local = await runLocalAdapt(input);
+  const response: AdaptResponse = { ...local, adapter: "fixture" };
+  return Response.json(AdaptResponseSchema.parse(response), {
+    headers: { "x-linaw-adapter": "fixture" },
+  });
 }

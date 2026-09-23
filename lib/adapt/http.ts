@@ -7,6 +7,30 @@ import { adapt as adaptFixture } from "./fixture";
 
 export { getDevelopmentSampleSource } from "./fixture";
 
+export type AdapterInfo = {
+  adapter: "model" | "fixture";
+  providers: string[];
+};
+
+/**
+ * Asks the route what will handle the next adaptation, so the reading UI can
+ * tell the reader up front whether their text will be sent to a model.
+ * Falls back to "fixture" when the route is unreachable.
+ */
+export async function getAdapterInfo(): Promise<AdapterInfo> {
+  try {
+    const res = await fetch("/api/adapt", { method: "GET" });
+    if (!res.ok) return { adapter: "fixture", providers: [] };
+    const json = (await res.json()) as Partial<AdapterInfo>;
+    return {
+      adapter: json.adapter === "model" ? "model" : "fixture",
+      providers: Array.isArray(json.providers) ? json.providers.map(String) : [],
+    };
+  } catch {
+    return { adapter: "fixture", providers: [] };
+  }
+}
+
 /**
  * Thrown when `/api/adapt` returns a plain-language error body.
  * Callers (e.g. /read) surface `message` in the existing error toast.
@@ -51,7 +75,7 @@ export async function adapt(input: AdaptRequest): Promise<AdaptResponse> {
     try {
       json = await res.json();
     } catch {
-      return adaptFixture(input);
+      return localFallback(input);
     }
 
     if (!res.ok) {
@@ -59,12 +83,12 @@ export async function adapt(input: AdaptRequest): Promise<AdaptResponse> {
       if (message) {
         throw new AdaptRequestError(message);
       }
-      return adaptFixture(input);
+      return localFallback(input);
     }
 
     const parsed = AdaptResponseSchema.safeParse(json);
     if (!parsed.success) {
-      return adaptFixture(input);
+      return localFallback(input);
     }
 
     return parsed.data;
@@ -72,6 +96,12 @@ export async function adapt(input: AdaptRequest): Promise<AdaptResponse> {
     if (err instanceof AdaptRequestError) {
       throw err;
     }
-    return adaptFixture(input);
+    return localFallback(input);
   }
+}
+
+/** In-browser fixture, labelled so the UI never presents it as a model result. */
+async function localFallback(input: AdaptRequest): Promise<AdaptResponse> {
+  const result = await adaptFixture(input);
+  return { ...result, adapter: "fixture" };
 }

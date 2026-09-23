@@ -60,7 +60,7 @@ export function ReadingPreferencesDialog({
             Reading preferences
           </DialogTitle>
           <DialogDescription className="font-ui text-sm leading-relaxed text-ink-muted">
-            Choose how Linaw clarifies what you read in this session.
+            Choose how Linaw adapts what you read in this session.
           </DialogDescription>
         </DialogHeader>
 

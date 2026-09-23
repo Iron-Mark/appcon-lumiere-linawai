@@ -2,7 +2,9 @@
 
 ## Purpose
 
-Definition of done for this MVP slice (canon §39 + mascot), with a live server treated as future work.
+Definition of done for this MVP slice (canon §39 + mascot).
+
+`POST /api/adapt` is in the app. With no model key it runs the fixture. The seeded bad adaptation always uses the fixture. A model key spends tokens and is not required for the demo.
 
 ## Browser verification path (after Wave 1 tracks)
 

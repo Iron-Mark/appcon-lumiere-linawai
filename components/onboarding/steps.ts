@@ -52,7 +52,7 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
       {
         value: "full",
         label: "Full",
-        hint: "Keep the complete clarified text.",
+        hint: "Keep the complete adapted text.",
         icon: FileText,
       },
       {
@@ -112,7 +112,7 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
       {
         value: "listen",
         label: "Listen",
-        hint: "Speak the clarified text aloud.",
+        hint: "Speak the adapted text aloud.",
         icon: Volume2,
       },
     ],
@@ -120,22 +120,22 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
   {
     id: "browserBehavior",
     question: "When you are on a page, should Linaw wait for you?",
-    promptIdle: "Auto-Clarify stays off until you choose it.",
+    promptIdle: "Auto-Adapt stays off until you choose it.",
     lineFor: (value) =>
       value === "auto_adapt"
-        ? "Auto-Clarify: clarify pages when you ask the extension."
-        : "Manual: you choose when to clarify.",
+        ? "Auto-Adapt: adapt pages when you ask the extension."
+        : "Manual: you choose when to adapt.",
     options: [
       {
         value: "auto_adapt",
-        label: "Auto-Clarify",
-        hint: "Let the extension clarify when you opt in.",
+        label: "Auto-Adapt",
+        hint: "Let the extension adapt when you opt in.",
         icon: Wand2,
       },
       {
         value: "manual",
         label: "Manual",
-        hint: "You decide when to clarify a page.",
+        hint: "You decide when to adapt a page.",
         icon: Hand,
       },
     ],

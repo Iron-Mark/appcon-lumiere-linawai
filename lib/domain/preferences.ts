@@ -34,7 +34,7 @@ export const PreferencesSchema = z.object({
 });
 export type Preferences = z.infer<typeof PreferencesSchema>;
 
-/** Defaults for local development exercises (Auto-Clarify remains off). */
+/** Defaults for local development exercises (Auto-Adapt remains off). */
 export const DEFAULT_PREFERENCES: Preferences = {
   detail: "key_points",
   wording: "plain",

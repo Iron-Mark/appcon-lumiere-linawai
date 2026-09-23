@@ -14,8 +14,8 @@ Human setup instructions live in `docs/README.md`. Root `AGENTS.md`, `CLAUDE.md`
 ## Non-negotiables
 
 - Product name: **Linaw AI**. Tagline: **Adapt the format. Preserve the meaning.**
-- One Next.js app at the repo root. One `package.json`. No monorepo, no `apps/`, no `packages/`, no `app/api` routes in the current scaffold.
-- No backend in this slice. Local development uses in-browser fixtures via `adapt()`.
+- One Next.js app at the repo root. One `package.json`. No monorepo, no `apps/`, no `packages/`. The only server route is `app/api/adapt`.
+- `adapt()` posts to that route. With no model key it runs the fixture, including an in-browser fallback if the route is down. Do not add other API routes.
 - UI calls `adapt()` from `lib/adapt` and the preference store. It never imports `fixture.ts` directly and never branches on “demo mode.”
 - Prefer preference language (Key Points, Plain Language, Listen, Auto-Adapt). Never diagnose or label the person. Auto-Adapt is always explicit opt-in.
 - Verification copy is cautious. Never say “guaranteed,” “100% verified,” or “the AI proves this is correct.”
@@ -52,7 +52,7 @@ If your task names one track, stop at that directory. Do not open sibling track 
 
 ## Ports and seams
 
-- **Adapt:** `lib/adapt/port.ts` defines `adapt(input)`. `lib/adapt/index.ts` is the only selector. Today it imports `./fixture`. A later backend adds `http.ts` and switches the selector. Request/response stay section-17 domain types.
+- **Adapt:** `lib/adapt/port.ts` defines `adapt(input)`. `lib/adapt/index.ts` is the only selector and re-exports `./http`. `http.ts` posts to `/api/adapt` and falls back to the fixture. Request/response stay section-17 domain types.
 - **Preferences:** `lib/storage/preferences.ts` exposes `PreferenceStore`. Web uses `localStorage`. Extension track owns `chrome.storage` under `extension/`.
 - **Sindi:** `components/sindi/` is presentational only (`state`, one short line, SVG lantern). No screen logic.
 - **Fidelity:** four layers (deterministic, relationship, NLI slot, coverage). UI calls one pipeline function when the fidelity track lands.
@@ -65,7 +65,7 @@ If your task names one track, stop at that directory. Do not open sibling track 
 
 ## Out of scope for agents unless a later phase says otherwise
 
-Server routes, Gemini calls, Supabase, DeBERTa host, repair regeneration, account sync, OCR, PDF, healthcare, multi-agent stacks, and product-line forks (Learn / Work / Org / Public as separate apps).
+Extra server routes, Gemini calls with no key in the environment, Supabase, a hosted DeBERTa service, repair regeneration, account sync, OCR, healthcare, multi-agent stacks, and product-line forks (Learn / Work / Org / Public as separate apps).
 
 ## Branches
 

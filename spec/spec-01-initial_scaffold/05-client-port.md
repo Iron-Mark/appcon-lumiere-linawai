@@ -2,19 +2,20 @@
 
 ## Purpose
 
-Single client integration point for adaptation. Web and extension call `adapt()`; they never import the fixture (or future HTTP) module directly.
+Single client integration point for adaptation. Web and extension call `adapt()`; they never import the fixture or the HTTP module directly.
 
 ## Ownership
 
 | File | Owner |
 | --- | --- |
 | `lib/adapt/port.ts` | Wave 0 (done) — defines `adapt(input)` type |
-| `lib/adapt/index.ts` | Wave 0 (done) — **only** selector; imports `./fixture` today |
-| `lib/adapt/fixture.ts` | **Fixture track** — campus-pilot development sample + seeded bad adaptation |
-| `lib/adapt/prompts.ts` | Deferred Gemini system/user prompt builders for a future `http.ts` (not wired in this slice) |
-| `lib/adapt/http.ts` | Future backend owner — not this phase |
+| `lib/adapt/index.ts` | **Only** selector. Re-exports `adapt()` from `./http`. |
+| `lib/adapt/fixture.ts` | Campus-pilot sample, seeded bad adaptation, and the offline fallback. |
+| `lib/adapt/prompts.ts` | Prompt builders used by `app/api/adapt/model.ts` when a key is set. |
+| `lib/adapt/http.ts` | Client. `POST /api/adapt`, then the in-browser fixture if the route is unreachable. |
+| `app/api/adapt/route.ts` | Server. Fixture by default. Model only when `modelConfigured()` is true. Seeded failure source always stays on the fixture. |
 
-Fixture track must **not** edit `index.ts`. Backend owner switches the selector later.
+Callers must not import `fixture.ts` or `http.ts` directly.
 
 ## Contracts (canon §17)
 

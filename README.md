@@ -13,8 +13,8 @@ Kept literally accurate; update it when the code changes.
 | Reading workspace, preferences (detail · wording incl. **Taglish** · delivery), three note layouts (text · at a glance · one at a time), Listen with word tracking, PDF/text intake, saved pieces on device, share links (`/read?s=…`) | **Live** in the browser |
 | Meaning Check layers 1, 2, 4 — deterministic fact compare, actor–value relationships, critical-fact coverage (`lib/fidelity/`) | **Live** rule-based logic; tested in `evals/` |
 | Meaning Check layer 3 — semantic verification (NLI) | **Live when the local verifier is running.** `/api/adapt` calls `lib/fidelity/nli.ts`, which posts to the DeBERTa service in `nli-service/` (`cross-encoder/nli-deberta-v3-base`) via `NLI_ENDPOINT`. When the service is down or the env var is unset, the layer reports *Not run* and is excluded from the verdict |
-| The adaptation itself (`adapt()` in `lib/adapt/`) | **Client port posts to `/api/adapt`; the route runs the same offline sample adapter server-side** (`http.ts` → `app/api/adapt` → `fixture.ts`), with an in-browser fixture fallback if the route fails. **No model calls yet.** The fixture adapts the built-in campus-pilot example (in original, plain, or Taglish wording) and its seeded failure case; for any other input the UI shows a notice that the note was not produced from that text |
-| Live model path (Gemini inside `/api/adapt`) | **Not started** — `spec/spec-02-gemini-adapt/`; prompts are ready in `lib/adapt/prompts.ts` (incl. the Taglish rule). Needs a key (`.env.example`) and an on-screen notice that text is being sent to a model (see `SECURITY.md`) |
+| The adaptation itself (`adapt()` in `lib/adapt/`) | **Client port posts to `/api/adapt`.** With no model key, the route runs the offline sample adapter (`fixture.ts`), and the browser falls back to that fixture if the route fails. The fixture adapts the campus-pilot example (original, plain, or Taglish) and its seeded failure case. For other input, the UI says the note was not produced from that text |
+| Live model path (Gemini inside `/api/adapt`) | **Wired, off unless a key is set.** `app/api/adapt/model.ts` runs only when `GEMINI_API_KEY` or the gateway env is present. The seeded failure example never uses the model. The reading screen says when text will be sent. See `SECURITY.md` and `.env.example`. Do not commit a key |
 | Chrome extension (`extension/`) | Builds (`node extension/build.mjs`); MV3 side panel + content script calling the same `adapt()` port. Load unpacked from `extension/` |
 
 Run: `npm install && npm run dev` → http://localhost:3000. Check: `npm run typecheck && npm test`. CI runs both plus `next build` on every push.
@@ -52,7 +52,7 @@ flowchart LR
   S --> W
   A --> H
   H -- "route absent / fails" --> F
-  H -.-> R["app/api/adapt<br/>Gemini · in progress"]
+  H -.-> R["app/api/adapt<br/>model only if a key is set"]
   F --> M --> G
   G --> W
   P --> W

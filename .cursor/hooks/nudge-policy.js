@@ -75,7 +75,7 @@ function main() {
 
   if (/^app\/api(\/|$)/i.test(rel) || /\/api\/route\.(ts|js|tsx|jsx)$/i.test(rel)) {
     notes.push(
-      "No backend in this slice — avoid `app/api`. Prefer `lib/adapt/http.ts` when a network client is added later.",
+      "Only `app/api/adapt` exists. Do not add another route. Without a model key the handler stays on the fixture.",
     );
   }
 

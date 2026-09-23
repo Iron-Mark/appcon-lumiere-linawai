@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Linaw AI",
   "version": "0.1.0",
-  "description": "Clarify the format. Preserve the meaning. Companion reading panel for the Linaw web app.",
+  "description": "Adapt the format. Preserve the meaning. Companion reading panel for the Linaw web app.",
   "permissions": ["sidePanel", "storage", "activeTab"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "background": {
@@ -12,7 +12,7 @@
     "default_path": "sidepanel.html"
   },
   "action": {
-    "default_title": "Linaw: Clarify selection",
+    "default_title": "Linaw: Adapt selection",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png"

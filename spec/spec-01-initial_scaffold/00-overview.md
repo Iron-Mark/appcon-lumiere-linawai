@@ -21,21 +21,25 @@ Tagline: **Adapt the format. Preserve the meaning.**
 7. Differentiator is **meaning preservation** (Meaning Map → Fidelity Guard → Meaning Check), not format count.
 8. Verification is never presented as a guarantee.
 9. Development path must include a **deliberately corrupted adaptation** that Linaw catches (campus-pilot sample; owned by fixture + fidelity tracks).
-10. Single repo, one app. No backend in this slice; fixture behind `adapt()`.
+10. Single repo, one app. `adapt()` posts to `/api/adapt`. With no model key, that route runs the fixture. A key turns the model path on.
 
 ## Architecture (this slice)
 
 ```text
-ui (web / extension) → adapt() client port → fixture (now) | http (later)
-                              ↓
-                     Fidelity Guard (browser)
-                              ↓
-                            UI
+ui (web / extension) → adapt() → POST /api/adapt
+                                    ↓
+                         model only if a key is set
+                                    ↓
+                         fixture (default, and fallback)
+                                    ↓
+                              Fidelity Guard
+                                    ↓
+                                   UI
 ```
 
-- `app/` — App Router routes only. No `app/api`.
+- `app/` — App Router routes, plus `app/api/adapt/route.ts` only.
 - `lib/domain/` — Zod contracts (stable field names).
-- `lib/adapt/` — port + selector + fixture implementation.
+- `lib/adapt/` — port, selector, HTTP client, and fixture. Callers import `adapt()` from `lib/adapt` only.
 - `lib/storage/` — `PreferenceStore` (web: localStorage).
 - `lib/fidelity/` — four layers (fidelity track).
 - `components/sindi/` — presentational mascot (Wave 0).
@@ -76,7 +80,7 @@ ui (web / extension) → adapt() client port → fixture (now) | http (later)
 
 ## Out of scope (entire phase)
 
-OCR, PDF, auth, RAG, diagnosis, dashboards, Gemini live calls, Supabase, DeBERTa host, repair regeneration, account sync, healthcare, multi-agent, product-line forks as separate apps.
+OCR, auth, RAG, diagnosis, dashboards, a Gemini call with no key set, Supabase, a hosted DeBERTa service, repair regeneration, account sync, healthcare, multi-agent, product-line forks as separate apps. PDF text intake and an optional local `NLI_ENDPOINT` are already in the app.
 
 ## Acceptance (overview)
 

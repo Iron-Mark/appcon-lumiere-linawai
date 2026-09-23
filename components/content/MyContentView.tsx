@@ -60,7 +60,7 @@ export function MyContentView() {
               Nothing saved yet
             </p>
             <p className="font-ui mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink-muted">
-              Clarify a note, then save it on this device. It will show up here.
+              Adapt a note, then save it on this device. It will show up here.
             </p>
             <span className="font-ui mt-6 inline-flex min-h-11 w-full max-w-xs items-center justify-center gap-2 rounded-lg bg-action px-5 text-sm font-semibold text-paper-raised">
               <Plus aria-hidden className="size-4" strokeWidth={2} />

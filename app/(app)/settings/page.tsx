@@ -82,11 +82,11 @@ export default function SettingsPage() {
             <div className="font-ui flex min-h-11 items-start gap-3 px-4 py-3.5">
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="text-sm font-semibold text-ink">
-                  Auto-Clarify
+                  Auto-Adapt
                 </span>
                 <span className="text-xs leading-relaxed text-ink-muted sm:text-sm">
                   Opt-in only. Default is Manual: Linaw waits for you to
-                  trigger a clarification. Auto-Clarify never runs silently,
+                  trigger an adaptation. Auto-Adapt never runs silently,
                   and this page does not send or store webpage content.
                 </span>
               </span>

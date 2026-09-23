@@ -171,7 +171,7 @@ export function NoteCard({
                   <FileText size={18} strokeWidth={2} />
                 )
               }
-              label={showingOriginal ? "Show clarified" : "Show original"}
+              label={showingOriginal ? "Show adapted" : "Show original"}
               pressed={showingOriginal}
             />
             {listening ? (

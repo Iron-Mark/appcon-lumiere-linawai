@@ -718,7 +718,7 @@ function updateFab() {
     btn.id = "linaw-fab-btn";
     btn.name = "linaw-fab-btn";
     btn.className = "linaw-fab";
-    btn.textContent = "Clarify with Linaw";
+    btn.textContent = "Adapt with Linaw";
 
     btn.addEventListener("click", () => {
       void openWithSelection();
@@ -835,7 +835,7 @@ async function bootstrap() {
     renderPanel();
   });
 
-  // Listen for text selection (mouseup); if length >= 20, position popover and clarify
+  // Listen for text selection (mouseup); if length >= 20, position popover and adapt
   document.addEventListener("mouseup", (e: MouseEvent) => {
     if (state.host && e.composedPath().includes(state.host)) {
       return;

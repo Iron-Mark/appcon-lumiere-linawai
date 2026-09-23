@@ -28,7 +28,7 @@ const additional_context = [
   "",
   "Hard constraints for this scaffold:",
   "- Single repo / one `package.json` (no monorepo).",
-  "- No `app/api` routes. UI calls `adapt()` from `lib/adapt` only.",
+  "- One API route: `app/api/adapt`. It runs the fixture unless a model key is set. UI calls `adapt()` from `lib/adapt` only.",
   "- Do not invent a second adaptation path beside `lib/adapt`.",
   "- Do not put loose files directly in `spec/` (use `spec-NN-short_name/` folders).",
   "- Edit only your track’s directories (see ownership map in `docs/AGENTS.md`).",
