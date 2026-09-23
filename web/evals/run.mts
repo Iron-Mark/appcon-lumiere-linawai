@@ -151,7 +151,7 @@ async function runCase(fixture: FidelityFixture): Promise<CaseResult> {
     if (fixture.expected.expectNLIEnabled !== undefined) {
       if (Boolean(body.nli?.enabled) !== fixture.expected.expectNLIEnabled) {
         reasons.push(
-          `expected nli.enabled=${fixture.expected.expectNLIEnabled} but got ${body.nli?.enabled} (is HUGGINGFACE_API_KEY configured on the server?)`
+          `expected nli.enabled=${fixture.expected.expectNLIEnabled} but got ${body.nli?.enabled} (is NLI_ENDPOINT configured on the server?)`
         );
       } else {
         confirmations.push(`nli.enabled=${body.nli?.enabled} matched expectation`);
@@ -163,11 +163,11 @@ async function runCase(fixture: FidelityFixture): Promise<CaseResult> {
       if (actualStatus !== fixture.expected.expectNLIStatus) {
         if (fixture.expected.expectNLIStatus === "ok" && actualStatus === "soft_failure") {
           reasons.push(
-            `expected nli.status="ok" but got "soft_failure" — Hugging Face was configured (nli.enabled) but the inference request did not complete successfully (timeout, non-2xx response, or malformed payload); check server logs for the [NLI] warning`
+            `expected nli.status="ok" but got "soft_failure" — NLI_ENDPOINT was configured (nli.enabled) but the inference request did not complete successfully (timeout, non-2xx response, or malformed payload); check server logs for the [NLI] warning`
           );
         } else if (fixture.expected.expectNLIStatus !== "disabled" && actualStatus === "disabled") {
           reasons.push(
-            `expected nli.status="${fixture.expected.expectNLIStatus}" but NLI is disabled — HUGGINGFACE_API_KEY is not configured on the server`
+            `expected nli.status="${fixture.expected.expectNLIStatus}" but NLI is disabled — NLI_ENDPOINT is not configured on the server`
           );
         } else {
           reasons.push(`expected nli.status="${fixture.expected.expectNLIStatus}" but got "${actualStatus}"`);

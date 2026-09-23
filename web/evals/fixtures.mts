@@ -29,8 +29,8 @@ export type IssueType =
  * Operational status of the auxiliary Hugging Face NLI check, mirroring
  * `nli.status` in the /api/adapt response. Distinct from whether a
  * contradiction was actually flagged:
- *  - "disabled": no HUGGINGFACE_API_KEY configured; NLI intentionally not attempted.
- *  - "ok": the HF request completed and was parsed for scoring — a successful
+ *  - "disabled": no NLI_ENDPOINT configured; NLI intentionally not attempted.
+ *  - "ok": the endpoint request completed and was parsed for scoring — a successful
  *    request that simply finds zero contradictions is still "ok".
  *  - "soft_failure": NLI was configured/attempted, but a timeout, network
  *    error, non-2xx response, or malformed payload prevented a valid result.
@@ -67,17 +67,19 @@ export interface ExpectedBehavior {
   forbiddenIssueTypes?: IssueType[];
   /**
    * Whether `nli.enabled` should be true/false in the response. Only set
-   * this when it is actually meaningful (e.g. proving the HF wiring is
-   * live) — it reflects whether HUGGINGFACE_API_KEY is configured on the
-   * server, NOT whether the HF request actually succeeded, and NOT whether
-   * a contradiction was found. Use `expectNLIStatus` for the former.
+   * this when it is actually meaningful (e.g. proving the NLI wiring is
+   * live) — it reflects whether `NLI_ENDPOINT` is configured on the
+   * server, NOT whether the endpoint request actually succeeded, and NOT
+   * whether a contradiction was found. `HUGGINGFACE_API_KEY` is optional
+   * bearer auth only and has no bearing on this flag. Use `expectNLIStatus`
+   * for the former.
    */
   expectNLIEnabled?: boolean;
   /**
-   * Expected `nli.status` (see `NLIStatus`). Use this to prove the Hugging
-   * Face request actually completed successfully ("ok"), as opposed to
+   * Expected `nli.status` (see `NLIStatus`). Use this to prove the remote
+   * NLI endpoint actually completed successfully ("ok"), as opposed to
    * merely being configured (`expectNLIEnabled: true` alone does NOT prove
-   * the HF inference call succeeded — `runNLICheck` soft-fails on timeout,
+   * the inference call succeeded — `runNLICheck` soft-fails on timeout,
    * non-2xx, and malformed payloads, all of which still report
    * `enabled: true`). Never infer this from `flaggedClaims` — a successful
    * request that finds zero contradictions is still "ok".
@@ -151,7 +153,7 @@ export const fixtures: FidelityFixture[] = [
   {
     id: "nli_wiring_canary",
     description:
-      "A simple source containing a clear negation ('NOT permitted') — a construction known to be at risk of accidental negation-dropping during LLM paraphrase. Proves the Hugging Face NLI integration is actually wired up AND that the inference request itself completed successfully, when HUGGINGFACE_API_KEY is configured. Does not force or fake a contradiction.",
+      "A simple source containing a clear negation ('NOT permitted') — a construction known to be at risk of accidental negation-dropping during LLM paraphrase. Proves the NLI integration is actually wired up AND that the inference request itself completed successfully, when NLI_ENDPOINT is configured. Does not force or fake a contradiction.",
     originalText:
       "Photography and video recording are NOT permitted inside the exhibit hall during the judging period. Attendees may take photos in the lobby area only.",
     preferences: { detailLevel: "full", wordingStyle: "plain_language" },
@@ -161,7 +163,7 @@ export const fixtures: FidelityFixture[] = [
       expectNLIStatus: "ok",
     },
     notes:
-      "This is an infrastructure/wiring check, not a request for a contradiction. It intentionally asserts TWO distinct facts: (1) expectNLIEnabled=true — HUGGINGFACE_API_KEY is configured on the server; (2) expectNLIStatus='ok' — the HF request itself actually completed and was parsed for scoring, which enabled=true alone does NOT prove (runNLICheck soft-fails on timeout/non-2xx/malformed payload while still reporting enabled=true). It deliberately does NOT require nli.flaggedClaims > 0 or a semantic_contradiction issue, because normal Gemini generation may correctly preserve the negation — that is a good outcome, not a canary failure. Per task scope, production code is never modified to force this canary to fire. Expected outcomes in this environment: if enabled=true and status='soft_failure', the runner FAILS clearly stating HF was configured but inference did not complete successfully (check server logs for the [NLI] warning — timeout/non-2xx/malformed payload). If enabled=false and status='disabled', the runner FAILS clearly stating NLI is not configured in this environment (set HUGGINGFACE_API_KEY to enable it).",
+      "This is an infrastructure/wiring check, not a request for a contradiction. It intentionally asserts TWO distinct facts: (1) expectNLIEnabled=true — NLI_ENDPOINT is configured on the server (HUGGINGFACE_API_KEY is optional bearer auth only and does not affect this flag); (2) expectNLIStatus='ok' — the endpoint request itself actually completed and was parsed for scoring, which enabled=true alone does NOT prove (runNLICheck soft-fails on timeout/non-2xx/malformed payload while still reporting enabled=true). It deliberately does NOT require nli.flaggedClaims > 0 or a semantic_contradiction issue, because normal Gemini generation may correctly preserve the negation — that is a good outcome, not a canary failure. Per task scope, production code is never modified to force this canary to fire. Expected outcomes in this environment: if enabled=true and status='soft_failure', the runner FAILS clearly stating the endpoint was configured but inference did not complete successfully (check server logs for the [NLI] warning — timeout/non-2xx/malformed payload). If enabled=false and status='disabled', the runner FAILS clearly stating NLI is not configured in this environment (set NLI_ENDPOINT to enable it).",
   },
   {
     id: "nli_claim_cutoff",
