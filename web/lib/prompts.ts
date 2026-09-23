@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DetailLevel, WordingStyle, VerificationOutput } from "./schemas";
+import { DetailLevel, WordingStyle, VerificationOutput } from "@/lib/schemas";
 
 export const GENERATIVE_SYSTEM_PROMPT = `
 You are Linaw AI's Generative Core. Your job is to extract a strict structured meaning map from raw source text and produce a recipient-facing adaptation that preserves 100% of critical logic, obligations, dates, conditions, and exceptions.

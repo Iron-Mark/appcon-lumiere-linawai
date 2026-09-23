@@ -17,8 +17,8 @@ import {
 
 export const maxDuration = 60;
 
-const model = google("gemini-2.5-flash");
-const TIMEOUT_MS = 15_000;
+const model = google("gemini-3.8-flash");
+const TIMEOUT_MS = 25_000;
 
 // ---------- Auxiliary NLI (Natural Language Inference) check ----------
 const HF_NLI_MODEL_URL =
