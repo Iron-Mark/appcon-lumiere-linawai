@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Linaw AI",
+  "version": "0.1.0",
+  "description": "Adapt the format. Preserve the meaning. Companion reading panel for the Linaw web app.",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "dist/background.js"
+  },
+  "action": {
+    "default_title": "Linaw — adapt selection",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["dist/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

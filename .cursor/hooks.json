@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "node .cursor/hooks/session-start.js",
+        "timeout": 10
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": "node .cursor/hooks/guard-policy.js",
+        "timeout": 10
+      }
+    ],
+    "postToolUse": [
+      {
+        "command": "node .cursor/hooks/nudge-policy.js",
+        "matcher": "Write|StrReplace|Delete",
+        "timeout": 10
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": "node .cursor/hooks/no-ai-attribution.js",
+        "timeout": 10
+      }
+    ]
+  }
+}
