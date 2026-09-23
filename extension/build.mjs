@@ -6,7 +6,8 @@
  *   node extension/build.mjs
  */
 import * as esbuild from "../node_modules/esbuild/lib/main.js";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -75,7 +76,9 @@ const shared = {
   format: "iife",
   target: ["chrome120"],
   platform: "browser",
+  // MV3 CSP strictly forbids eval-based or remote sourcemaps
   sourcemap: false,
+  legalComments: "none",
   logLevel: "info",
   jsx: "automatic",
   absWorkingDir: __dirname,
@@ -93,13 +96,39 @@ await esbuild.build({
   outfile: path.join(__dirname, "dist/content.js"),
 });
 
+const backgroundEntry = existsSync(path.join(__dirname, "src/background/index.ts"))
+  ? path.join(__dirname, "src/background/index.ts")
+  : path.join(__dirname, "src/background.ts");
+
 await esbuild.build({
   ...shared,
-  entryPoints: [path.join(__dirname, "src/background.ts")],
+  entryPoints: [backgroundEntry],
   outfile: path.join(__dirname, "dist/background.js"),
 });
+
+const sidepanelEntry = path.join(__dirname, "src/sidepanel/index.tsx");
+if (existsSync(sidepanelEntry)) {
+  await esbuild.build({
+    ...shared,
+    entryPoints: [sidepanelEntry],
+    outfile: path.join(__dirname, "dist/sidepanel.js"),
+  });
+}
+
+// Validate CSP compliance for Manifest V3 (no eval(), no remote script loading)
+for (const file of ["dist/content.js", "dist/background.js", "dist/sidepanel.js"]) {
+  const filePath = path.join(__dirname, file);
+  if (existsSync(filePath)) {
+    const content = readFileSync(filePath, "utf-8");
+    if (/\beval\s*\(/.test(content)) {
+      throw new Error(`CSP violation: eval() detected in ${file}`);
+    }
+  }
+}
+
 
 // Touch require so tooling notices node resolution stayed local to the monorepo.
 void require.resolve("../node_modules/esbuild/package.json");
 
 console.log("Linaw extension built → extension/dist (load unpacked: extension/)");
+

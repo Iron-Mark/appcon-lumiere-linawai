@@ -51,11 +51,33 @@ declare namespace chrome {
       currentWindow?: boolean;
     }): Promise<ChromeTab[]>;
     sendMessage(tabId: number, message: ChromeRuntimeMessage): Promise<unknown>;
+    onActivated?: {
+      addListener(
+        callback: (activeInfo: { tabId: number; windowId: number }) => void,
+      ): void;
+    };
+    onUpdated?: {
+      addListener(
+        callback: (
+          tabId: number,
+          changeInfo: { status?: string; url?: string },
+          tab: ChromeTab,
+        ) => void,
+      ): void;
+    };
   };
+
 
   const action: {
     onClicked: {
       addListener(callback: (tab: ChromeTab) => void): void;
     };
   };
+
+  const sidePanel: {
+    open(options: { windowId?: number; tabId?: number }): Promise<void>;
+    setPanelBehavior(behavior: { openPanelOnActionClick?: boolean }): Promise<void>;
+    setOptions(options: { tabId?: number; path?: string; enabled?: boolean }): Promise<void>;
+  };
 }
+

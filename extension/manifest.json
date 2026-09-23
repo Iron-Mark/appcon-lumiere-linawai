@@ -3,10 +3,13 @@
   "name": "Linaw AI",
   "version": "0.1.0",
   "description": "Adapt the format. Preserve the meaning. Companion reading panel for the Linaw web app.",
-  "permissions": ["storage", "activeTab"],
+  "permissions": ["sidePanel", "storage", "activeTab"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "background": {
     "service_worker": "dist/background.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
   },
   "action": {
     "default_title": "Linaw: adapt selection",
@@ -28,3 +31,4 @@
     "128": "icons/icon128.png"
   }
 }
+
