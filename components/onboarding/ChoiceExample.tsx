@@ -3,134 +3,10 @@
 import { useEffect, useState } from "react";
 import { Pause, Play } from "lucide-react";
 import { useListen } from "@/components/read/useListen";
+import { EXAMPLE_MEASURE_SETS, exampleFor } from "./example";
 import type { ChoiceValue, DraftPreferences, StepId } from "./steps";
 
-const SOURCE = [
-  "Members of the Linaw campus pilot must confirm their orientation seat by Thursday at 5 PM.",
-  "Mentors should arrive Friday at 8:30 AM. Other members should arrive at 9:00 AM.",
-  "Late confirmations are accepted only with written approval from the program coordinator.",
-];
-
-const KEY_POINTS = [
-  "Confirm your orientation seat by Thursday at 5 PM.",
-  "Mentors arrive Friday at 8:30 AM.",
-  "Other members arrive at 9:00 AM.",
-  "Late confirmations need written approval.",
-];
-
-const PLAIN = [
-  "Please confirm your orientation seat by Thursday at 5 PM.",
-  "Mentors arrive on Friday at 8:30 AM. Other members arrive at 9:00 AM.",
-  "If you confirm late, you need written approval from the program coordinator.",
-];
-
-const PLAIN_POINTS = [
-  "Confirm your seat by Thursday at 5 PM.",
-  "Mentors arrive Friday at 8:30 AM.",
-  "Everyone else arrives at 9:00 AM.",
-  "A late confirmation needs written approval.",
-];
-
-// Taglish keeps dates, times, roles, and the approval rule in English, as people do.
-const TAGLISH = [
-  "Members of the Linaw campus pilot, kumpirmahin ninyo ang orientation seat ninyo by Thursday at 5 PM.",
-  "Mentors, dumating ng Friday at 8:30 AM. Other members, dumating ng 9:00 AM.",
-  "Late confirmations ay tatanggapin lang only with written approval from the program coordinator.",
-];
-
-const TAGLISH_POINTS = [
-  "Kumpirmahin ang seat mo by Thursday at 5 PM.",
-  "Mentors, dumating ng Friday at 8:30 AM.",
-  "Other members, dumating ng 9:00 AM.",
-  "Late confirmation? Kailangan ng written approval.",
-];
-
-type Example = {
-  kicker: string;
-  blocks: string[];
-  list: boolean;
-  spoken: boolean;
-};
-
-function detailBlocks(draft: DraftPreferences, detail: "full" | "key_points"): Example {
-  const plain = draft.wording === "plain";
-  const taglish = draft.wording === "taglish";
-  if (detail === "key_points") {
-    return {
-      kicker: taglish
-        ? "Key points, sa Taglish"
-        : plain
-          ? "Key points, in everyday words"
-          : "Key points",
-      blocks: taglish ? TAGLISH_POINTS : plain ? PLAIN_POINTS : KEY_POINTS,
-      list: true,
-      spoken: false,
-    };
-  }
-  return {
-    kicker: taglish
-      ? "The full message, sa Taglish"
-      : plain
-        ? "The full message, in everyday words"
-        : "The full message",
-    blocks: taglish ? TAGLISH : plain ? PLAIN : SOURCE,
-    list: false,
-    spoken: false,
-  };
-}
-
-export function exampleFor(
-  stepId: StepId,
-  selected: ChoiceValue | undefined,
-  draft: DraftPreferences,
-): Example {
-  if (!selected) {
-    return {
-      kicker: "A sample message",
-      blocks: SOURCE,
-      list: false,
-      spoken: false,
-    };
-  }
-
-  if (stepId === "detail") {
-    return detailBlocks(draft, selected === "key_points" ? "key_points" : "full");
-  }
-
-  if (stepId === "wording") {
-    const next = {
-      ...draft,
-      wording:
-        selected === "plain" || selected === "taglish" ? selected : "original",
-    } as DraftPreferences;
-    return detailBlocks(next, draft.detail === "key_points" ? "key_points" : "full");
-  }
-
-  if (stepId === "delivery") {
-    const next = {
-      ...draft,
-      delivery: selected === "listen" ? "listen" : "read",
-    } as DraftPreferences;
-    const example = detailBlocks(
-      next,
-      draft.detail === "key_points" ? "key_points" : "full",
-    );
-    return {
-      ...example,
-      kicker: selected === "listen" ? "Linaw would read this aloud" : example.kicker,
-      spoken: selected === "listen",
-    };
-  }
-
-  const sample = detailBlocks(draft, draft.detail === "key_points" ? "key_points" : "full");
-  return {
-    ...sample,
-    kicker:
-      selected === "auto_adapt"
-        ? "After you opt in, a page you open can look like this"
-        : "You choose the message, then it can look like this",
-  };
-}
+export { exampleFor } from "./example";
 
 export function ChoiceExample({
   stepId,
@@ -148,15 +24,17 @@ export function ChoiceExample({
   return (
     <div className="onboarding-example">
       <div className="onboarding-example-stage">
-        <ExampleMeasure blocks={SOURCE} list={false} />
-        <ExampleMeasure blocks={PLAIN} list={false} />
-        <ExampleMeasure blocks={KEY_POINTS} list />
-        <ExampleMeasure blocks={PLAIN_POINTS} list />
+        <ExampleMeasure blocks={EXAMPLE_MEASURE_SETS.source} list={false} />
+        <ExampleMeasure blocks={EXAMPLE_MEASURE_SETS.plain} list={false} />
+        <ExampleMeasure blocks={EXAMPLE_MEASURE_SETS.keyPoints} list />
+        <ExampleMeasure blocks={EXAMPLE_MEASURE_SETS.plainPoints} list />
         <div className="onboarding-example-measure" aria-hidden="true">
           <div className="listen-player">
             <p className="onboarding-example-kicker">Listen</p>
             <p className="listen-player-title">Orientation seat</p>
-            <p className="listen-player-script">{SOURCE.join(" ")}</p>
+            <p className="listen-player-script">
+              {EXAMPLE_MEASURE_SETS.source.join(" ")}
+            </p>
             <div className="listen-player-bar">
               <span className="listen-player-time">0:00</span>
               <span className="listen-player-track" />
@@ -196,7 +74,7 @@ function ExampleMeasure({
   blocks,
   list,
 }: {
-  blocks: string[];
+  blocks: readonly string[];
   list: boolean;
 }) {
   return (
@@ -224,7 +102,10 @@ function ExampleMeasure({
 function ListenPlayer({ title, script }: { title: string; script: string }) {
   const { listening, toggle, stop } = useListen(script);
   const [progress, setProgress] = useState(0);
-  const duration = Math.max(8, Math.round(script.split(/\s+/).filter(Boolean).length / 2.4));
+  const duration = Math.max(
+    8,
+    Math.round(script.split(/\s+/).filter(Boolean).length / 2.4),
+  );
 
   useEffect(() => {
     if (!listening) {
@@ -261,7 +142,10 @@ function ListenPlayer({ title, script }: { title: string; script: string }) {
           aria-valuenow={elapsed}
           aria-label="Sample playback"
         >
-          <span className="listen-player-fill" style={{ width: `${progress * 100}%` }} />
+          <span
+            className="listen-player-fill"
+            style={{ width: `${progress * 100}%` }}
+          />
         </span>
         <span className="listen-player-time">{formatTime(duration)}</span>
         <button

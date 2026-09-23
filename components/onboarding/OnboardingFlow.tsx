@@ -15,12 +15,14 @@ import { preferenceStore } from "@/lib/storage/preferences";
 import { ChoiceCard } from "./ChoiceCard";
 import { ChoiceExample } from "./ChoiceExample";
 import {
-  ONBOARDING_STEPS,
+  TOTAL_ONBOARDING_STEPS,
+  choiceForStep,
+  resolveOnboardingStep,
   type ChoiceValue,
   type DraftPreferences,
 } from "./steps";
 
-const TOTAL_STEPS = ONBOARDING_STEPS.length;
+const TOTAL_STEPS = TOTAL_ONBOARDING_STEPS;
 
 export function OnboardingFlow({ editing = false }: { editing?: boolean }) {
   const headingId = useId();
@@ -30,8 +32,8 @@ export function OnboardingFlow({ editing = false }: { editing?: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [checkingExisting, setCheckingExisting] = useState(true);
 
-  const step = ONBOARDING_STEPS[stepIndex];
-  const selected = draft[step.id];
+  const step = resolveOnboardingStep(stepIndex, draft);
+  const selected = choiceForStep(step, draft);
   const canContinue = selected !== undefined;
   const isLast = stepIndex === TOTAL_STEPS - 1;
   const progress = ((stepIndex + 1) / TOTAL_STEPS) * 100;
@@ -43,7 +45,14 @@ export function OnboardingFlow({ editing = false }: { editing?: boolean }) {
         const existing = await preferenceStore.get();
         if (!cancelled && existing) {
           if (editing) {
-            setDraft(existing);
+            // Onboarding only offers original | plain; clear other wording so Continue stays honest.
+            const { wording, ...rest } = existing;
+            setDraft({
+              ...rest,
+              ...(wording === "original" || wording === "plain"
+                ? { wording }
+                : {}),
+            });
           } else {
             window.location.replace("/read");
             return;
@@ -91,6 +100,15 @@ export function OnboardingFlow({ editing = false }: { editing?: boolean }) {
     setError(null);
     try {
       await preferenceStore.set(preferences);
+      // Seed the note layout for first arrival: Key Points → glance, Full → text.
+      try {
+        window.localStorage.setItem(
+          "linaw.read.view",
+          detail === "key_points" ? "glance" : "text",
+        );
+      } catch {
+        // Best effort; /read can still seed from preferences.
+      }
       // Hard navigate so we never sit on "Saving…" if soft push stalls.
       window.location.assign("/read");
     } catch {
