@@ -1,6 +1,8 @@
 /**
  * Background Service Worker for Linaw AI extension.
+ * Clarify calls the Linaw app (Gemini, then Pandev). The page never sees the keys.
  */
+import { fetchLinawJson } from "../linaw-origin";
 
 // Configure side panel behavior so clicking the action icon opens the side panel
 if (typeof chrome !== "undefined" && chrome.sidePanel?.setPanelBehavior) {
@@ -40,6 +42,39 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
           sendResponse({ ok: false, error: String(error) });
         });
       return true; // Keep message channel open for asynchronous response
+    }
+
+    if (message?.type === "linaw.adaptInfo") {
+      void fetchLinawJson("/api/adapt", { method: "GET" })
+        .then((result) => {
+          sendResponse(
+            result
+              ? { ok: true, status: result.status, json: result.json }
+              : { ok: false },
+          );
+        })
+        .catch(() => {
+          sendResponse({ ok: false });
+        });
+      return true;
+    }
+
+    if (message?.type === "linaw.adapt" && message.input) {
+      void fetchLinawJson("/api/adapt", {
+        method: "POST",
+        body: JSON.stringify(message.input),
+      })
+        .then((result) => {
+          sendResponse(
+            result
+              ? { ok: result.status < 400, status: result.status, json: result.json }
+              : { ok: false },
+          );
+        })
+        .catch(() => {
+          sendResponse({ ok: false });
+        });
+      return true;
     }
 
     return undefined;

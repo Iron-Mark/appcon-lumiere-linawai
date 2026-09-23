@@ -42,6 +42,7 @@ declare namespace chrome {
       ): void;
     };
     sendMessage(message: ChromeRuntimeMessage): Promise<unknown>;
+    getURL?(path: string): string;
     lastError?: { message?: string };
   };
 

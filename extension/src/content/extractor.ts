@@ -50,34 +50,50 @@ function scoreRoot(el: Element): number {
   return text.length * (1 - Math.min(linkDensity, 0.9)) + paragraphs * 120;
 }
 
+function isLinawHost(el: Element): boolean {
+  return Boolean(el.closest("[data-linaw]"));
+}
+
 /**
- * Extract the main readable text from the current document.
- * Returns empty string when nothing useful is found.
+ * Main article element Auto-Clarify already prefers.
+ * Returns null when the only readable text is a loose body-wide cluster,
+ * so page styling never restyles the whole document.
  */
-export function extractMainReadableText(doc: Document = document): string {
+export function findMainContentRoot(doc: Document = document): Element | null {
   const candidates: Element[] = [];
 
   const article = doc.querySelector("article");
-  if (article) candidates.push(article);
+  if (article && !isLinawHost(article)) candidates.push(article);
 
   const main = doc.querySelector("main, [role='main']");
-  if (main) candidates.push(main);
+  if (main && !isLinawHost(main)) candidates.push(main);
 
   for (const el of doc.querySelectorAll(
     ".post, .entry-content, .article-body, #content, .content",
   )) {
-    candidates.push(el);
+    if (!isLinawHost(el)) candidates.push(el);
   }
 
   let best: Element | null = null;
   let bestScore = 0;
   for (const el of candidates) {
+    if (el === doc.body || el === doc.documentElement) continue;
     const score = scoreRoot(el);
     if (score > bestScore) {
       bestScore = score;
       best = el;
     }
   }
+
+  return best;
+}
+
+/**
+ * Extract the main readable text from the current document.
+ * Returns empty string when nothing useful is found.
+ */
+export function extractMainReadableText(doc: Document = document): string {
+  const best = findMainContentRoot(doc);
 
   if (best) {
     const parts = collectParagraphs(best);

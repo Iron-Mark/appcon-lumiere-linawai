@@ -4,6 +4,7 @@ import type { Preferences } from "@/lib/domain";
 import { Panel } from "./Panel";
 import {
   extractMainReadableText,
+  findMainContentRoot,
   getCurrentSelectionText,
 } from "./extractor";
 import {
@@ -14,32 +15,54 @@ import {
   loadPreferences,
 } from "../storage/preferences";
 import { startLinawPreferenceSync } from "./prefs-sync";
+import { getReadingComfort } from "../storage/reading-comfort";
+import {
+  clearPageReading,
+  releasePageReadingHold,
+  selectionInsideArticle,
+  syncPageReading,
+} from "./page-reading";
 
 const HOST_ID = "linaw-companion-root";
 
 export const PANEL_CSS = `
 :host, * { box-sizing: border-box; }
 :host {
-  --color-brand: #2563eb;
-  --color-brand-hover: #1d4ed8;
-  --color-brand-light: #eff6ff;
-  --color-slate-50: #f8fafc;
-  --color-slate-100: #f1f5f9;
-  --color-slate-200: #e2e8f0;
-  --color-slate-300: #cbd5e1;
+  --color-brand: #4f5d2f;
+  --color-brand-hover: #3f4a25;
+  --color-brand-light: #e4ebd4;
+  --color-paper: #f3ebe0;
+  --color-paper-raised: #faf6f0;
+  --color-paper-inset: #e8dfd2;
+  --color-ink: #1a1814;
+  --color-ink-muted: #5c564c;
+  --color-action: #4f5d2f;
+  --color-action-soft: #e4ebd4;
+  --color-action-border: #6b7a3f;
+  --color-slate-50: #faf6f0;
+  --color-slate-100: #f3ebe0;
+  --color-slate-200: #e8dfd2;
+  --color-slate-300: #d4cbbd;
   --color-slate-400: #94a3b8;
-  --color-slate-500: #64748b;
-  --color-slate-600: #475569;
+  --color-slate-500: #726a5c;
+  --color-slate-600: #5c564c;
   --color-slate-700: #334155;
-  --color-slate-800: #1e293b;
+  --color-slate-800: #1a1814;
   --color-slate-900: #0f172a;
   --color-white: #ffffff;
-  --color-warning: #b45309;
+  --color-warning: #a16207;
   --color-warning-bg: #fef3c7;
-  --color-pass: #065f46;
-  --color-pass-bg: #ecfdf5;
-  --color-pass-border: #a7f3d0;
+  --color-pass: #3f4a25;
+  --color-pass-bg: #e4ebd4;
+  --color-pass-border: #6b7a3f;
   --font-ui: 'Plus Jakarta Sans', Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --linaw-type-size: 0.875rem;
+  --linaw-line-height: 1.6;
+  --linaw-letter-spacing: normal;
+  --linaw-word-spacing: normal;
+  --linaw-reading-face: inherit;
+  --linaw-reading-ink: #1a1814;
+  --linaw-reading-bg: #f3ebe0;
   all: initial;
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
@@ -47,6 +70,7 @@ export const PANEL_CSS = `
 }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
+  .linaw-focus-line { transition: none !important; }
 }
 .linaw-shell {
   position: absolute;
@@ -56,10 +80,10 @@ export const PANEL_CSS = `
   max-height: min(540px, calc(100vh - 32px));
   overflow-y: auto;
   border-radius: 16px;
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  color: #0f172a;
+  background-color: var(--color-paper-raised);
+  border: 1px solid var(--color-paper-inset);
+  box-shadow: 0 20px 25px -5px rgba(26, 24, 20, 0.1), 0 8px 10px -6px rgba(26, 24, 20, 0.08);
+  color: var(--color-ink);
   animation: linaw-popover-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
@@ -106,7 +130,7 @@ export const PANEL_CSS = `
   margin: 0;
   font-size: 1rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--color-ink);
   letter-spacing: -0.025em;
 }
 .linaw-close-btn {
@@ -128,9 +152,9 @@ export const PANEL_CSS = `
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  background-color: #ecfdf5;
-  border: 1px solid #a7f3d0;
-  color: #065f46;
+  background-color: var(--color-pass-bg);
+  border: 1px solid var(--color-pass-border);
+  color: var(--color-pass);
   border-radius: 9999px;
   padding: 6px 12px;
   font-size: 0.75rem;
@@ -158,8 +182,8 @@ export const PANEL_CSS = `
   flex-shrink: 0;
 }
 .linaw-status-pill-badge.is-pass {
-  background-color: #d1fae5;
-  color: #065f46;
+  background-color: var(--color-action-soft);
+  color: var(--color-pass);
 }
 .linaw-status-pill-badge.is-warning {
   background-color: var(--color-warning-bg);
@@ -173,7 +197,7 @@ export const PANEL_CSS = `
 .linaw-status-pill-title {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #065f46;
+  color: var(--color-pass);
   line-height: 1.2;
 }
 .linaw-status-pill.is-warning .linaw-status-pill-title {
@@ -181,7 +205,7 @@ export const PANEL_CSS = `
 }
 .linaw-status-pill-subtitle {
   font-size: 0.7rem;
-  color: #047857;
+  color: var(--color-action-border);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -192,8 +216,10 @@ export const PANEL_CSS = `
 .linaw-gear-btn {
   background: transparent;
   border: none;
-  color: #065f46;
+  color: var(--color-pass);
   font-size: 1rem;
+  min-width: 44px;
+  min-height: 44px;
   padding: 2px 4px;
   border-radius: 4px;
   cursor: pointer;
@@ -203,13 +229,13 @@ export const PANEL_CSS = `
   transition: color 150ms ease;
 }
 .linaw-gear-btn:hover {
-  color: #047857;
+  color: var(--color-brand-hover);
 }
 .linaw-status-pill.is-warning .linaw-gear-btn {
   color: var(--color-warning);
 }
 .linaw-gear-btn.is-active {
-  color: #2563eb;
+  color: var(--color-action);
 }
 .linaw-settings-drawer {
   background-color: var(--color-slate-50);
@@ -243,7 +269,7 @@ export const PANEL_CSS = `
   cursor: pointer;
 }
 .linaw-select:focus {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--color-action);
   outline-offset: 1px;
 }
 .linaw-btn-group {
@@ -261,9 +287,89 @@ export const PANEL_CSS = `
   cursor: pointer;
 }
 .linaw-btn-group button.is-active {
-  background-color: #2563eb;
+  background-color: var(--color-action);
   color: var(--color-white);
   font-weight: 600;
+}
+.linaw-reading-disclosure {
+  background-color: var(--color-paper);
+  border: 1px solid var(--color-paper-inset);
+  border-radius: 0.75rem;
+  padding: 0;
+}
+.linaw-reading-summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-muted);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  user-select: none;
+}
+.linaw-reading-summary::-webkit-details-marker { display: none; }
+.linaw-reading-summary::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 5px solid var(--color-ink-muted);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  margin-right: 8px;
+  transition: transform 150ms ease;
+}
+details[open] > .linaw-reading-summary::before {
+  transform: rotate(90deg);
+}
+.linaw-reading-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 12px 12px;
+  border-top: 1px solid var(--color-paper-inset);
+  padding-top: 10px;
+}
+.linaw-comfort-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.linaw-segment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.linaw-segment-btn {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--color-ink-muted);
+  background-color: var(--color-paper-raised);
+  border: 1px solid var(--color-paper-inset);
+  border-radius: 8px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+.linaw-segment-btn:hover {
+  border-color: var(--color-action-border);
+  color: var(--color-ink);
+}
+.linaw-segment-btn.is-active {
+  background-color: var(--color-action-soft);
+  border-color: var(--color-action-border);
+  color: var(--color-action);
+  font-weight: 600;
+}
+.linaw-toggle-btn {
+  align-self: flex-start;
+  min-width: 72px;
 }
 .linaw-settings-links {
   display: flex;
@@ -302,19 +408,20 @@ export const PANEL_CSS = `
   margin: 0;
 }
 .linaw-enable-primary-btn {
-  background-color: #2563eb;
+  background-color: var(--color-action);
   color: var(--color-white);
-  border: 1px solid #2563eb;
+  border: 1px solid var(--color-action);
   border-radius: 0.5rem;
   padding: 8px 14px;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   text-align: center;
+  min-height: 44px;
   transition: background-color 150ms ease;
 }
 .linaw-enable-primary-btn:hover {
-  background-color: #1d4ed8;
+  background-color: var(--color-brand-hover);
 }
 .linaw-disabled-sites-section {
   display: flex;
@@ -410,12 +517,47 @@ export const PANEL_CSS = `
   line-height: 1.35;
 }
 .linaw-content-card {
-  background-color: var(--color-slate-50);
-  border: 1px solid var(--color-slate-200);
+  background-color: var(--linaw-reading-bg, var(--color-paper));
+  border: 1px solid var(--color-paper-inset);
   border-radius: 12px;
   padding: 12px 14px;
   max-height: 38vh;
   overflow-y: auto;
+}
+.linaw-reading-text {
+  color: var(--linaw-reading-ink);
+}
+.linaw-reading-text .linaw-paragraph,
+.linaw-reading-text .linaw-bullet-item {
+  font-size: var(--linaw-type-size);
+  line-height: var(--linaw-line-height);
+  letter-spacing: var(--linaw-letter-spacing);
+  word-spacing: var(--linaw-word-spacing);
+  font-family: var(--linaw-reading-face);
+  color: var(--linaw-reading-ink);
+}
+.linaw-focus-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+.linaw-focus-line {
+  background-color: color-mix(in srgb, var(--color-action-soft) 70%, transparent);
+  border-radius: 4px;
+  box-shadow: inset 3px 0 0 var(--color-action);
+  padding: 2px 6px;
+  margin-left: -6px;
+  margin-right: -6px;
+  transition: background-color 150ms ease, box-shadow 150ms ease;
+  cursor: pointer;
+}
+.linaw-deadline-mark {
+  background-color: var(--color-action-soft);
+  color: var(--color-action);
+  font-weight: 600;
+  border-radius: 2px;
+  padding: 0 2px;
 }
 .linaw-bullet-list {
   margin: 0;
@@ -461,9 +603,10 @@ export const PANEL_CSS = `
 }
 .linaw-action-bar {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1.4fr;
   gap: 10px;
   margin-top: 4px;
+  align-items: stretch;
 }
 .linaw-copy-btn {
   display: inline-flex;
@@ -473,17 +616,33 @@ export const PANEL_CSS = `
   font-family: var(--font-ui);
   font-size: 0.85rem;
   font-weight: 500;
-  color: #334155;
-  background-color: #ffffff;
-  border: 1px solid #cbd5e1;
+  color: var(--color-ink);
+  background-color: var(--color-paper-raised);
+  border: 1px solid var(--color-paper-inset);
   border-radius: 8px;
   padding: 8px 12px;
+  min-height: 44px;
   cursor: pointer;
   transition: all 150ms ease;
 }
 .linaw-copy-btn:hover {
-  background-color: var(--color-slate-50);
-  border-color: var(--color-slate-400);
+  background-color: var(--color-paper);
+  border-color: var(--color-action-border);
+}
+.linaw-listen-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.linaw-pace-segment {
+  width: 100%;
+}
+.linaw-pace-btn {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.68rem;
+  padding: 6px 4px;
 }
 .linaw-listen-btn {
   display: inline-flex;
@@ -494,24 +653,26 @@ export const PANEL_CSS = `
   font-size: 0.85rem;
   font-weight: 500;
   color: #ffffff;
-  background-color: #2563eb;
-  border: 1px solid #2563eb;
+  background-color: var(--color-action);
+  border: 1px solid var(--color-action);
   border-radius: 8px;
   padding: 8px 12px;
+  min-height: 44px;
   cursor: pointer;
   transition: all 150ms ease;
+  width: 100%;
 }
 .linaw-listen-btn:hover {
-  background-color: #1d4ed8;
-  border-color: #1d4ed8;
+  background-color: var(--color-brand-hover);
+  border-color: var(--color-brand-hover);
 }
 .linaw-listen-btn.is-listening {
-  background-color: #ea580c;
-  border-color: #ea580c;
+  background-color: #a16207;
+  border-color: #a16207;
 }
 .linaw-listen-btn.is-listening:hover {
-  background-color: #c2410c;
-  border-color: #c2410c;
+  background-color: #854d0e;
+  border-color: #854d0e;
 }
 .linaw-btn-svg {
   display: inline-block;
@@ -531,17 +692,39 @@ export const PANEL_CSS = `
   bottom: 20px;
   right: 20px;
   z-index: 2147483645;
-  background-color: #2563eb;
+  background-color: var(--color-action);
   color: var(--color-white);
-  border: 1px solid #1d4ed8;
+  border: 1px solid var(--color-brand-hover);
   border-radius: 9999px;
   padding: 8px 16px;
+  min-height: 44px;
   font-size: 0.85rem;
   font-weight: 600;
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.15);
+  box-shadow: 0 8px 24px rgb(26 24 20 / 0.15);
   cursor: pointer;
 }
 `;
+
+function buildPanelCss(): string {
+  let fontFace = "";
+  try {
+    if (typeof chrome !== "undefined" && chrome.runtime?.getURL) {
+      const url = chrome.runtime.getURL("fonts/Lexend.woff2");
+      fontFace = `
+@font-face {
+  font-family: "Lexend";
+  src: url("${url}") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+`;
+    }
+  } catch {
+    // Outside an extension context (tests / SSR) — Clear falls back to system UI.
+  }
+  return fontFace + PANEL_CSS;
+}
 
 type HostState = {
   root: Root | null;
@@ -553,6 +736,7 @@ type HostState = {
   disabled: boolean;
   panelOpen: boolean;
   position: { top: number; left: number } | null;
+  replaceOnPage: boolean;
 };
 
 const state: HostState = {
@@ -580,7 +764,7 @@ function ensureHost(): ShadowRoot {
   if (!shadow.querySelector("style[data-linaw-style]")) {
     const style = document.createElement("style");
     style.setAttribute("data-linaw-style", "true");
-    style.textContent = PANEL_CSS;
+    style.textContent = buildPanelCss();
     shadow.appendChild(style);
   }
   state.host = host;
@@ -686,6 +870,8 @@ function renderPanel() {
           void (async () => {
             await disableOrigin(location.origin);
             state.disabled = true;
+            releasePageReadingHold();
+            clearPageReading();
             state.panelOpen = false;
             state.position = null;
             renderPanel();
@@ -823,6 +1009,7 @@ async function bootstrap() {
   }
 
   state.preferences = await loadPreferences();
+  syncPageReading(await getReadingComfort());
 
   // Listen for clicks outside the companion card to dismiss it
   document.addEventListener("mousedown", (e: MouseEvent) => {

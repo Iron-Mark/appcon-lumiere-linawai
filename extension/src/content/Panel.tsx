@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { adapt } from "@/lib/adapt";
 import type {
   AdaptResponse,
@@ -15,6 +15,39 @@ import {
   savePreferences,
   type ExtensionPreferences,
 } from "../storage/preferences";
+import {
+  getReadingComfort,
+  saveReadingComfort,
+} from "../storage/reading-comfort";
+import {
+  DEFAULT_READING_COMFORT,
+  normalizeReadingComfort,
+  readingTextStyleVars,
+  speechRateForPace,
+  type ListenPace,
+  type ReadingComfort,
+  type ReadingFace,
+  type ReadingTone,
+  type SpacingStep,
+  type TypeSize,
+} from "../reading-comfort/defaults";
+import {
+  holdOffPageReading,
+  isPageReadingActive,
+  onPageFocusIndex,
+  pageFocusBlocks,
+  releasePageReadingHold,
+  setPageFocus,
+  shouldReplacePageWords,
+  showClarifiedText,
+  syncPageReading,
+} from "./page-reading";
+import { findMainContentRoot } from "./extractor";
+import { splitDeadlineMarks } from "../reading-comfort/deadline-marks";
+import {
+  clampFocusLine,
+  splitReadingLines,
+} from "../reading-comfort/focus-line";
 
 const WEB_APP_READ_URL = "http://localhost:3000/read";
 
@@ -26,6 +59,8 @@ export type PanelProps = {
   onClose?: () => void;
   onDisableSite: () => void;
   origin: string;
+  /** Auto-Clarify, or a selection that sits inside the main article. */
+  replaceOnPage?: boolean;
 };
 
 type ViewMode = "adapted" | "original";
@@ -70,6 +105,12 @@ function sindiLineFor(
   if (isDisabled) return "Linaw disabled on this site.";
   if (state === "working") return "Clarifying…";
   if (state === "listening") return "Reading aloud…";
+  if (state === "pass" && response?.adapter === "model") {
+    return "Clarified by the model, then checked.";
+  }
+  if (state === "pass" && response?.adapter === "fixture") {
+    return "Offline example. Start Linaw on this computer for Gemini, then Pandev.";
+  }
   if (state === "pass") return "No issue found in these checks.";
   if (state === "warning") {
     const warn = response?.checks.find(
@@ -109,6 +150,138 @@ function statusPillInfo(
   return { icon: "✔", text: "Using your saved preferences", isWarning: false };
 }
 
+function MarkedLine({ text }: { text: string }) {
+  const segments = splitDeadlineMarks(text);
+  return (
+    <>
+      {segments.map((seg, i) =>
+        seg.marked ? (
+          <mark key={i} className="linaw-deadline-mark">
+            {seg.text}
+          </mark>
+        ) : (
+          <span key={i}>{seg.text}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+function ReadingBody({
+  text,
+  asBullets,
+  focusLine,
+  focusIndex,
+  onFocusLine,
+}: {
+  text: string;
+  asBullets: boolean;
+  focusLine: boolean;
+  focusIndex: number;
+  onFocusLine: (index: number) => void;
+}) {
+  const lines = splitReadingLines(text);
+  if (lines.length === 0) {
+    return <p className="linaw-paragraph">—</p>;
+  }
+
+  if (asBullets || (focusLine && lines.length > 1)) {
+    const ListTag = asBullets ? "ul" : "div";
+    const ItemTag = asBullets ? "li" : "p";
+    return (
+      <ListTag
+        className={asBullets ? "linaw-bullet-list" : "linaw-focus-lines"}
+      >
+        {lines.map((line, idx) => (
+          <ItemTag
+            key={idx}
+            className={[
+              asBullets ? "linaw-bullet-item" : "linaw-paragraph",
+              focusLine && idx === focusIndex ? "linaw-focus-line" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            onClick={
+              focusLine
+                ? () => {
+                    onFocusLine(idx);
+                  }
+                : undefined
+            }
+            role={focusLine ? "button" : undefined}
+            tabIndex={focusLine ? 0 : undefined}
+            onKeyDown={
+              focusLine
+                ? (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onFocusLine(idx);
+                    }
+                  }
+                : undefined
+            }
+            aria-current={focusLine && idx === focusIndex ? "true" : undefined}
+          >
+            <MarkedLine text={line} />
+          </ItemTag>
+        ))}
+      </ListTag>
+    );
+  }
+
+  return (
+    <p
+      className={[
+        "linaw-paragraph",
+        focusLine ? "linaw-focus-line" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <MarkedLine text={text} />
+    </p>
+  );
+}
+
+function Segmented<T extends string>({
+  name,
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  name: string;
+  label: string;
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (next: T) => void;
+}) {
+  const groupId = `linaw-${name}`;
+  return (
+    <div className="linaw-comfort-row" role="group" aria-labelledby={`${groupId}-label`}>
+      <span id={`${groupId}-label`} className="linaw-settings-label">
+        {label}
+      </span>
+      <div className="linaw-segment">
+        {options.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            id={`${groupId}-${opt.value}`}
+            name={name}
+            className={`linaw-segment-btn ${value === opt.value ? "is-active" : ""}`}
+            aria-pressed={value === opt.value}
+            aria-label={`${label}: ${opt.label}`}
+            onClick={() => onChange(opt.value)}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function Panel({
   source,
   preferences,
@@ -117,6 +290,7 @@ export function Panel({
   onClose,
   onDisableSite,
   origin,
+  replaceOnPage = false,
 }: PanelProps) {
   const titleId = useId();
   const [working, setWorking] = useState(false);
@@ -126,16 +300,42 @@ export function Panel({
   const [listening, setListening] = useState(false);
   const [copied, setCopied] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [comfort, setComfort] = useState<ReadingComfort>(DEFAULT_READING_COMFORT);
+  const [focusIndex, setFocusIndex] = useState(0);
+  const [pageOn, setPageOn] = useState(false);
 
   const sourceRef = useRef(source);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const comfortRef = useRef(comfort);
 
   sourceRef.current = source;
+  comfortRef.current = comfort;
 
   const disabledOrigins: string[] =
     (preferences as Partial<ExtensionPreferences>).disabledOrigins ?? [];
   const isCurrentOriginDisabled =
     Boolean(origin) && disabledOrigins.includes(origin);
+
+  useEffect(() => {
+    void getReadingComfort().then((saved) => {
+      comfortRef.current = saved;
+      setComfort(saved);
+      if (isCurrentOriginDisabled) {
+        syncPageReading(saved, { disabled: true });
+        setPageOn(false);
+        return;
+      }
+      syncPageReading(saved);
+      setPageOn(isPageReadingActive());
+    });
+  }, [isCurrentOriginDisabled]);
+
+  useEffect(() => onPageFocusIndex(setFocusIndex), []);
+
+  useEffect(() => {
+    if (!comfort.focusLine || !isPageReadingActive()) return;
+    setPageFocus(focusIndex);
+  }, [focusIndex, comfort.focusLine]);
 
   const runAdapt = async (nextPrefs: Preferences, nextSource: string) => {
     const trimmed = nextSource.trim();
@@ -147,6 +347,7 @@ export function Panel({
     setWorking(true);
     setError(null);
     setView("adapted");
+    setFocusIndex(0);
     stopSpeech();
     try {
       const result = await adapt({
@@ -154,6 +355,10 @@ export function Panel({
         preferences: nextPrefs,
       });
       setResponse(result);
+      if (shouldReplacePageWords(result.adapter, replaceOnPage)) {
+        const root = findMainContentRoot(document);
+        if (root) showClarifiedText(root, result.adaptedText);
+      }
     } catch {
       setError("Clarification could not finish. Try again.");
       setResponse(null);
@@ -181,15 +386,78 @@ export function Panel({
   }
 
   function listenDisplayed() {
-    const textToSpeak =
+    const plainText =
       view === "original" ? source : (response?.adaptedText ?? source);
-    if (!textToSpeak.trim()) return;
+    const useFocus = comfortRef.current.focusLine;
+    const pageBlocks =
+      useFocus && isPageReadingActive() ? pageFocusBlocks() : [];
+    if (!plainText.trim() && pageBlocks.length === 0) return;
     stopSpeech();
     if (typeof window === "undefined" || !window.speechSynthesis) {
       setError("Speech is not available in this browser.");
       return;
     }
-    const utter = new SpeechSynthesisUtterance(textToSpeak);
+
+    const rate = speechRateForPace(comfortRef.current.listenPace);
+    if (useFocus && pageBlocks.length > 0) {
+      const index = clampFocusLine(focusIndex, pageBlocks.length);
+      setListening(true);
+      const speakAt = (i: number) => {
+        if (i >= pageBlocks.length) {
+          setListening(false);
+          utteranceRef.current = null;
+          return;
+        }
+        const next = setPageFocus(i);
+        setFocusIndex(next);
+        const line = (pageBlocks[next]?.textContent ?? "").replace(/\s+/g, " ").trim();
+        const utter = new SpeechSynthesisUtterance(line);
+        utter.rate = rate;
+        utter.onend = () => {
+          speakAt(next + 1);
+        };
+        utter.onerror = () => {
+          setListening(false);
+          utteranceRef.current = null;
+        };
+        utteranceRef.current = utter;
+        window.speechSynthesis.speak(utter);
+      };
+      speakAt(index);
+      return;
+    }
+    const lines = splitReadingLines(plainText);
+
+    if (useFocus && lines.length > 1) {
+      let index = clampFocusLine(focusIndex, lines.length);
+      setListening(true);
+
+      const speakAt = (i: number) => {
+        if (i >= lines.length) {
+          setListening(false);
+          utteranceRef.current = null;
+          return;
+        }
+        setFocusIndex(i);
+        const utter = new SpeechSynthesisUtterance(lines[i]);
+        utter.rate = rate;
+        utter.onend = () => {
+          speakAt(i + 1);
+        };
+        utter.onerror = () => {
+          setListening(false);
+          utteranceRef.current = null;
+        };
+        utteranceRef.current = utter;
+        window.speechSynthesis.speak(utter);
+      };
+
+      speakAt(index);
+      return;
+    }
+
+    const utter = new SpeechSynthesisUtterance(plainText);
+    utter.rate = rate;
     utter.onend = () => {
       setListening(false);
       utteranceRef.current = null;
@@ -210,6 +478,20 @@ export function Panel({
     if (!isCurrentOriginDisabled) {
       await runAdapt(saved, sourceRef.current);
     }
+  }
+
+  async function updateComfort(patch: Partial<ReadingComfort>) {
+    const next = normalizeReadingComfort({ ...comfortRef.current, ...patch });
+    comfortRef.current = next;
+    setComfort(next);
+    const saved = await saveReadingComfort(patch, next);
+    comfortRef.current = saved;
+    setComfort(saved);
+    const touchesPage = Object.keys(patch).some((key) => key !== "listenPace");
+    if (!touchesPage || isCurrentOriginDisabled) return;
+    releasePageReadingHold();
+    syncPageReading(saved);
+    setPageOn(isPageReadingActive());
   }
 
   async function handleEnableSite(site: string) {
@@ -233,10 +515,10 @@ export function Panel({
     isCurrentOriginDisabled,
   );
 
-  // Extract structured bullet points if in key_points mode or when content has line breaks
-  const rawDisplayedText =
+  // Plain string for Copy / Meaning Check — never HTML from deadline marks.
+  const plainDisplayedText =
     view === "original" ? source : (response?.adaptedText ?? source);
-  const bulletItems = rawDisplayedText
+  const bulletItems = plainDisplayedText
     .split(/\n+/)
     .map((line) => line.replace(/^[-•*]\s*/, "").trim())
     .filter(Boolean);
@@ -250,13 +532,14 @@ export function Panel({
       ? document.title
       : "Selected content");
 
+  const readingStyle = readingTextStyleVars(comfort) as CSSProperties;
+
   return (
     <div
       className="linaw-panel"
       role="dialog"
       aria-labelledby={titleId}
     >
-      {/* Header with Linaw AI title, brand icon, and close button */}
       <header className="linaw-header">
         <div className="linaw-header-left">
           <div className="linaw-sindi-wrap">
@@ -285,7 +568,6 @@ export function Panel({
         )}
       </header>
 
-      {/* Disabled Origin Recovery State Banner */}
       {isCurrentOriginDisabled && (
         <div className="linaw-disabled-banner" role="alert">
           <p className="linaw-disabled-banner-text">
@@ -303,7 +585,6 @@ export function Panel({
         </div>
       )}
 
-      {/* Status Pill: Saved preferences / Meaning checked + summary + Settings gear */}
       <div
         className={`linaw-status-pill ${
           pillInfo.isWarning ? "is-warning" : "is-pass"
@@ -337,7 +618,6 @@ export function Panel({
         </button>
       </div>
 
-      {/* Collapsible Settings Drawer with explicit form controls having id and name */}
       {settingsOpen && (
         <div
           className="linaw-settings-drawer"
@@ -420,7 +700,6 @@ export function Panel({
             </select>
           </div>
 
-          {/* Disabled Sites Management Section */}
           <div className="linaw-disabled-sites-section">
             <span className="linaw-settings-label">Disabled Sites</span>
             {disabledOrigins.length === 0 ? (
@@ -483,7 +762,126 @@ export function Panel({
         </div>
       )}
 
-      {/* Reading Section: "Simplified version" label, document title, and content */}
+      {/* Reading comfort — extension-only; under mode controls */}
+      {!isCurrentOriginDisabled && (
+        <details className="linaw-reading-disclosure">
+          <summary className="linaw-reading-summary">Reading</summary>
+          <div className="linaw-reading-controls">
+            <div className="linaw-comfort-row">
+              <button
+                type="button"
+                id="linaw-on-this-page"
+                name="on-this-page"
+                className={`linaw-segment-btn ${pageOn ? "is-active" : ""}`}
+                aria-pressed={pageOn}
+                onClick={() => {
+                  syncPageReading(comfortRef.current, { force: true });
+                  setPageOn(isPageReadingActive());
+                }}
+              >
+                On this page
+              </button>
+              <button
+                type="button"
+                id="linaw-page-as-it-was"
+                name="page-as-it-was"
+                className="linaw-segment-btn"
+                onClick={() => {
+                  holdOffPageReading();
+                  setPageOn(false);
+                }}
+              >
+                Page as it was
+              </button>
+            </div>
+            <Segmented<TypeSize>
+              name="type-size"
+              label="Type size"
+              value={comfort.typeSize}
+              options={[
+                { value: "smaller", label: "Smaller" },
+                { value: "default", label: "Default" },
+                { value: "larger", label: "Larger" },
+              ]}
+              onChange={(typeSize) => void updateComfort({ typeSize })}
+            />
+            <Segmented<SpacingStep>
+              name="line-spacing"
+              label="Line spacing"
+              value={comfort.lineSpacing}
+              options={[
+                { value: "tighter", label: "Tighter" },
+                { value: "default", label: "Default" },
+                { value: "roomier", label: "Roomier" },
+              ]}
+              onChange={(lineSpacing) => void updateComfort({ lineSpacing })}
+            />
+            <Segmented<SpacingStep>
+              name="letter-spacing"
+              label="Letter spacing"
+              value={comfort.letterSpacing}
+              options={[
+                { value: "tighter", label: "Tighter" },
+                { value: "default", label: "Default" },
+                { value: "roomier", label: "Roomier" },
+              ]}
+              onChange={(letterSpacing) => void updateComfort({ letterSpacing })}
+            />
+            <Segmented<SpacingStep>
+              name="word-spacing"
+              label="Word spacing"
+              value={comfort.wordSpacing}
+              options={[
+                { value: "tighter", label: "Tighter" },
+                { value: "default", label: "Default" },
+                { value: "roomier", label: "Roomier" },
+              ]}
+              onChange={(wordSpacing) => void updateComfort({ wordSpacing })}
+            />
+            <Segmented<ReadingFace>
+              name="reading-face"
+              label="Reading face"
+              value={comfort.face}
+              options={[
+                { value: "default", label: "Default" },
+                { value: "clear", label: "Clear" },
+              ]}
+              onChange={(face) => void updateComfort({ face })}
+            />
+            <Segmented<ReadingTone>
+              name="reading-tone"
+              label="Tone"
+              value={comfort.tone}
+              options={[
+                { value: "paper", label: "Paper" },
+                { value: "soft", label: "Soft" },
+                { value: "strong", label: "Strong" },
+              ]}
+              onChange={(tone) => void updateComfort({ tone })}
+            />
+            <div className="linaw-comfort-row">
+              <span className="linaw-settings-label" id="linaw-focus-line-label">
+                Focus line
+              </span>
+              <button
+                type="button"
+                id="linaw-focus-line-toggle"
+                name="focus-line"
+                className={`linaw-segment-btn linaw-toggle-btn ${comfort.focusLine ? "is-active" : ""}`}
+                aria-pressed={comfort.focusLine}
+                aria-labelledby="linaw-focus-line-label"
+                onClick={() => {
+                  void updateComfort({ focusLine: !comfort.focusLine });
+                  setFocusIndex(0);
+                }}
+              >
+                {comfort.focusLine ? "On" : "Off"}
+              </button>
+            </div>
+          </div>
+        </details>
+      )}
+
       {!isCurrentOriginDisabled && (
         <section className="linaw-reading-section" aria-live="polite">
           <div className="linaw-reading-header">
@@ -495,35 +893,30 @@ export function Panel({
               id="linaw-toggle-original-btn"
               name="linaw-toggle-original-btn"
               className="linaw-toggle-original-btn"
-              onClick={() =>
-                setView((v) => (v === "adapted" ? "original" : "adapted"))
-              }
+              onClick={() => {
+                setView((v) => (v === "adapted" ? "original" : "adapted"));
+                setFocusIndex(0);
+              }}
             >
-              {view === "adapted" ? "View original" : "Back to simplified"}
+              {view === "adapted" ? "Show original" : "Show clarified"}
             </button>
           </div>
 
           <h2 className="linaw-doc-title">{docTitle}</h2>
 
-          <div className="linaw-content-card">
+          <div className="linaw-content-card linaw-reading-text" style={readingStyle}>
             {error ? (
               <p className="linaw-error">{error}</p>
             ) : working && !response ? (
               <p className="linaw-loading">Clarifying…</p>
-            ) : view === "original" ? (
-              <p className="linaw-paragraph">{source || "—"}</p>
-            ) : showAsBullets && bulletItems.length > 0 ? (
-              <ul className="linaw-bullet-list">
-                {bulletItems.map((item, idx) => (
-                  <li key={idx} className="linaw-bullet-item">
-                    {item}
-                  </li>
-                ))}
-              </ul>
             ) : (
-              <p className="linaw-paragraph">
-                {response?.adaptedText || source || "—"}
-              </p>
+              <ReadingBody
+                text={plainDisplayedText || "—"}
+                asBullets={showAsBullets && view === "adapted"}
+                focusLine={comfort.focusLine}
+                focusIndex={focusIndex}
+                onFocusLine={setFocusIndex}
+              />
             )}
 
             {response?.overallStatus === "warning" && (
@@ -535,7 +928,6 @@ export function Panel({
         </section>
       )}
 
-      {/* Bottom Action Bar: [Copy] with checkmark feedback and Primary [Listen] with SVG play */}
       {!isCurrentOriginDisabled && (
         <div className="linaw-action-bar">
           <button
@@ -544,10 +936,7 @@ export function Panel({
             name="linaw-copy-btn"
             className="linaw-copy-btn"
             onClick={() => {
-              const textToCopy =
-                view === "adapted"
-                  ? (response?.adaptedText ?? source)
-                  : source;
+              const textToCopy = plainDisplayedText;
               if (!textToCopy) return;
               void navigator.clipboard.writeText(textToCopy).then(() => {
                 setCopied(true);
@@ -595,49 +984,77 @@ export function Panel({
             )}
           </button>
 
-          <button
-            type="button"
-            id="linaw-listen-btn"
-            name="linaw-listen-btn"
-            className={`linaw-listen-btn ${listening ? "is-listening" : ""}`}
-            onClick={() => {
-              if (listening) {
-                stopSpeech();
-              } else {
-                listenDisplayed();
-              }
-            }}
-          >
-            {listening ? (
-              <>
-                <svg
-                  className="linaw-btn-svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  aria-hidden="true"
+          <div className="linaw-listen-group">
+            <div
+              className="linaw-segment linaw-pace-segment"
+              role="group"
+              aria-label="Listen pace"
+            >
+              {(
+                [
+                  { value: "slower" as ListenPace, label: "Slower" },
+                  { value: "steady" as ListenPace, label: "Steady" },
+                  { value: "faster" as ListenPace, label: "Faster" },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  id={`linaw-pace-${opt.value}`}
+                  name="listen-pace"
+                  className={`linaw-segment-btn linaw-pace-btn ${comfort.listenPace === opt.value ? "is-active" : ""}`}
+                  aria-pressed={comfort.listenPace === opt.value}
+                  aria-label={`Listen pace: ${opt.label}`}
+                  onClick={() => void updateComfort({ listenPace: opt.value })}
                 >
-                  <rect x="5" y="5" width="14" height="14" rx="2" />
-                </svg>
-                <span>Stop</span>
-              </>
-            ) : (
-              <>
-                <svg
-                  className="linaw-btn-svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <polygon points="6 4 20 12 6 20 6 4" />
-                </svg>
-                <span>Listen</span>
-              </>
-            )}
-          </button>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              id="linaw-listen-btn"
+              name="linaw-listen-btn"
+              className={`linaw-listen-btn ${listening ? "is-listening" : ""}`}
+              onClick={() => {
+                if (listening) {
+                  stopSpeech();
+                } else {
+                  listenDisplayed();
+                }
+              }}
+            >
+              {listening ? (
+                <>
+                  <svg
+                    className="linaw-btn-svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <rect x="5" y="5" width="14" height="14" rx="2" />
+                  </svg>
+                  <span>Stop</span>
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="linaw-btn-svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <polygon points="6 4 20 12 6 20 6 4" />
+                  </svg>
+                  <span>Listen</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       )}
 

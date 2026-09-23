@@ -208,6 +208,9 @@ function collectExtensionFiles() {
   for (const name of ["icon16.png", "icon48.png", "icon128.png"]) {
     addFile(`icons/${name}`);
   }
+  for (const name of ["Lexend.woff2", "README.md"]) {
+    addFile(`fonts/${name}`);
+  }
   return files;
 }
 

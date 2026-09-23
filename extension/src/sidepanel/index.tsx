@@ -155,10 +155,7 @@ function SidePanelApp() {
       )}
 
       <Panel
-        source={
-          source ||
-          "Select text on the webpage to clarify, or use the settings to manage preferences."
-        }
+        source={source}
         preferences={preferences}
         origin={origin}
         onPreferencesChange={(next) => {
@@ -171,7 +168,6 @@ function SidePanelApp() {
           }));
         }}
         onDisableSite={() => void handleDisableSite()}
-
       />
     </div>
   );

@@ -36,12 +36,12 @@ Sindi states in the header, smaller size. Keyboard focus matches visual order.
 
 ## Acceptance checks
 
-- [ ] Unpacked load works per README instructions once built.
-- [ ] Manual clarify selection works with Auto-Clarify off.
-- [ ] Auto-Clarify requires explicit enable.
-- [ ] Show original / open web / disable on this site present.
-- [ ] Same domain preference field names as web.
-- [ ] Does not add `app/api` or a second npm package tree.
+- [ ] Unpacked load works per README instructions once built. Code and README match; not loaded in Chrome this pass.
+- [x] Manual clarify selection works with Auto-Clarify off.
+- [x] Auto-Clarify requires explicit enable.
+- [x] Show original / open web / disable on this site present.
+- [x] Same domain preference field names as web.
+- [x] Does not add `app/api` or a second npm package tree.
 
 ## Out of scope
 
