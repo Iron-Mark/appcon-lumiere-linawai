@@ -135,6 +135,16 @@ export function ReadingPreferencesDialog({
 
 type ModeBarProps = PreferenceHandlers;
 
+const PREFERENCE_SUMMARY: {
+  detail: Record<Detail, string>;
+  wording: Record<Wording, string>;
+  delivery: Record<Delivery, string>;
+} = {
+  detail: { full: "Full", key_points: "Key Points" },
+  wording: { original: "Original", plain: "Plain Language" },
+  delivery: { read: "Read", listen: "Listen" },
+};
+
 export function ModeBar({
   detail,
   wording,
@@ -144,6 +154,12 @@ export function ModeBar({
   onWording,
   onDelivery,
 }: ModeBarProps) {
+  const summary = [
+    PREFERENCE_SUMMARY.detail[detail],
+    PREFERENCE_SUMMARY.wording[wording],
+    PREFERENCE_SUMMARY.delivery[delivery],
+  ];
+
   return (
     <ReadingPreferencesDialog
       detail={detail}
@@ -157,11 +173,27 @@ export function ModeBar({
         <Button
           type="button"
           variant="outline"
-          aria-label="Change reading preferences"
-          className="min-h-10 min-w-10 cursor-pointer gap-1.5 rounded-full px-3.5 font-ui text-[0.875rem] font-medium text-ink-muted hover:text-ink"
+          aria-label={`Reading as ${summary.join(", ")}. Change preferences.`}
+          className="h-11 min-h-11 w-fit max-w-full cursor-pointer gap-1.5 rounded-full px-3.5 font-ui text-[0.875rem] font-medium text-ink hover:bg-paper-inset hover:text-ink"
         >
-          <Settings2 aria-hidden className="size-4" strokeWidth={2} />
-          Change
+          {summary.map((label, index) => (
+            <span
+              key={label}
+              className="inline-flex items-center gap-1.5 whitespace-nowrap"
+            >
+              {index > 0 ? (
+                <span aria-hidden className="text-ink-subtle">
+                  ·
+                </span>
+              ) : null}
+              <span>{label}</span>
+            </span>
+          ))}
+          <Settings2
+            aria-hidden
+            className="size-4 shrink-0 text-ink-muted"
+            strokeWidth={2}
+          />
         </Button>
       }
     />

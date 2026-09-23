@@ -715,86 +715,40 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
         className="read-page-header"
         style={{
           display: "flex",
-          flexDirection: "column",
-          gap: "0.5rem",
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "0.85rem 1.5rem",
           minWidth: 0,
           paddingTop: "0.35rem",
         }}
       >
-        <h1
-          className="font-reading"
-          style={{
-            margin: 0,
-            fontSize: "clamp(2rem, 1.5rem + 1.6vw, 2.6rem)",
-            fontWeight: 600,
-            letterSpacing: "-0.022em",
-            lineHeight: 1.1,
-            color: "var(--color-ink)",
-          }}
-        >
-          Read
-        </h1>
-        <p
-          style={{
-            margin: 0,
-            maxWidth: "44rem",
-            fontSize: "1.0625rem",
-            lineHeight: 1.5,
-            color: "var(--color-ink-muted)",
-          }}
-        >
-          Paste a notice, email, or lesson. Linaw adapts it to how you like to
-          read, then checks that the meaning stayed the same.
-        </p>
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            gap: "0.5rem 0.65rem",
-            marginTop: "0.5rem",
-          }}
-        >
-          <span
+        <div style={{ minWidth: 0, flex: "1 1 16rem" }}>
+          <h1
+            className="font-reading"
             style={{
-              fontSize: "0.75rem",
-              fontWeight: 600,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "var(--color-ink-subtle)",
-            }}
-          >
-            Reading as
-          </span>
-          <ul
-            aria-label="Current preferences"
-            style={{
-              listStyle: "none",
               margin: 0,
-              padding: 0,
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "0.35rem",
+              fontSize: "clamp(2rem, 1.5rem + 1.6vw, 2.6rem)",
+              fontWeight: 600,
+              letterSpacing: "-0.022em",
+              lineHeight: 1.1,
+              color: "var(--color-ink)",
             }}
           >
-            {[detailLabel, wordingLabel, deliveryLabel].map((label) => (
-              <li
-                key={label}
-                style={{
-                  padding: "0.3rem 0.7rem",
-                  borderRadius: 999,
-                  border: "1px solid var(--color-paper-inset)",
-                  background: "var(--color-paper-raised)",
-                  fontSize: "0.8125rem",
-                  fontWeight: 500,
-                  color: "var(--color-ink)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {label}
-              </li>
-            ))}
-          </ul>
+            Read
+          </h1>
+          <p
+            style={{
+              margin: "0.45rem 0 0",
+              fontSize: "1.0625rem",
+              lineHeight: 1.5,
+              color: "var(--color-ink-muted)",
+            }}
+          >
+            Adapt a message, then check the meaning.
+          </p>
+        </div>
+        <div style={{ marginLeft: "auto", minWidth: 0 }}>
           <ModeBar
             detail={preferences.detail}
             wording={preferences.wording}
@@ -1106,15 +1060,15 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
             {[
               {
                 title: "Paste or drop",
-                body: "A notice, email, or lesson — text or a PDF.",
+                body: "Plain text or a PDF, up to 30 pages long.",
               },
               {
                 title: "Adapt",
-                body: "Key points or full detail, in plain language or the original wording.",
+                body: "Rewritten to your detail and wording choices.",
               },
               {
                 title: "Meaning Check",
-                body: "Every critical fact is compared back to the source before you rely on it.",
+                body: "Key facts are checked against the source.",
               },
             ].map((step, i) => (
               <li key={step.title} className="read-guide-step">
@@ -1446,7 +1400,8 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
         }
         .read-guide-steps {
           list-style: none;
-          margin: 0;
+          /* Only the heading needs to clear Ray; steps take the full panel width. */
+          margin: 0 0 0 calc(var(--guide-ray) * -0.72);
           padding: 1.25rem 0 0;
           border-top: 1px solid var(--color-paper-inset);
           display: grid;
@@ -1485,6 +1440,7 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
           font-size: 0.875rem;
           line-height: 1.5;
           color: var(--color-ink-muted);
+          text-wrap: pretty;
         }
         @media (max-width: 860px) {
           .read-guide {
@@ -1492,14 +1448,32 @@ export function ReadingWorkspace({ pieceId = null }: ReadingWorkspaceProps) {
             margin-left: 0.85rem;
             padding: 1.35rem 1.15rem 1.35rem;
           }
-          /* Heading clears Ray; steps sit below it, so they take the full width. */
+          /* Narrow: Ray softens into a glow that fades out to the right, so the
+             heading can sit closer without a hard circle edge cutting into it. */
+          .read-guide-mascot {
+            border: 0;
+            box-shadow: none;
+            transform: none;
+            background:
+              radial-gradient(
+                circle at 42% 46%,
+                var(--color-paper-raised) 0%,
+                var(--color-paper-raised) 38%,
+                color-mix(in srgb, var(--color-paper-raised) 70%, transparent) 58%,
+                transparent 78%
+              );
+          }
+          .read-guide:hover .read-guide-mascot {
+            transform: none;
+          }
           .read-guide-heading {
-            padding-left: calc(var(--guide-ray) * 0.72 + 0.35rem);
+            padding-left: calc(var(--guide-ray) * 0.53 - 1.15rem + 0.6rem);
           }
           .read-guide-lede {
             font-size: 1.125rem;
           }
           .read-guide-steps {
+            margin-left: 0;
             grid-template-columns: 1fr;
             gap: 1rem;
           }

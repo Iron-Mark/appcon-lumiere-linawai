@@ -52,15 +52,21 @@ export function MyContentView() {
         {!ready ? (
           <p className="font-ui m-0 text-sm text-ink-muted">Loading your pieces…</p>
         ) : pieces.length === 0 ? (
-          <div className="flex flex-col items-center rounded-xl border border-dashed border-border bg-paper-raised px-5 py-10 text-center">
+          <Link
+            href="/read"
+            className="flex min-h-80 cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-paper-raised px-5 py-12 text-center outline-none transition-colors duration-200 hover:border-action-border hover:bg-action-soft/40 focus-visible:ring-2 focus-visible:ring-focus motion-reduce:transition-none"
+          >
             <p className="font-reading m-0 text-xl font-semibold text-ink">
               Nothing saved yet
             </p>
             <p className="font-ui mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink-muted">
               Adapt a note, then save it on this device. It will show up here.
             </p>
-            <NewContentButton className="mt-5 w-full max-w-xs" />
-          </div>
+            <span className="font-ui mt-6 inline-flex min-h-11 w-full max-w-xs items-center justify-center gap-2 rounded-lg bg-action px-5 text-sm font-semibold text-paper-raised">
+              <Plus aria-hidden className="size-4" strokeWidth={2} />
+              New Content
+            </span>
+          </Link>
         ) : (
           <ContentTable
             rows={pieces.map((piece) => ({

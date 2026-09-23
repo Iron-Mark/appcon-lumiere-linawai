@@ -57,10 +57,15 @@ function navButtonClass(active: boolean) {
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { state, isMobile } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const settingsActive = navIsActive(pathname, SETTINGS_ITEM.href);
   const SettingsIcon = SETTINGS_ITEM.icon;
+
+  /** Close the off-canvas sheet after nav; leave desktop expanded/collapsed alone. */
+  function closeMobileSheet() {
+    if (isMobile) setOpenMobile(false);
+  }
 
   return (
     <Sidebar
@@ -72,6 +77,7 @@ export function AppSidebar() {
           <Link
             href="/content"
             title="Linaw"
+            onClick={closeMobileSheet}
             className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-2.5 overflow-hidden rounded-lg px-2 outline-none transition-colors duration-200 ease-out hover:bg-paper-inset/80 focus-visible:ring-2 focus-visible:ring-sidebar-ring motion-reduce:transition-none group-data-[collapsible=icon]:size-11 group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
           >
             <span
@@ -115,6 +121,7 @@ export function AppSidebar() {
                       <Link
                         href={item.href}
                         aria-current={active ? "page" : undefined}
+                        onClick={closeMobileSheet}
                       >
                         <Icon aria-hidden strokeWidth={1.75} />
                         <span className="whitespace-nowrap">{item.label}</span>
@@ -141,6 +148,7 @@ export function AppSidebar() {
               <Link
                 href={SETTINGS_ITEM.href}
                 aria-current={settingsActive ? "page" : undefined}
+                onClick={closeMobileSheet}
               >
                 <SettingsIcon aria-hidden strokeWidth={1.75} />
                 <span className="whitespace-nowrap">{SETTINGS_ITEM.label}</span>

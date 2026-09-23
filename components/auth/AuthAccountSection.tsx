@@ -46,31 +46,35 @@ export function AuthAccountSection({
           className="fixed inset-x-4 z-40 mx-auto w-auto max-w-lg animate-in fade-in slide-in-from-bottom-2 duration-300 motion-reduce:animate-none md:inset-x-auto md:right-6 md:w-full"
           style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}
         >
-          <div className="relative rounded-xl border border-border bg-paper-raised px-4 py-3.5 pr-12 shadow-sm">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label="Dismiss"
-              onClick={dismissToast}
-              className="absolute top-2 right-2 size-11 min-h-11 min-w-11 cursor-pointer text-ink-muted hover:bg-paper-inset hover:text-ink focus-visible:ring-2 focus-visible:ring-focus"
-            >
-              <X aria-hidden className="size-4" strokeWidth={1.75} />
-            </Button>
-            <p className="font-ui m-0 text-sm font-semibold text-ink">
-              No account needed
-            </p>
-            <p className="font-ui m-0 mt-1 text-sm leading-relaxed text-ink-muted">
-              Want to keep a piece for later? Save a light profile on this
-              device. You can keep reading without one.
-            </p>
-            <Button
-              type="button"
-              onClick={() => setDialogOpen(true)}
-              className="font-ui mt-3 h-11 min-h-11 cursor-pointer rounded-lg bg-action px-4 text-sm font-semibold text-paper-raised shadow-none hover:bg-action-hover focus-visible:ring-2 focus-visible:ring-focus"
-            >
-              Save on this device
-            </Button>
+          <div className="flex items-start gap-3 rounded-xl border border-border bg-paper-raised p-3 shadow-sm sm:items-center sm:gap-4 sm:p-4">
+            <div className="min-w-0 flex-1">
+              <p className="font-ui m-0 text-sm font-semibold leading-5 text-ink">
+                No account needed
+              </p>
+              <p className="font-ui m-0 mt-1 text-sm leading-5 text-ink-muted">
+                Want to keep a piece for later? Save a light profile on this
+                device. You can keep reading without one.
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <Button
+                type="button"
+                onClick={() => setDialogOpen(true)}
+                className="font-ui h-11 min-h-11 cursor-pointer rounded-lg bg-action px-3.5 text-sm font-semibold text-paper-raised shadow-none hover:bg-action-hover focus-visible:ring-2 focus-visible:ring-focus"
+              >
+                Save on this device
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Dismiss"
+                onClick={dismissToast}
+                className="size-11 min-h-11 min-w-11 cursor-pointer text-ink-muted hover:bg-paper-inset hover:text-ink focus-visible:ring-2 focus-visible:ring-focus"
+              >
+                <X aria-hidden className="size-4" strokeWidth={1.75} />
+              </Button>
+            </div>
           </div>
         </div>
         <SignInDialog
