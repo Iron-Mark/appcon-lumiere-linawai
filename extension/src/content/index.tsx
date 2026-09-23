@@ -749,6 +749,7 @@ const state: HostState = {
   disabled: false,
   panelOpen: false,
   position: null,
+  replaceOnPage: false,
 };
 
 function ensureHost(): ShadowRoot {
@@ -849,6 +850,7 @@ function renderPanel() {
         source: state.source,
         preferences: state.preferences,
         origin: location.origin,
+        replaceOnPage: state.replaceOnPage,
         onPreferencesChange: (next) => {
           const wasAuto = isAutoAdaptEnabled(state.preferences);
           state.preferences = next;
@@ -934,6 +936,10 @@ async function handleTextSelection() {
       // Background worker might be idle or asleep
     }
     await chrome.storage.local.set({ pendingSourceText: selection });
+    state.replaceOnPage = selectionInsideArticle(
+      findMainContentRoot(document),
+      window.getSelection()?.anchorNode ?? null,
+    );
     await openWithSource(selection);
   }
 }
@@ -970,6 +976,10 @@ async function openWithSelection() {
     }
     await chrome.storage.local.set({ pendingSourceText: selection });
   }
+  state.replaceOnPage = selectionInsideArticle(
+    findMainContentRoot(document),
+    sel?.anchorNode ?? null,
+  );
   await openWithSource(selection);
 }
 
@@ -983,6 +993,7 @@ async function maybeAutoAdapt() {
   if (!isAutoAdaptEnabled(state.preferences)) return;
   const text = extractMainReadableText();
   if (!text) return;
+  state.replaceOnPage = findMainContentRoot(document) != null;
   state.position = null;
   await chrome.storage.local.set({ pendingSourceText: text });
   try {
