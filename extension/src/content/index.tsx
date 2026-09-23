@@ -1,13 +1,13 @@
 import { createRoot, type Root } from "react-dom/client";
 import { createElement } from "react";
 import type { Preferences } from "@/lib/domain";
-import { DEFAULT_PREFERENCES } from "@/lib/domain";
 import { Panel } from "./Panel";
 import {
   extractMainReadableText,
   getCurrentSelectionText,
 } from "./extractor";
 import {
+  DEFAULT_PREFERENCES,
   disableOrigin,
   isAutoAdaptEnabled,
   isOriginDisabled,

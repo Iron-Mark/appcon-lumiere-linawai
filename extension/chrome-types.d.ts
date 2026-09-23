@@ -58,4 +58,11 @@ declare namespace chrome {
       addListener(callback: (tab: ChromeTab) => void): void;
     };
   };
+
+  const sidePanel: {
+    open(options: { windowId?: number; tabId?: number }): Promise<void>;
+    setPanelBehavior(behavior: { openPanelOnActionClick?: boolean }): Promise<void>;
+    setOptions(options: { tabId?: number; path?: string; enabled?: boolean }): Promise<void>;
+  };
 }
+
