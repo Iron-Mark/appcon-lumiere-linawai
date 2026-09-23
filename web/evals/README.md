@@ -36,32 +36,57 @@ now receives `detailLevel`/`wordingStyle`).
    npm run dev
    ```
 3. `web/.env.local` must contain a valid `GOOGLE_GENERATIVE_AI_API_KEY` (required — every case calls
-   Gemini at least twice). `HUGGINGFACE_API_KEY` is optional; if it is not set, `nli.enabled` will
-   correctly report `false`, `nli.status` will correctly report `"disabled"`, and the
-   `nli_wiring_canary` case's `expectNLIEnabled: true` / `expectNLIStatus: "ok"` checks will correctly
-   FAIL — that is the intended signal that the NLI layer isn't configured, not a bug in the harness.
+   Gemini at least twice).
+4. NLI is now **endpoint-driven** and optional. To exercise it, `web/.env.local` needs:
+   - `NLI_ENDPOINT` — the full URL of a real, deployed inference backend (e.g. a dedicated Hugging
+     Face Inference Endpoint running `cross-encoder/nli-deberta-v3-base`, or later our fine-tuned
+     Linaw DeBERTa checkpoint). **This is required for NLI to be considered "configured" at all** —
+     a Hugging Face token alone is not sufficient evidence that serverless inference exists for a
+     given model.
+   - `HUGGINGFACE_API_KEY` — optional. Used only as `Authorization: Bearer <token>` against
+     `NLI_ENDPOINT` when present. A public test endpoint can be used with no token at all.
+
+   If `NLI_ENDPOINT` is not set, `nli.enabled` will correctly report `false`, `nli.status` will
+   correctly report `"disabled"`, and the `nli_wiring_canary` case's `expectNLIEnabled: true` /
+   `expectNLIStatus: "ok"` checks will correctly FAIL — that is the intended signal that the NLI
+   layer isn't configured, not a bug in the harness.
+
+   > There is currently no tracked `.env.example` in `web/` — `web/.gitignore`'s `.env*` rule would
+   > silently exclude it unless a `!.env.example` negation is added first. The required variable
+   > **names** (never values) are documented here instead.
+
+### Required environment variable names (values live only in `.env.local`, never committed)
+
+```
+GOOGLE_GENERATIVE_AI_API_KEY=
+NLI_ENDPOINT=
+HUGGINGFACE_API_KEY=
+```
 
 ## `nli.enabled` vs. `nli.status` — why both exist
 
-`/api/adapt`'s auxiliary Hugging Face NLI check (`runNLICheck` in `route.ts`) is intentionally
-**non-blocking**: any operational failure (timeout, non-2xx response, network error, malformed
-payload) is swallowed and never throws or fails the request. That means `nli.enabled: true` alone
-does **not** prove the Hugging Face request actually succeeded — it only proves a
-`HUGGINGFACE_API_KEY` is configured on the server. The response also carries `nli.status`, which
-distinguishes three cases:
+`/api/adapt`'s auxiliary NLI check (`runNLICheck` in `route.ts`) is intentionally **non-blocking**:
+any operational failure (timeout, non-2xx response, network error, malformed payload) is swallowed
+and never throws or fails the request. That means `nli.enabled: true` alone does **not** prove the
+remote inference request actually succeeded — it only proves `NLI_ENDPOINT` is configured on the
+server. The response also carries `nli.status`, which distinguishes three cases:
 
 | `status`        | Meaning                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------ |
-| `"disabled"`     | No `HUGGINGFACE_API_KEY`; NLI was intentionally not attempted.                              |
-| `"ok"`           | The HF request completed and was parsed for scoring. **A successful request that simply finds zero contradictions is still `"ok"`** — never infer HF health from `nli.flaggedClaims` alone. |
+| `"disabled"`     | No `NLI_ENDPOINT`; NLI was intentionally not attempted.                              |
+| `"ok"`           | The endpoint request completed and its response was actually parsed for scoring. **A successful request that simply finds zero contradictions is still `"ok"`** — never infer endpoint health from `nli.flaggedClaims` alone. |
 | `"soft_failure"` | NLI was configured/attempted, but a timeout, non-2xx response, network error, or malformed payload prevented a valid result. The pipeline still succeeds; this is purely observability. |
 
-`nli.auditedClaims` reports how many adapted-text sentences were actually sent to Hugging Face
+`nli.auditedClaims` reports how many adapted-text sentences were actually sent to the endpoint
 (capped at `MAX_NLI_CLAIMS` in `route.ts`), independent of how many were flagged.
 
 The `nli_wiring_canary` fixture asserts both `expectNLIEnabled: true` and `expectNLIStatus: "ok"`
-together, specifically so it can tell "not configured" apart from "configured but the HF call is
-currently failing" — a distinction the previous version of this harness could not make.
+together, specifically so it can tell "not configured" apart from "configured but the remote call is
+currently failing" — a distinction the previous version of this harness could not make. As of this
+writing, the underlying serverless URL previously assumed for `cross-encoder/nli-deberta-v3-base`
+(`api-inference.huggingface.co/models/...`) does not resolve/serve this model — the canary is
+expected to FAIL until a real `NLI_ENDPOINT` (e.g. a provisioned Hugging Face Inference Endpoint) is
+configured. That failure is correct and should not be "fixed" by weakening the assertion.
 
 ## Running it
 
@@ -85,7 +110,7 @@ LINAW_API_URL="https://your-deployed-url.vercel.app/api/adapt" npm run eval:fide
 ### Cost note
 
 Every case makes at least 2 Gemini calls (generation + verification) plus an optional repair call and
-an optional Hugging Face call. Running all 8 cases can cost up to ~24 Gemini calls in the worst case.
+an optional remote NLI endpoint call. Running all 8 cases can cost up to ~24 Gemini calls in the worst case.
 Don't run this on every save — run it deliberately, e.g. before a commit that touches the pipeline or
 prompts.
 
@@ -98,7 +123,7 @@ FidelityFixture {
   id, description, originalText, preferences,
   expected: {
     requestShouldSucceed?, expectRepair?, expectedStatus?,
-    expectedIssueTypes?, forbiddenIssueTypes?, expectNLIEnabled?,
+    expectedIssueTypes?, forbiddenIssueTypes?, expectNLIEnabled?, expectNLIStatus?,
     requiredSubstringsInAdaptedText?, forbiddenSubstringsInAdaptedText?
   },
   notes?, tags?
