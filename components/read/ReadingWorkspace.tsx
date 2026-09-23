@@ -303,7 +303,7 @@ export function ReadingWorkspace() {
           }}
         >
           Preferences are not saved yet.{" "}
-          <Link href="/" style={{ color: "var(--color-action)" }}>
+          <Link href="/onboarding" style={{ color: "var(--color-action)" }}>
             Set your defaults
           </Link>
           , or continue with Key Points · Plain Language · Read.

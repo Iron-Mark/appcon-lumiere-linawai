@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -23,7 +22,6 @@ import {
 const TOTAL_STEPS = ONBOARDING_STEPS.length;
 
 export function OnboardingFlow() {
-  const router = useRouter();
   const headingId = useId();
   const [stepIndex, setStepIndex] = useState(0);
   const [draft, setDraft] = useState<DraftPreferences>({});
@@ -43,7 +41,7 @@ export function OnboardingFlow() {
       try {
         const existing = await preferenceStore.get();
         if (!cancelled && existing) {
-          router.replace("/read");
+          window.location.replace("/read");
           return;
         }
       } catch {
@@ -55,7 +53,7 @@ export function OnboardingFlow() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, []);
 
   const selectValue = useCallback(
     (value: ChoiceValue) => {
@@ -88,12 +86,13 @@ export function OnboardingFlow() {
     setError(null);
     try {
       await preferenceStore.set(preferences);
-      router.push("/read");
+      // Hard navigate so we never sit on "Saving…" if soft push stalls.
+      window.location.assign("/read");
     } catch {
       setError("Could not save your preferences. Try again.");
       setSaving(false);
     }
-  }, [draft, router]);
+  }, [draft]);
 
   const goNext = useCallback(() => {
     if (!canContinue || saving) return;

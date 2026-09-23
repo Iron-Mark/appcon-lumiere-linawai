@@ -25,6 +25,7 @@ type RayLook =
   | "listening"
   | "warning";
 
+/** Character-sheet palette (warm yellow body, bright rays, cream, navy, cool gray). */
 const RAY = {
   body: "#F5C542",
   ray: "#F0D06B",
@@ -70,6 +71,7 @@ function lookFor(state: SindiState): RayLook {
 export function Sindi({ state, line, className }: SindiProps) {
   const text = line ?? DEFAULT_LINES[state];
   const look = lookFor(state);
+  const size = state === "reading" ? 28 : 40;
 
   return (
     <div
@@ -89,12 +91,12 @@ export function Sindi({ state, line, className }: SindiProps) {
       <RaySvg
         look={look}
         style={{
-          width: state === "reading" ? 28 : 40,
-          height: state === "reading" ? 28 : 40,
+          width: size,
+          height: size,
           flexShrink: 0,
+          overflow: "visible",
           transition:
-            "width var(--motion-base) ease, height var(--motion-base) ease, transform var(--motion-base) ease",
-          transform: look === "warning" ? "rotate(-6deg)" : undefined,
+            "width var(--motion-base) ease, height var(--motion-base) ease",
         }}
       />
       {text ? (
@@ -124,9 +126,12 @@ function RaySvg({
   look: RayLook;
   style?: CSSProperties;
 }) {
-  const showExtraRays = look === "success";
   const quietRays = look === "listening";
+  const showBloom = look === "success";
+  const dimRays = look === "empty";
   const spin = look === "processing";
+  const listenPulse = look === "listening";
+  const warnTilt = look === "warning";
 
   return (
     <svg
@@ -139,67 +144,132 @@ function RaySvg({
       <title>Ray</title>
       <defs>
         <style>{`
+          .linaw-ray-spin,
+          .linaw-ray-listen-side,
+          .linaw-ray-warn {
+            transform-origin: 32px 32px;
+          }
           @keyframes linaw-ray-spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
           }
-          .linaw-ray-spin {
-            transform-origin: 32px 32px;
+          @keyframes linaw-ray-arc-pulse {
+            0%, 100% { opacity: 0.35; }
+            50% { opacity: 0.75; }
+          }
+          @keyframes linaw-ray-listen {
+            0%, 100% { transform: scale(1); opacity: 0.4; }
+            50% { transform: scale(0.92); opacity: 0.18; }
+          }
+          @keyframes linaw-ray-warn-breathe {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(-8deg); }
           }
           @media (prefers-reduced-motion: no-preference) {
             .linaw-ray-spin {
-              animation: linaw-ray-spin 4.5s linear infinite;
+              animation: linaw-ray-spin 3.2s linear infinite;
+            }
+            .linaw-ray-arcs {
+              animation: linaw-ray-arc-pulse 240ms ease-in-out infinite;
+            }
+            .linaw-ray-listen-side {
+              animation: linaw-ray-listen 280ms ease-in-out infinite;
+            }
+            .linaw-ray-warn {
+              animation: linaw-ray-warn-breathe 2.4s ease-in-out infinite;
+            }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .linaw-ray-spin,
+            .linaw-ray-arcs,
+            .linaw-ray-listen-side,
+            .linaw-ray-warn {
+              animation: none;
+            }
+            .linaw-ray-warn {
+              transform: rotate(-6deg);
+            }
+            .linaw-ray-listen-side {
+              opacity: 0.28;
             }
           }
         `}</style>
       </defs>
 
-      <g className={spin ? "linaw-ray-spin" : undefined}>
-        <RayBurst quiet={quietRays} extra={showExtraRays} />
-        {spin ? <MotionArcs /> : null}
+      {/* Fixed layout slot — motion stays inside the 64×64 viewBox */}
+      <g className={warnTilt ? "linaw-ray-warn" : undefined}>
+        <g className={spin ? "linaw-ray-spin" : undefined}>
+          <RayBurst
+            quiet={quietRays}
+            bloom={showBloom}
+            dim={dimRays}
+            omitSideRays={listenPulse}
+          />
+          {spin ? <MotionArcs /> : null}
+        </g>
+
+        {/* Listening: animated quieter side rays; body/face stay still */}
+        {listenPulse ? <ListeningSidePulse /> : null}
+
+        <circle cx="32" cy="32" r="14" fill={RAY.body} />
+        <Face look={look} />
       </g>
-
-      {/* body */}
-      <circle cx="32" cy="32" r="14" fill={RAY.body} />
-
-      <Face look={look} />
     </svg>
   );
 }
 
-/** Six pill rays at 12 / 2 / 4 / 6 / 8 / 10 o'clock; optional bloom lines. */
-function RayBurst({ quiet, extra }: { quiet: boolean; extra: boolean }) {
-  const angles = [0, 60, 120, 180, 240, 300];
-  // Listening: side rays quieter (lower opacity); keep top/bottom clearer.
-  const quietOpacity = (i: number) =>
-    quiet ? (i === 0 || i === 3 ? 0.85 : 0.28) : 1;
+/** Six pill rays at clock positions; optional success bloom; quieter sides when listening. */
+function RayBurst({
+  quiet,
+  bloom,
+  dim,
+  omitSideRays,
+}: {
+  quiet: boolean;
+  bloom: boolean;
+  dim: boolean;
+  /** When true, only top/bottom rays (sides drawn by ListeningSidePulse). */
+  omitSideRays?: boolean;
+}) {
+  const angles = [0, 60, 120, 180, 240, 300] as const;
+  // Listening: top/bottom clearer; side rays quieter (unless omitted for pulse layer).
+  const opacityFor = (i: number) => {
+    if (quiet) return i === 0 || i === 3 ? 0.9 : 0.22;
+    if (dim) return 0.78;
+    return 1;
+  };
 
   return (
     <g>
-      {angles.map((deg, i) => (
-        <rect
-          key={deg}
-          x="29"
-          y="4"
-          width="6"
-          height="12"
-          rx="3"
-          fill={RAY.ray}
-          opacity={quietOpacity(i)}
-          transform={`rotate(${deg} 32 32)`}
-        />
-      ))}
-      {extra
+      {angles.map((deg, i) => {
+        const isSide = i !== 0 && i !== 3;
+        if (omitSideRays && isSide) return null;
+        return (
+          <rect
+            key={deg}
+            x="29"
+            y="3.5"
+            width="6"
+            height="12.5"
+            rx="3"
+            fill={RAY.ray}
+            opacity={opacityFor(i)}
+            transform={`rotate(${deg} 32 32)`}
+          />
+        );
+      })}
+      {bloom
         ? [30, 90, 150, 210, 270, 330].map((deg) => (
             <line
               key={`bloom-${deg}`}
               x1="32"
-              y1="8"
+              y1="7"
               x2="32"
-              y2="14"
-              stroke={RAY.ray}
-              strokeWidth="1.5"
+              y2="13.5"
+              stroke={RAY.cream}
+              strokeWidth="1.6"
               strokeLinecap="round"
+              opacity="0.95"
               transform={`rotate(${deg} 32 32)`}
             />
           ))
@@ -208,17 +278,41 @@ function RayBurst({ quiet, extra }: { quiet: boolean; extra: boolean }) {
   );
 }
 
+/** Soft side-ray pulse for listening — transform/opacity only; still when reduced-motion. */
+function ListeningSidePulse() {
+  const sideAngles = [60, 120, 240, 300] as const;
+  return (
+    <g className="linaw-ray-listen-side" aria-hidden="true">
+      {sideAngles.map((deg) => (
+        <rect
+          key={`listen-${deg}`}
+          x="29.5"
+          y="4"
+          width="5"
+          height="11"
+          rx="2.5"
+          fill={RAY.ray}
+          opacity="0.35"
+          transform={`rotate(${deg} 32 32)`}
+        />
+      ))}
+    </g>
+  );
+}
+
 function MotionArcs() {
   return (
     <g
+      className="linaw-ray-arcs"
       fill="none"
-      stroke={RAY.ray}
-      strokeWidth="1.25"
+      stroke={RAY.cream}
+      strokeWidth="1.4"
       strokeLinecap="round"
-      opacity="0.55"
     >
-      <path d="M12 28 A20 20 0 0 1 16 18" />
-      <path d="M52 36 A20 20 0 0 1 48 46" />
+      {/* Clockwise motion trails outside the pill rays */}
+      <path d="M11 30 A21 21 0 0 1 18 15" />
+      <path d="M14 42 A21 21 0 0 1 11 28" opacity="0.7" />
+      <path d="M53 34 A21 21 0 0 1 46 49" />
     </g>
   );
 }
@@ -228,78 +322,88 @@ function Face({ look }: { look: RayLook }) {
     case "success":
       return (
         <g fill="none" stroke={RAY.navy} strokeWidth="2" strokeLinecap="round">
-          {/* happy closed eyes */}
-          <path d="M24 30 Q27 26 30 30" />
-          <path d="M34 30 Q37 26 40 30" />
-          <path
-            d="M28 38 Q32 41 36 38"
-            stroke={RAY.cream}
-            strokeWidth="1.75"
-          />
+          {/* Happy closed eyes (⌢) — information is clearer */}
+          <path d="M23.5 30.5 Q27 26.5 30.5 30.5" />
+          <path d="M33.5 30.5 Q37 26.5 40.5 30.5" />
         </g>
       );
     case "empty":
       return (
-        <g fill="none" stroke={RAY.navy} strokeWidth="2" strokeLinecap="round">
-          {/* peaceful closed eyes */}
-          <path d="M24 31 Q27 35 30 31" />
-          <path d="M34 31 Q37 35 40 31" />
+        <g fill="none" stroke={RAY.navy} strokeLinecap="round">
+          {/* Peaceful closed eyes (⌣) */}
           <path
-            d="M29 38 Q32 40 35 38"
-            stroke={RAY.cream}
-            strokeWidth="1.5"
+            d="M23.5 31 Q27 35 30.5 31"
+            strokeWidth="2"
+          />
+          <path
+            d="M33.5 31 Q37 35 40.5 31"
+            strokeWidth="2"
+          />
+          {/* Faint soft smile */}
+          <path
+            d="M29 38.5 Q32 40.5 35 38.5"
+            stroke={RAY.navy}
+            strokeWidth="1.35"
+            opacity="0.45"
           />
         </g>
       );
     case "processing":
       return (
         <g fill={RAY.navy}>
-          <circle cx="27" cy="31" r="2.25" />
-          <circle cx="37" cy="31" r="2.25" />
+          {/* Focused dots, slightly closer — no mouth while working */}
+          <circle cx="27.5" cy="31" r="2.15" />
+          <circle cx="36.5" cy="31" r="2.15" />
         </g>
       );
     case "listening":
       return (
         <g>
-          <circle cx="27" cy="31" r="2.6" fill={RAY.navy} opacity="0.92" />
-          <circle cx="37" cy="31" r="2.6" fill={RAY.navy} opacity="0.92" />
+          {/* Softer, slightly larger open eyes */}
+          <circle cx="27" cy="31" r="2.75" fill={RAY.navy} opacity="0.88" />
+          <circle cx="37" cy="31" r="2.75" fill={RAY.navy} opacity="0.88" />
+          {/* Tiny cream highlight for softness */}
+          <circle cx="26.2" cy="30.2" r="0.7" fill={RAY.cream} opacity="0.9" />
+          <circle cx="36.2" cy="30.2" r="0.7" fill={RAY.cream} opacity="0.9" />
           <path
-            d="M28 38 Q32 41 36 38"
+            d="M28.5 38.5 Q32 41 35.5 38.5"
             fill="none"
             stroke={RAY.navy}
-            strokeWidth="1.75"
+            strokeWidth="1.6"
             strokeLinecap="round"
-            opacity="0.85"
+            opacity="0.75"
           />
         </g>
       );
     case "warning":
       return (
         <g>
-          {/* soft concern brows — not angry */}
+          {/* Soft concern brows — tilted in, not furrowed-angry */}
           <path
-            d="M23 26 Q27 24.5 30 26.5"
+            d="M23 26.5 Q27 25 30.5 27"
             fill="none"
             stroke={RAY.navy}
-            strokeWidth="1.5"
+            strokeWidth="1.45"
             strokeLinecap="round"
-            opacity="0.7"
+            opacity="0.65"
           />
           <path
-            d="M34 26.5 Q37 24.5 41 26"
+            d="M33.5 27 Q37 25 41 26.5"
             fill="none"
             stroke={RAY.navy}
-            strokeWidth="1.5"
+            strokeWidth="1.45"
             strokeLinecap="round"
-            opacity="0.7"
+            opacity="0.65"
           />
-          <ellipse cx="27" cy="31.5" rx="2.4" ry="2.7" fill={RAY.navy} />
-          <ellipse cx="37" cy="31.5" rx="2.4" ry="2.7" fill={RAY.navy} />
+          {/* Slightly inward ellipses — worried, not fierce */}
+          <ellipse cx="27.4" cy="31.6" rx="2.25" ry="2.55" fill={RAY.navy} />
+          <ellipse cx="36.6" cy="31.6" rx="2.25" ry="2.55" fill={RAY.navy} />
+          {/* Flat-to-wavy concerned mouth */}
           <path
-            d="M28 39 Q32 37.5 36 39"
+            d="M28 39.2 Q30 37.8 32 39 Q34 40.2 36 39.2"
             fill="none"
             stroke={RAY.navy}
-            strokeWidth="1.75"
+            strokeWidth="1.65"
             strokeLinecap="round"
           />
         </g>

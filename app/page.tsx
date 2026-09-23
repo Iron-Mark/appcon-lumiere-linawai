@@ -1,9 +1,8 @@
-import { OnboardingFlow } from "@/components/onboarding";
+import { LandingPage } from "@/components/landing";
 
 /**
- * Onboarding entry — preference defaults, then /read.
- * Spec: spec/spec-01-initial_scaffold/01-onboarding.md
+ * Public one-page landing. Onboarding lives at /onboarding.
  */
 export default function HomePage() {
-  return <OnboardingFlow />;
+  return <LandingPage />;
 }

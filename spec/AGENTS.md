@@ -18,6 +18,7 @@ This file is the **only** file that may live directly in `spec/`. Everything els
 | Folder | Status | Depends on | Summary |
 | --- | --- | --- | --- |
 | [`spec-01-initial_scaffold`](./spec-01-initial_scaffold/) | active | — | Contracts, shell, and MVP build tracks for onboarding, reading, fidelity, fixture, and extension |
+| [`spec-02-gemini-adapt`](./spec-02-gemini-adapt/) | planned | `spec-01-initial_scaffold` | Planned Gemini `lib/adapt/http.ts` behind `adapt()`; default remains fixture until team turns model on |
 
 ## How to use a phase folder
 
