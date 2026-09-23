@@ -18,7 +18,7 @@ Each row: what, which file/function to replace or add, which spec.
 | Gemini extraction + adaptation over `adapt()` - **wired, off unless a key is set** (spends tokens) | `app/api/adapt/route.ts` tries `app/api/adapt/model.ts` only when `GEMINI_API_KEY` or the OpenAI-compatible gateway env is set. Otherwise, and on model failure, it runs `lib/adapt/fixture.ts`. The seeded failure example never uses the model. | `05-client-port.md`, `spec-02-gemini-adapt` |
 | DeBERTa NLI — **wired, off unless `NLI_ENDPOINT` is set** | `runNliSlot` stays neutral with “Semantic check not connected” when unset. Optional local server: `nli-service/`. Not required for the demo. | `06-fidelity.md` |
 | Repair regeneration — **one retry only when a model key is already set** | `app/api/adapt/model.ts` calls `buildRepairPrompt` after `repair_required`. The fixture demo never calls it. | `06-fidelity.md`, `05-client-port.md` |
-| Preference sync across web and extension | Same-browser `postMessage` bridge in `lib/storage/preferences-sync.ts` and `extension/src/content/prefs-sync.ts`. Accounts skipped: no auth env. | `01-onboarding.md`, `07-extension.md` |
+| Preference sync across web and extension | Optional on-device account stores the preference copy (`lib/auth/local.ts`). The same-browser companion receives it through `lib/storage/preferences-sync.ts`. Nothing is uploaded. | `01-onboarding.md`, `07-extension.md` |
 | Saved source content | Reading workspace **Save on this device**. Samples stay unsaved until that click. No content table. | storage + future backend |
 
 Eval corpus growth (20 → 50) is owned by the **evals / fidelity track**, not this backend checklist.

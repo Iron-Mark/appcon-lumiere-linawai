@@ -2,6 +2,7 @@
 
 import { useId, useState, type FormEvent } from "react";
 
+import { isCloudAuthEnabled } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,7 +18,12 @@ import { Input } from "@/components/ui/input";
 type SignInDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSignIn: (input: { name: string; email: string }) => Promise<void>;
+  onSignIn: (input: {
+    name: string;
+    email: string;
+    password?: string;
+    mode?: "sign-in" | "sign-up";
+  }) => Promise<void>;
 };
 
 /**
@@ -29,21 +35,32 @@ export function SignInDialog({
   onOpenChange,
   onSignIn,
 }: SignInDialogProps) {
+  const cloud = isCloudAuthEnabled();
   const nameId = useId();
   const emailId = useId();
+  const passwordId = useId();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-up");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const creating = !cloud || mode === "sign-up";
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
     setBusy(true);
     try {
-      await onSignIn({ name, email });
+      await onSignIn({
+        name,
+        email,
+        password: cloud ? password : undefined,
+        mode: cloud ? mode : "sign-up",
+      });
       setName("");
       setEmail("");
+      setPassword("");
       onOpenChange(false);
     } catch (err) {
       setError(
@@ -64,12 +81,16 @@ export function SignInDialog({
       >
         <DialogHeader className="gap-2 pr-10 text-left">
           <DialogTitle className="font-reading text-lg font-semibold tracking-tight text-ink">
-            Save on this device
+            {cloud
+              ? creating
+                ? "Create your Linaw account"
+                : "Sign in"
+              : "Save on this device"}
           </DialogTitle>
           <DialogDescription className="font-ui text-sm leading-relaxed text-ink-muted">
-            Optional. Leave a name and email so Linaw can keep a short list of
-            pieces you want to return to, and remember preferences for a later
-            browser companion. Nothing leaves this device right now.
+            {cloud
+              ? "Optional. The same preferences follow this email to another phone or laptop. Text you paste is not uploaded."
+              : "Optional. Leave a name and email so Linaw can keep a short list of pieces you want to return to on this device. Nothing is uploaded."}
           </DialogDescription>
         </DialogHeader>
 
@@ -86,7 +107,7 @@ export function SignInDialog({
               name="name"
               type="text"
               autoComplete="name"
-              required
+              required={creating}
               value={name}
               onChange={(event) => setName(event.target.value)}
               className="font-ui h-11 min-h-11 cursor-text rounded-lg border-border bg-paper-raised px-3 text-base text-ink focus-visible:border-action focus-visible:ring-2 focus-visible:ring-focus md:text-sm"
@@ -114,6 +135,28 @@ export function SignInDialog({
             />
           </div>
 
+          {cloud ? (
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor={passwordId}
+                className="font-ui text-sm font-semibold text-ink"
+              >
+                Password
+              </label>
+              <Input
+                id={passwordId}
+                name="password"
+                type="password"
+                autoComplete={creating ? "new-password" : "current-password"}
+                required
+                minLength={6}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="font-ui h-11 min-h-11 cursor-text rounded-lg border-border bg-paper-raised px-3 text-base text-ink focus-visible:border-action focus-visible:ring-2 focus-visible:ring-focus md:text-sm"
+              />
+            </div>
+          ) : null}
+
           {error ? (
             <p
               className="font-ui m-0 text-sm text-[var(--color-warning)]"
@@ -129,8 +172,31 @@ export function SignInDialog({
               disabled={busy}
               className="font-ui h-11 min-h-11 w-full cursor-pointer rounded-lg bg-action px-4 text-sm font-semibold text-paper-raised shadow-none hover:bg-action-hover focus-visible:ring-2 focus-visible:ring-focus"
             >
-              {busy ? "Saving…" : "Save on this device"}
+              {busy
+                ? "Saving…"
+                : cloud
+                  ? creating
+                    ? "Create account"
+                    : "Sign in"
+                  : "Save on this device"}
             </Button>
+            {cloud ? (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={busy}
+                onClick={() =>
+                  setMode((current) =>
+                    current === "sign-up" ? "sign-in" : "sign-up",
+                  )
+                }
+                className="font-ui h-11 min-h-11 w-full cursor-pointer text-sm font-medium text-ink-muted hover:text-ink"
+              >
+                {creating
+                  ? "Already have an account? Sign in"
+                  : "Need an account? Create one"}
+              </Button>
+            ) : null}
             <DialogClose asChild>
               <Button
                 type="button"

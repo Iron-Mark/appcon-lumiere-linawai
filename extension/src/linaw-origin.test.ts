@@ -20,7 +20,7 @@ describe("fetchLinawJson", () => {
     });
     expect(fetchImpl).toHaveBeenNthCalledWith(
       2,
-      "http://localhost:3000/api/adapt",
+      "http://127.0.0.1:3000/api/adapt",
       expect.objectContaining({ method: "GET" }),
     );
   });
@@ -41,6 +41,6 @@ describe("fetchLinawJson", () => {
     );
 
     expect(result).toBeNull();
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
   });
 });

@@ -3,6 +3,7 @@ import {
   BookOpen,
   FileText,
   Hand,
+  Languages,
   List,
   MessageSquareText,
   Quote,
@@ -20,8 +21,8 @@ import type {
 /** Steps are the choice dimensions only — sync metadata like `updatedAt` is not a step. */
 export type StepId = Exclude<keyof Preferences, "updatedAt">;
 
-/** Wording choices offered in onboarding (spec table); domain may allow more elsewhere. */
-export type OnboardingWording = Extract<Wording, "original" | "plain">;
+/** Wording choices offered in onboarding, including optional Taglish. */
+export type OnboardingWording = Wording;
 
 export type ChoiceValue = Detail | OnboardingWording | Delivery | BrowserBehavior;
 
@@ -105,9 +106,13 @@ function wordingStep(draft: DraftPreferences): OnboardingStep {
         ? keyPoints
           ? "Original: short list, close to the source words."
           : "Original: keep the source wording."
-        : keyPoints
-          ? "Plain Language: the same short list, in everyday words."
-          : "Plain Language: simpler words.",
+        : value === "plain"
+          ? keyPoints
+            ? "Plain Language: the same short list, in everyday words."
+            : "Plain Language: simpler words."
+          : keyPoints
+            ? "Taglish: the same short list, in everyday Taglish."
+            : "Taglish: everyday Tagalog and English, with terms kept intact.",
     options: [
       {
         value: "original",
@@ -124,6 +129,12 @@ function wordingStep(draft: DraftPreferences): OnboardingStep {
           ? "Say the same short list in everyday words."
           : "Use clearer, everyday words.",
         icon: MessageSquareText,
+      },
+      {
+        value: "taglish",
+        label: "Taglish",
+        hint: "Everyday Tagalog and English. Dates and conditions stay as written.",
+        icon: Languages,
       },
     ],
   };

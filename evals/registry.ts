@@ -1,4 +1,5 @@
 import { campusPilotEvalCase } from "./campus-pilot";
+import { growthEvalCases } from "./growth-cases";
 import { campusOrgEvalCases } from "./campus-org-cases";
 import { policyEvalCases } from "./policy-cases";
 import { publicAdvisoryEvalCases } from "./public-advisory-cases";
@@ -17,6 +18,7 @@ export const allEvalCases: EvalCase[] = [
   ...workplaceEvalCases,
   ...publicAdvisoryEvalCases,
   ...policyEvalCases,
+  ...growthEvalCases,
 ];
 
 export const EVAL_SOURCE_COUNT = allEvalCases.length;

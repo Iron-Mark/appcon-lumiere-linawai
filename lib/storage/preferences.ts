@@ -108,6 +108,12 @@ export const localStoragePreferenceStore: PreferenceStore = {
     writeRaw(toStore);
     notifyPreferencesChanged(toStore);
     broadcastToExtension(toStore);
+    void import("@/lib/auth/local").then(({ attachPreferencesToSignedInProfile }) => {
+      attachPreferencesToSignedInProfile(toStore);
+    });
+    void import("@/lib/auth/supabase").then(({ pushPreferencesIfSignedIn }) =>
+      pushPreferencesIfSignedIn(toStore),
+    );
   },
 
   async clear() {

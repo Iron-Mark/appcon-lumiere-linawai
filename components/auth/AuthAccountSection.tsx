@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 
+import { isCloudAuthEnabled } from "@/lib/auth";
 import { SignInDialog } from "@/components/auth/SignInDialog";
 import { useLocalAuth } from "@/components/auth/useLocalAuth";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,9 @@ const TOAST_COPY = {
   },
   settings: {
     title: "No account needed",
-    body: "Sign in only if you want to save a piece and keep preferences for later. Landing, reading, and Meaning Check work without an account.",
+    body: isCloudAuthEnabled()
+      ? "Sign in only if you want the same preferences on another phone or laptop. Reading works without an account. Text you paste is not uploaded."
+      : "Sign in only if you want to save a piece and keep preferences on this device. Landing, reading, and Meaning Check work without an account.",
   },
 } as const;
 
@@ -68,9 +71,9 @@ export function AuthAccountSection({
                 Signed in as {user.name}
               </span>
               <span className="text-xs leading-relaxed text-ink-muted sm:text-sm">
-                We&apos;ll keep a short list of pieces you save, and your
-                preferences, on this device ({user.email}). A future companion
-                can sync later; nothing is uploaded from here today.
+                {isCloudAuthEnabled()
+                  ? `${user.email}. Preferences on this account follow you to another browser. Text you paste is not uploaded.`
+                  : `Preferences stay with this profile on this device (${user.email}). The Chrome companion on this browser receives the same preferences. Nothing is uploaded.`}
               </span>
             </div>
             <Button
@@ -114,7 +117,7 @@ export function AuthAccountSection({
               onClick={() => setDialogOpen(true)}
               className="font-ui h-11 min-h-11 cursor-pointer rounded-lg bg-action px-3.5 text-sm font-semibold text-paper-raised shadow-none hover:bg-action-hover focus-visible:ring-2 focus-visible:ring-focus"
             >
-              Save on this device
+              {isCloudAuthEnabled() ? "Sign in" : "Save on this device"}
             </Button>
             <Button
               type="button"

@@ -19,6 +19,19 @@ const PLAIN = [
   "If you confirm late, you need written approval from the program coordinator.",
 ];
 
+const TAGLISH = [
+  "I-confirm ang orientation seat mo by Thursday at 5 PM.",
+  "Mentors dapat dumating Friday at 8:30 AM. Other members at 9:00 AM.",
+  "Late confirmations, tatanggapin lang with written approval from the program coordinator.",
+];
+
+const TAGLISH_POINTS = [
+  "I-confirm ang seat mo by Thursday at 5 PM.",
+  "Mentors dumating Friday at 8:30 AM.",
+  "Other members dumating at 9:00 AM.",
+  "Late confirmation kailangan ng written approval.",
+];
+
 const PLAIN_POINTS = [
   "Confirm your seat by Thursday at 5 PM.",
   "Mentors arrive Friday at 8:30 AM.",
@@ -45,17 +58,26 @@ function detailBlocks(
   detail: "full" | "key_points",
 ): ChoiceExampleData {
   const plain = draft.wording === "plain";
+  const taglish = draft.wording === "taglish";
   if (detail === "key_points") {
     return {
-      kicker: plain ? "Key points, in everyday words" : "Key points",
-      blocks: plain ? PLAIN_POINTS : KEY_POINTS,
+      kicker: taglish
+        ? "Key points, in Taglish"
+        : plain
+          ? "Key points, in everyday words"
+          : "Key points",
+      blocks: taglish ? TAGLISH_POINTS : plain ? PLAIN_POINTS : KEY_POINTS,
       list: true,
       spoken: false,
     };
   }
   return {
-    kicker: plain ? "The full message, in everyday words" : "The full message",
-    blocks: plain ? PLAIN : SOURCE,
+    kicker: taglish
+      ? "The full message, in Taglish"
+      : plain
+        ? "The full message, in everyday words"
+        : "The full message",
+    blocks: taglish ? TAGLISH : plain ? PLAIN : SOURCE,
     list: false,
     spoken: false,
   };
@@ -93,7 +115,12 @@ export function exampleFor(
   if (stepId === "wording") {
     const next = {
       ...draft,
-      wording: selected === "plain" ? "plain" : "original",
+      wording:
+        selected === "plain"
+          ? "plain"
+          : selected === "taglish"
+            ? "taglish"
+            : "original",
     } as DraftPreferences;
     return detailBlocks(
       next,

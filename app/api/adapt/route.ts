@@ -8,6 +8,19 @@ import {
   SEEDED_FAILURE_SOURCE,
 } from "@/lib/adapt/fixture";
 import { modelCacheKey, readModelCache, writeModelCache } from "./cache";
+import {
+  BODY_TOO_LARGE_MESSAGE,
+  MAX_SOURCE_CHARS,
+  MIN_MODEL_SOURCE_CHARS,
+  RATE_LIMIT_MESSAGE,
+  SOURCE_TOO_LONG_MESSAGE,
+  bodyTooLarge,
+  clientAddress,
+  isInjectionOnly,
+  sanitizeSource,
+  takeGetSlot,
+  takeModelSlot,
+} from "./limit";
 import { adaptWithModel, modelConfigured, readModelProviders } from "./model";
 
 /** Gateway abort is 75s. 90s lets the route return fixture instead of a platform kill. */
@@ -26,8 +39,12 @@ export const runtime = "nodejs";
  * Source text is never logged.
  */
 
-function plainError(message: string, status: number): Response {
-  return Response.json({ error: message }, { status });
+function plainError(
+  message: string,
+  status: number,
+  headers?: Record<string, string>,
+): Response {
+  return Response.json({ error: message }, { status, headers });
 }
 
 function normalizeKey(text: string): string {
@@ -35,7 +52,13 @@ function normalizeKey(text: string): string {
 }
 
 /** Lets the UI say up front whether text will be sent to a model. */
-export async function GET(): Promise<Response> {
+export async function GET(request: Request): Promise<Response> {
+  const slot = takeGetSlot(clientAddress(request));
+  if (!slot.ok) {
+    return plainError(RATE_LIMIT_MESSAGE, 429, {
+      "Retry-After": String(slot.retryAfter),
+    });
+  }
   const providers = readModelProviders().map((p) => p.kind);
   return Response.json({
     adapter: providers.length > 0 ? "model" : "fixture",
@@ -44,6 +67,10 @@ export async function GET(): Promise<Response> {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  if (bodyTooLarge(request)) {
+    return plainError(BODY_TOO_LARGE_MESSAGE, 413);
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -55,12 +82,23 @@ export async function POST(request: Request): Promise<Response> {
   if (!parsed.success) {
     return plainError("The request did not match the expected shape.", 400);
   }
-  const input = parsed.data;
+  const input = {
+    ...parsed.data,
+    source: sanitizeSource(parsed.data.source),
+  };
+
+  if (input.source.length > MAX_SOURCE_CHARS) {
+    return plainError(SOURCE_TOO_LONG_MESSAGE, 400);
+  }
 
   const isSeededDemo =
     normalizeKey(input.source) === normalizeKey(SEEDED_FAILURE_SOURCE);
+  const skipModel =
+    isSeededDemo ||
+    input.source.trim().length < MIN_MODEL_SOURCE_CHARS ||
+    isInjectionOnly(input.source);
 
-  if (!isSeededDemo && input.source.trim() && modelConfigured()) {
+  if (!skipModel && input.source.trim() && modelConfigured()) {
     const key = modelCacheKey(
       input.source,
       input.preferences.detail,
@@ -70,6 +108,14 @@ export async function POST(request: Request): Promise<Response> {
     if (cached) {
       return Response.json(AdaptResponseSchema.parse(cached), {
         headers: { "x-linaw-adapter": "model:cache" },
+      });
+    }
+
+    const address = clientAddress(request);
+    const slot = takeModelSlot(address);
+    if (!slot.ok) {
+      return plainError(RATE_LIMIT_MESSAGE, 429, {
+        "Retry-After": String(slot.retryAfter),
       });
     }
 

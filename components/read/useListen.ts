@@ -1,25 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  applyListenSettings,
+  DEFAULT_LISTEN_SETTINGS,
+  loadListenSettings,
+  normalizeListenSettings,
+  saveListenSettings,
+  type ListenPitch,
+  type ListenRate,
+  type ListenSettings,
+  type ListenVoice,
+} from "@/lib/listen/settings";
+
+export type { ListenPitch, ListenRate, ListenSettings, ListenVoice };
 
 /** Character range in the *displayed* text currently being spoken. */
 export type SpokenRange = { start: number; end: number };
-
-export const LISTEN_RATES = [0.8, 1, 1.25, 1.5] as const;
-export type ListenRate = (typeof LISTEN_RATES)[number];
-
-const RATE_STORAGE_KEY = "linaw.listen.rate";
-
-function loadRate(): ListenRate {
-  if (typeof window === "undefined") return 1;
-  try {
-    const raw = window.localStorage.getItem(RATE_STORAGE_KEY);
-    const n = raw ? Number(raw) : NaN;
-    return (LISTEN_RATES as readonly number[]).includes(n) ? (n as ListenRate) : 1;
-  } catch {
-    return 1;
-  }
-}
 
 /** Word end from a boundary index — some engines omit `charLength`. */
 function wordEnd(text: string, from: number, charLength: number | undefined): number {
@@ -38,7 +35,8 @@ function wordEnd(text: string, from: number, charLength: number | undefined): nu
 export function useListen(text: string) {
   const [listening, setListening] = useState(false);
   const [paused, setPaused] = useState(false);
-  const [rate, setRateState] = useState<ListenRate>(1);
+  const [settings, setSettings] = useState<ListenSettings>(DEFAULT_LISTEN_SETTINGS);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [spoken, setSpoken] = useState<SpokenRange | null>(null);
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -48,16 +46,28 @@ export function useListen(text: string) {
   const spokenTextRef = useRef<string>("");
   const baseOffsetRef = useRef(0);
   const lastBoundaryRef = useRef<number>(0);
-  const rateRef = useRef<ListenRate>(1);
-
-  useEffect(() => {
-    const r = loadRate();
-    rateRef.current = r;
-    setRateState(r);
-  }, []);
-
+  const settingsRef = useRef<ListenSettings>(DEFAULT_LISTEN_SETTINGS);
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   const supported =
     typeof window !== "undefined" && Boolean(window.speechSynthesis);
+
+  useEffect(() => {
+    const loaded = loadListenSettings();
+    settingsRef.current = loaded;
+    setSettings(loaded);
+  }, []);
+
+  useEffect(() => {
+    if (!supported) return;
+    const refresh = () => {
+      const next = window.speechSynthesis.getVoices();
+      voicesRef.current = next;
+      setVoices(next);
+    };
+    refresh();
+    window.speechSynthesis.addEventListener("voiceschanged", refresh);
+    return () => window.speechSynthesis.removeEventListener("voiceschanged", refresh);
+  }, [supported]);
 
   const stop = useCallback(() => {
     if (!supported) return;
@@ -85,7 +95,21 @@ export function useListen(text: string) {
 
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(spokenText);
-      utterance.rate = rateRef.current;
+      const listed: ListenVoice[] = voicesRef.current.map((voice) => ({
+        voiceURI: voice.voiceURI,
+        name: voice.name,
+        lang: voice.lang,
+      }));
+      const applied = { rate: 1, pitch: 1, voice: null as ListenVoice | null };
+      applyListenSettings(applied, settingsRef.current, listed);
+      utterance.rate = applied.rate;
+      utterance.pitch = applied.pitch;
+      if (applied.voice) {
+        const match = voicesRef.current.find(
+          (voice) => voice.voiceURI === applied.voice?.voiceURI,
+        );
+        if (match) utterance.voice = match;
+      }
       utteranceRef.current = utterance;
       spokenTextRef.current = full;
       baseOffsetRef.current = from + leading;
@@ -153,27 +177,18 @@ export function useListen(text: string) {
     else start();
   }, [listening, start, stop]);
 
-  const setRate = useCallback(
-    (next: ListenRate) => {
-      rateRef.current = next;
-      setRateState(next);
-      try {
-        window.localStorage.setItem(RATE_STORAGE_KEY, String(next));
-      } catch {
-        // Preference is a convenience; ignore storage failures.
-      }
-      // Mid-read: restart from the word we were on so the change is audible now.
+  const updateSettings = useCallback(
+    (patch: Partial<ListenSettings>) => {
+      const next = normalizeListenSettings({ ...settingsRef.current, ...patch });
+      settingsRef.current = next;
+      setSettings(next);
+      saveListenSettings(next);
       if (utteranceRef.current) {
         speakFrom(spokenTextRef.current, lastBoundaryRef.current);
       }
     },
     [speakFrom],
   );
-
-  const cycleRate = useCallback(() => {
-    const i = LISTEN_RATES.indexOf(rateRef.current);
-    setRate(LISTEN_RATES[(i + 1) % LISTEN_RATES.length]!);
-  }, [setRate]);
 
   useEffect(() => {
     return () => {
@@ -183,19 +198,27 @@ export function useListen(text: string) {
     };
   }, []);
 
+  const listedVoices: ListenVoice[] = voices
+    .filter((voice) => voice.voiceURI)
+    .map((voice) => ({
+      voiceURI: voice.voiceURI,
+      name: voice.name,
+      lang: voice.lang,
+    }));
+
   return {
     supported,
     listening,
     paused,
     spoken,
-    rate,
+    settings,
+    voices: listedVoices,
     start,
     stop,
     toggle,
     pause,
     resume,
     togglePause,
-    setRate,
-    cycleRate,
+    updateSettings,
   };
 }

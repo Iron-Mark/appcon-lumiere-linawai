@@ -114,6 +114,8 @@ flowchart LR
 
 A successful model answer is kept in process memory (`app/api/adapt/cache.ts`), keyed by normalized source plus detail and wording. Delivery is not part of the key, so Read and Listen share one answer. Cap 50, oldest dropped. Not written to disk. A restart clears it. A hit returns the same body with header `x-linaw-adapter: model:cache` and `adapter: "model"`. Fixture answers and the seeded example are not stored.
 
+Before a model call, the route rejects a body over 80 KB (`413`) and a source over 20,000 characters (`400`). Each address may make 20 uncached model attempts per 10 minutes (`429`, `Retry-After`). Cache hits do not count. `GET` is limited to 60 per minute. A source shorter than 20 characters, or one that is only an instruction to ignore the system prompt, skips the model. The source is wrapped as untrusted data. An answer that echoes the system prompt or a key is dropped and the fixture is used instead. Counters live in process memory.
+
 `GET /api/adapt` → `{ adapter, providers }` for the composer disclosure.
 
 Response: `adaptedText`, `meaningMap`, `checks[]`, `overallStatus`, `adapter: "model" | "fixture"`. Header `x-linaw-adapter: model:gemini | model:openai-compatible | model:cache | fixture`. `{ error }` → 400 → `AdaptRequestError`. Network / invalid body → client fixture, labelled `adapter: "fixture"`. Source is not logged.
@@ -155,7 +157,7 @@ flowchart TD
 1. **Deterministic** — times, weekdays, numbers, units, negation, must/may, condition/exception markers, names. Known values come from fact `value` / `condition` / `exception` **and** `evidence`.
 2. **Relationships** — actor stays attached to the value (seeded failure: mentors' 8:30 AM on everyone).
 3. **NLI** — optional. `POST NLI_ENDPOINT` `{ inputs: [{ text, text_pair }] }`, 4 s. Entailment pass, contradiction warning, neutral pass + inconclusive. Unset or fail → reason `Semantic check not connected.` UI: **Not run**, excluded from the verdict. Service: `nli-service/` (`cross-encoder/nli-deberta-v3-base`, default `:8001/predict`).
-4. **Coverage** — only when `detail === "key_points"`. High-priority: condition, deadline, exception, prohibition. Facts already flagged by 1–2 are skipped. `full` emits one passing coverage check.
+4. **Coverage** — Key Points and Full. High-priority: condition, deadline, exception, prohibition. Facts already flagged by 1–2 are skipped. A missing deadline warns.
 
 `evals/` is the golden + seeded + fidelity cases. `npm test` runs them.
 
@@ -170,7 +172,7 @@ flowchart TD
 | `/settings` | preferences + optional local profile |
 | `/home` | redirects to `/content` |
 | `/todo` | backlog |
-| `extension/` | MV3; same `adapt()`. The service worker POSTs to `http://127.0.0.1:3000` then `http://localhost:3000`. A model answer replaces the main article (selection only if it sits inside that article; Auto-Clarify replaces the whole article). A fixture answer does not. **Page as it was** restores the original words |
+| `extension/` | MV3; same `adapt()`. The service worker tries `https://appcon-lumiere-linawai.vercel.app`, then `http://127.0.0.1:3000`, then `http://localhost:3000`. A model answer replaces the main article (selection only if it sits inside that article; Auto-Clarify replaces the whole article). A fixture answer does not. **Page as it was** restores the original words |
 
 Share: `/read?s=<base64url>`, ≤ 4,000 source chars. Recipient's own preferences apply. PDF/text parse is client-side (`readSourceFile.ts`). Ungrounded map (no evidence substring in the pasted source) is shown as not produced from that text.
 
@@ -203,5 +205,5 @@ No database.
 - No second adapt path. No other `app/api` routes.
 - Layers stay separate; never a single score or “verified”.
 - On-screen verb is Clarify. Preference language, never labels.
-- Gateway can take ~20–30 s; no `vercel.json` yet — serverless default 10 s will time out.
+- Gateway can take ~20–30 s. `app/api/adapt` sets `maxDuration` 90 and `runtime` nodejs. Production: https://appcon-lumiere-linawai.vercel.app
 - Gateway retention is unpublished; do not send personal data through it.

@@ -6,7 +6,6 @@ import {
   ArrowDown,
   Ear,
   FileText,
-  Gauge,
   LayoutList,
   Pause,
   Play,
@@ -20,7 +19,14 @@ import { AdaptedText } from "./AdaptedText";
 import { FocusView } from "./FocusView";
 import { GlanceView } from "./GlanceView";
 import type { TextMark } from "./marks";
-import type { ListenRate, SpokenRange } from "./useListen";
+import {
+  LISTEN_PITCHES,
+  LISTEN_RATES,
+  PITCH_LABELS,
+  type ListenSettings,
+  type ListenVoice,
+} from "@/lib/listen/settings";
+import type { SpokenRange } from "./useListen";
 
 /** How the note is laid out. Same facts, same checks — different shape. */
 export type NoteView = "text" | "glance" | "focus";
@@ -49,8 +55,9 @@ type NoteCardProps = {
   /** Listening extras — word tracking, pause/resume, reading speed. */
   listenPaused?: boolean;
   onTogglePause?: () => void;
-  listenRate?: ListenRate;
-  onCycleRate?: () => void;
+  listenSettings?: ListenSettings;
+  listenVoices?: ListenVoice[];
+  onListenChange?: (patch: Partial<ListenSettings>) => void;
   spoken?: SpokenRange | null;
   /** Evidence to highlight in the original view for the selected check. */
   originalHighlight?: { text: string; caution: boolean } | null;
@@ -84,8 +91,9 @@ export function NoteCard({
   working = false,
   listenPaused = false,
   onTogglePause,
-  listenRate = 1,
-  onCycleRate,
+  listenSettings,
+  listenVoices = [],
+  onListenChange,
   spoken = null,
   originalHighlight = null,
   onJumpToChecks,
@@ -100,7 +108,6 @@ export function NoteCard({
   const caution =
     overallStatus === "warning" || overallStatus === "repair_required";
   const pass = overallStatus === "pass" && !working;
-  const rateLabel = `${listenRate}×`;
   const hasStructure =
     Boolean(meaningMap && checks && adaptedText.trim()) && !working;
   const showSwitcher = Boolean(onViewChange) && hasStructure && !showingOriginal;
@@ -202,13 +209,6 @@ export function NoteCard({
                   compact
                 />
                 <ActionButton
-                  onClick={() => onCycleRate?.()}
-                  icon={<Gauge size={18} strokeWidth={2} />}
-                  label={rateLabel}
-                  ariaLabel={`Reading speed ${rateLabel}. Change speed`}
-                  compact
-                />
-                <ActionButton
                   onClick={onToggleListen}
                   icon={<Square size={16} strokeWidth={2.25} />}
                   label="Stop"
@@ -223,6 +223,13 @@ export function NoteCard({
                 label="Listen"
               />
             )}
+            {canListen && listenSettings && onListenChange ? (
+              <ListenMenu
+                settings={listenSettings}
+                voices={listenVoices}
+                onChange={onListenChange}
+              />
+            ) : null}
           </div>
         </div>
         <p
@@ -363,6 +370,91 @@ export function NoteCard({
         }
       `}</style>
     </article>
+  );
+}
+
+function ListenMenu({
+  settings,
+  voices,
+  onChange,
+}: {
+  settings: ListenSettings;
+  voices: ListenVoice[];
+  onChange: (patch: Partial<ListenSettings>) => void;
+}) {
+  return (
+    <details className="listen-menu font-ui">
+      <summary className="inline-flex min-h-10 cursor-pointer list-none items-center rounded-lg px-3 text-[0.8125rem] font-medium text-ink-muted hover:bg-paper-inset hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60">
+        Listen options
+      </summary>
+      <div
+        className="listen-menu-panel"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.65rem",
+          marginTop: "0.35rem",
+          padding: "0.75rem",
+          borderRadius: "0.7rem",
+          background: "var(--color-paper-raised)",
+          border: "1px solid var(--color-border)",
+          minWidth: "16rem",
+        }}
+      >
+        <label className="flex flex-col gap-1 text-[0.8125rem] text-ink">
+          Voice
+          <select
+            value={settings.voiceURI}
+            aria-label="Voice"
+            className="min-h-11 rounded-md border border-border bg-paper px-2 text-ink"
+            onChange={(event) => onChange({ voiceURI: event.target.value })}
+          >
+            <option value="">This device</option>
+            {voices.map((voice) => (
+              <option key={voice.voiceURI} value={voice.voiceURI}>
+                {voice.name} · {voice.lang}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div role="group" aria-label="Pitch" className="flex flex-wrap gap-1">
+          {LISTEN_PITCHES.map((pitch) => (
+            <button
+              key={pitch}
+              type="button"
+              aria-pressed={settings.pitch === pitch}
+              className={cn(
+                "min-h-11 rounded-md px-3 text-[0.8125rem]",
+                settings.pitch === pitch
+                  ? "bg-action-soft text-ink"
+                  : "text-ink-muted hover:bg-paper-inset",
+              )}
+              onClick={() => onChange({ pitch })}
+            >
+              {PITCH_LABELS[pitch]}
+            </button>
+          ))}
+        </div>
+        <div role="group" aria-label="Pace" className="flex flex-wrap gap-1">
+          {LISTEN_RATES.map((rate) => (
+            <button
+              key={rate}
+              type="button"
+              aria-pressed={settings.rate === rate}
+              className={cn(
+                "min-h-11 rounded-md px-3 text-[0.8125rem]",
+                settings.rate === rate
+                  ? "bg-action-soft text-ink"
+                  : "text-ink-muted hover:bg-paper-inset",
+              )}
+              onClick={() => onChange({ rate })}
+            >
+              {rate}×
+            </button>
+          ))}
+        </div>
+      </div>
+    </details>
   );
 }
 

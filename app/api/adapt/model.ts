@@ -13,6 +13,7 @@ import {
   buildRepairPrompt,
 } from "@/lib/adapt/prompts";
 import { runFidelityGuard, type FidelityGuardResult } from "@/lib/fidelity";
+import { answerLooksLeaked } from "./limit";
 
 /**
  * Server-only model adapter for /api/adapt.
@@ -140,6 +141,7 @@ export async function adaptWithModel(
 
     const adaptedText = parsed.adaptedText.trim();
     if (!adaptedText) continue;
+    if (answerLooksLeaked(adaptedText)) return null;
     const meaningMap = groundMeaningMap(parsed, input.source);
 
     const nliEndpoint = process.env.NLI_ENDPOINT?.trim() || undefined;
@@ -161,6 +163,8 @@ export async function adaptWithModel(
         guard = repaired.guard;
       }
     }
+
+    if (answerLooksLeaked(text)) return null;
 
     return {
       provider: provider.kind,

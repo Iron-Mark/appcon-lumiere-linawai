@@ -49,6 +49,7 @@ import {
   Paperclip,
   RotateCcw,
   Trash2,
+  X,
 } from "lucide-react";
 import { ErrorToast } from "./ErrorToast";
 import { ModeBar } from "./ModeBar";
@@ -70,6 +71,7 @@ import {
 const ADAPT_FAILED_MESSAGE = "Could not clarify this note.";
 /** Layout choice for the note (text / at a glance / one at a time). */
 const VIEW_STORAGE_KEY = "linaw.read.view";
+const GUIDE_HIDDEN_KEY = "linaw.read.guide-hidden";
 const NOTE_VIEW_VALUES: NoteView[] = ["text", "glance", "focus"];
 /** Draft survives a reload during a demo; cleared when the source is cleared. */
 const DRAFT_STORAGE_KEY = "linaw.read.draft";
@@ -89,6 +91,8 @@ export function ReadingWorkspace({
   const [preferences, setPreferences] = useState<Preferences>(DEFAULT_PREFERENCES);
   const [prefsReady, setPrefsReady] = useState(false);
   const [hasStoredPrefs, setHasStoredPrefs] = useState(false);
+  /** null until we know whether the how-it-works panel was dismissed. */
+  const [guideHidden, setGuideHidden] = useState<boolean | null>(null);
 
   const [draftSource, setDraftSource] = useState("");
   const [composerExpanded, setComposerExpanded] = useState(true);
@@ -147,12 +151,13 @@ export function ReadingWorkspace({
     listening,
     paused: listenPaused,
     spoken,
-    rate: listenRate,
+    settings: listenSettings,
+    voices: listenVoices,
     start: startListen,
     stop: stopListen,
     toggle: toggleListen,
     togglePause: toggleListenPause,
-    cycleRate: cycleListenRate,
+    updateSettings: updateListenSettings,
   } = useListen(displayedText);
   stopListenRef.current = stopListen;
 
@@ -466,6 +471,13 @@ export function ReadingWorkspace({
     return () => {
       cancelled = true;
     };
+  }, []);
+  useEffect(() => {
+    try {
+      setGuideHidden(window.localStorage.getItem(GUIDE_HIDDEN_KEY) === "1");
+    } catch {
+      setGuideHidden(false);
+    }
   }, []);
   const modelWillBeUsed = adapterInfo?.adapter === "model";
   const resultFromModel = result?.adapter === "model";
@@ -1426,61 +1438,67 @@ export function ReadingWorkspace({
 
       <ErrorToast message={error} onDismiss={dismissError} action={errorAction} />
 
-      {!showResultsGrid ? (
+      {!showResultsGrid && guideHidden === false ? (
         <section
-          aria-label={hasStoredPrefs ? "Your reading defaults" : "How Linaw works"}
+          aria-label="How Linaw works"
           className="read-guide animate-in fade-in-0 slide-in-from-bottom-1 duration-300 fill-mode-both motion-reduce:animate-none"
           style={{ animationDelay: "80ms" }}
         >
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Hide how Linaw works"
+            className="read-guide-close size-11 min-h-11 min-w-11 cursor-pointer text-ink-muted hover:bg-transparent hover:text-ink focus-visible:ring-2 focus-visible:ring-ring/60"
+            onClick={() => {
+              setGuideHidden(true);
+              try {
+                window.localStorage.setItem(GUIDE_HIDDEN_KEY, "1");
+              } catch {
+                // Hidden for this view even if storage is blocked.
+              }
+            }}
+          >
+            <X aria-hidden="true" />
+          </Button>
           <div className="read-guide-mascot" aria-hidden="true">
             <Sindi state="empty" line="" className="read-guide-ray" />
           </div>
-          {hasStoredPrefs ? (
-            <div className="read-guide-heading">
-              <p className="read-guide-eyebrow">Ready when you are</p>
-              <p className="read-guide-lede font-reading">
-                {detailLabel} · {wordingLabel} · {deliveryLabel}
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="read-guide-heading">
-                <p className="read-guide-eyebrow">How Linaw works</p>
-                <p className="read-guide-lede font-reading">
-                  Paste, clarify, then check the meaning held.
-                </p>
-              </div>
-              <ol className="read-guide-steps">
-                {[
-                  {
-                    title: "Paste or drop",
-                    body: "Plain text or a PDF, up to 30 pages long.",
-                  },
-                  {
-                    title: "Clarify",
-                    body: "Rewritten to your detail and wording choices.",
-                  },
-                  {
-                    title: "Meaning Check",
-                    body: "Key facts are checked against the source.",
-                  },
-                ].map((step, i) => (
-                  <li key={step.title} className="read-guide-step">
-                    <span
-                      aria-hidden="true"
-                      className="read-guide-num font-reading"
-                    >
-                      {i + 1}
-                    </span>
-                    <div>
-                      <p className="read-guide-title">{step.title}</p>
-                      <p className="read-guide-body">{step.body}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </>
-          )}
+          <div className="read-guide-heading">
+            <p className="read-guide-eyebrow">How Linaw works</p>
+            <p className="read-guide-lede font-reading">
+              Paste, clarify, then check the meaning held.
+            </p>
+          </div>
+          <ol className="read-guide-steps">
+            {[
+              {
+                title: "Paste or drop",
+                body: "Plain text or a PDF, up to 30 pages long.",
+              },
+              {
+                title: "Clarify",
+                body: "Rewritten to your detail and wording choices.",
+              },
+              {
+                title: "Meaning Check",
+                body: "Key facts are checked against the source.",
+              },
+            ].map((step, i) => (
+              <li key={step.title} className="read-guide-step">
+                <span
+                  aria-hidden="true"
+                  className="read-guide-num font-reading"
+                >
+                  {i + 1}
+                </span>
+                <div>
+                  <p className="read-guide-title">{step.title}</p>
+                  <p className="read-guide-body">{step.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </section>
       ) : null}
 
@@ -1561,8 +1579,9 @@ export function ReadingWorkspace({
               working={working}
               listenPaused={listenPaused}
               onTogglePause={toggleListenPause}
-              listenRate={listenRate}
-              onCycleRate={cycleListenRate}
+              listenSettings={listenSettings}
+              listenVoices={listenVoices}
+              onListenChange={updateListenSettings}
               spoken={spoken}
               originalHighlight={originalHighlight}
               onJumpToChecks={jumpToChecks}
@@ -1890,6 +1909,12 @@ export function ReadingWorkspace({
           display: grid;
           grid-template-columns: minmax(0, 1fr);
           gap: 1.35rem;
+        }
+        .read-guide-close {
+          position: absolute;
+          top: 0.45rem;
+          right: 0.45rem;
+          z-index: 2;
         }
         .read-guide-mascot {
           position: absolute;

@@ -19,8 +19,8 @@ const HIGH_PRIORITY_TYPES = new Set([
 
 /**
  * Layer 4 — Coverage.
- * For Key Points: critical facts retained, intentionally omitted, or flagged.
- * Conditions, deadlines, exceptions, and prohibitions stay high priority.
+ * High-priority facts (conditions, deadlines, exceptions, prohibitions)
+ * must still appear, for both Key Points and Full detail.
  */
 export function runCoverageChecks(
   meaningMap: MeaningMap,
@@ -30,15 +30,7 @@ export function runCoverageChecks(
 ): Check[] {
   const checks: Check[] = [];
 
-  if (preferences.detail !== "key_points") {
-    checks.push({
-      claim: "Critical fact coverage",
-      status: "pass",
-      evidence: meaningMap.sourceIntent,
-      reason: REASON_NO_ISSUE,
-    });
-    return checks;
-  }
+  void preferences;
 
   for (const fact of meaningMap.criticalFacts) {
     if (!isHighPriority(fact)) continue;

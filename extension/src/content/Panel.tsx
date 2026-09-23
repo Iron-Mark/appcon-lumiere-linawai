@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
-import { adapt } from "@/lib/adapt";
+import { AdaptRequestError, adapt } from "@/lib/adapt";
 import type {
   AdaptResponse,
   Detail,
@@ -23,8 +23,6 @@ import {
   DEFAULT_READING_COMFORT,
   normalizeReadingComfort,
   readingTextStyleVars,
-  speechRateForPace,
-  type ListenPace,
   type ReadingComfort,
   type ReadingFace,
   type ReadingTone,
@@ -43,13 +41,23 @@ import {
   syncPageReading,
 } from "./page-reading";
 import { findMainContentRoot } from "./extractor";
+import { getListenSettings, saveListenSettings } from "../storage/listen";
+import {
+  applyListenSettings,
+  DEFAULT_LISTEN_SETTINGS,
+  LISTEN_PITCHES,
+  LISTEN_RATES,
+  PITCH_LABELS,
+  type ListenSettings,
+  type ListenVoice,
+} from "@/lib/listen/settings";
 import { splitDeadlineMarks } from "../reading-comfort/deadline-marks";
 import {
   clampFocusLine,
   splitReadingLines,
 } from "../reading-comfort/focus-line";
 
-const WEB_APP_READ_URL = "http://localhost:3000/read";
+const WEB_APP_READ_URL = "https://appcon-lumiere-linawai.vercel.app/read";
 
 export type PanelProps = {
   source: string;
@@ -303,13 +311,21 @@ export function Panel({
   const [comfort, setComfort] = useState<ReadingComfort>(DEFAULT_READING_COMFORT);
   const [focusIndex, setFocusIndex] = useState(0);
   const [pageOn, setPageOn] = useState(false);
+  const [listenSettings, setListenSettings] = useState<ListenSettings>(
+    DEFAULT_LISTEN_SETTINGS,
+  );
+  const [listenVoices, setListenVoices] = useState<ListenVoice[]>([]);
 
   const sourceRef = useRef(source);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const comfortRef = useRef(comfort);
+  const listenRef = useRef(listenSettings);
+  const voicesRef = useRef(listenVoices);
 
   sourceRef.current = source;
   comfortRef.current = comfort;
+  listenRef.current = listenSettings;
+  voicesRef.current = listenVoices;
 
   const disabledOrigins: string[] =
     (preferences as Partial<ExtensionPreferences>).disabledOrigins ?? [];
@@ -329,6 +345,27 @@ export function Panel({
       setPageOn(isPageReadingActive());
     });
   }, [isCurrentOriginDisabled]);
+
+  useEffect(() => {
+    void getListenSettings().then(setListenSettings);
+    const refresh = () => {
+      const listed = window.speechSynthesis
+        .getVoices()
+        .filter((voice) => voice.voiceURI)
+        .map((voice) => ({
+          voiceURI: voice.voiceURI,
+          name: voice.name,
+          lang: voice.lang,
+        }));
+      setListenVoices(listed);
+    };
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      refresh();
+      window.speechSynthesis.addEventListener("voiceschanged", refresh);
+      return () => window.speechSynthesis.removeEventListener("voiceschanged", refresh);
+    }
+    return undefined;
+  }, []);
 
   useEffect(() => onPageFocusIndex(setFocusIndex), []);
 
@@ -359,8 +396,12 @@ export function Panel({
         const root = findMainContentRoot(document);
         if (root) showClarifiedText(root, result.adaptedText);
       }
-    } catch {
-      setError("Clarification could not finish. Try again.");
+    } catch (err) {
+      const message =
+        err instanceof AdaptRequestError && err.message.trim()
+          ? err.message.trim()
+          : "Clarification could not finish. Try again.";
+      setError(message);
       setResponse(null);
     } finally {
       setWorking(false);
@@ -377,6 +418,21 @@ export function Panel({
   useEffect(() => {
     return () => stopSpeech();
   }, []);
+
+  function spokenUtterance(text: string): SpeechSynthesisUtterance {
+    const utter = new SpeechSynthesisUtterance(text);
+    const applied = { rate: 1, pitch: 1, voice: null as ListenVoice | null };
+    applyListenSettings(applied, listenRef.current, voicesRef.current);
+    utter.rate = applied.rate;
+    utter.pitch = applied.pitch;
+    if (applied.voice && typeof window !== "undefined" && window.speechSynthesis) {
+      const match = window.speechSynthesis
+        .getVoices()
+        .find((voice) => voice.voiceURI === applied.voice?.voiceURI);
+      if (match) utter.voice = match;
+    }
+    return utter;
+  }
 
   function stopSpeech() {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
@@ -398,7 +454,6 @@ export function Panel({
       return;
     }
 
-    const rate = speechRateForPace(comfortRef.current.listenPace);
     if (useFocus && pageBlocks.length > 0) {
       const index = clampFocusLine(focusIndex, pageBlocks.length);
       setListening(true);
@@ -411,8 +466,7 @@ export function Panel({
         const next = setPageFocus(i);
         setFocusIndex(next);
         const line = (pageBlocks[next]?.textContent ?? "").replace(/\s+/g, " ").trim();
-        const utter = new SpeechSynthesisUtterance(line);
-        utter.rate = rate;
+        const utter = spokenUtterance(line);
         utter.onend = () => {
           speakAt(next + 1);
         };
@@ -439,8 +493,7 @@ export function Panel({
           return;
         }
         setFocusIndex(i);
-        const utter = new SpeechSynthesisUtterance(lines[i]);
-        utter.rate = rate;
+        const utter = spokenUtterance(lines[i] ?? "");
         utter.onend = () => {
           speakAt(i + 1);
         };
@@ -456,8 +509,7 @@ export function Panel({
       return;
     }
 
-    const utter = new SpeechSynthesisUtterance(plainText);
-    utter.rate = rate;
+    const utter = spokenUtterance(plainText);
     utter.onend = () => {
       setListening(false);
       utteranceRef.current = null;
@@ -985,29 +1037,54 @@ export function Panel({
           </button>
 
           <div className="linaw-listen-group">
-            <div
-              className="linaw-segment linaw-pace-segment"
-              role="group"
-              aria-label="Listen pace"
+            <label className="linaw-settings-label" htmlFor="linaw-listen-voice">
+              Voice
+            </label>
+            <select
+              id="linaw-listen-voice"
+              className="linaw-segment-btn"
+              aria-label="Voice"
+              value={listenSettings.voiceURI}
+              onChange={(event) => {
+                void saveListenSettings({ voiceURI: event.target.value }).then(
+                  setListenSettings,
+                );
+              }}
             >
-              {(
-                [
-                  { value: "slower" as ListenPace, label: "Slower" },
-                  { value: "steady" as ListenPace, label: "Steady" },
-                  { value: "faster" as ListenPace, label: "Faster" },
-                ] as const
-              ).map((opt) => (
+              <option value="">This device</option>
+              {listenVoices.map((voice) => (
+                <option key={voice.voiceURI} value={voice.voiceURI}>
+                  {voice.name} · {voice.lang}
+                </option>
+              ))}
+            </select>
+            <div className="linaw-segment" role="group" aria-label="Pitch">
+              {LISTEN_PITCHES.map((pitch) => (
                 <button
-                  key={opt.value}
+                  key={pitch}
                   type="button"
-                  id={`linaw-pace-${opt.value}`}
-                  name="listen-pace"
-                  className={`linaw-segment-btn linaw-pace-btn ${comfort.listenPace === opt.value ? "is-active" : ""}`}
-                  aria-pressed={comfort.listenPace === opt.value}
-                  aria-label={`Listen pace: ${opt.label}`}
-                  onClick={() => void updateComfort({ listenPace: opt.value })}
+                  className={`linaw-segment-btn ${listenSettings.pitch === pitch ? "is-active" : ""}`}
+                  aria-pressed={listenSettings.pitch === pitch}
+                  onClick={() => {
+                    void saveListenSettings({ pitch }).then(setListenSettings);
+                  }}
                 >
-                  {opt.label}
+                  {PITCH_LABELS[pitch]}
+                </button>
+              ))}
+            </div>
+            <div className="linaw-segment linaw-pace-segment" role="group" aria-label="Pace">
+              {LISTEN_RATES.map((rate) => (
+                <button
+                  key={rate}
+                  type="button"
+                  className={`linaw-segment-btn linaw-pace-btn ${listenSettings.rate === rate ? "is-active" : ""}`}
+                  aria-pressed={listenSettings.rate === rate}
+                  onClick={() => {
+                    void saveListenSettings({ rate }).then(setListenSettings);
+                  }}
+                >
+                  {rate}×
                 </button>
               ))}
             </div>

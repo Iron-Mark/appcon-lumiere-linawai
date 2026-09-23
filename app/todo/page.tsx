@@ -28,8 +28,8 @@ const BACKEND_TODOS: TodoRow[] = [
     spec: "06-fidelity.md, 05-client-port.md",
   },
   {
-    what: "Preference sync across web and extension on the same browser (accounts skipped: no auth env)",
-    replace: "lib/storage/preferences-sync.ts postMessage bridge; extension/src/content/prefs-sync.ts",
+    what: "Optional on-device account keeps preferences and the same-browser companion receives them (no cloud upload)",
+    replace: "lib/auth/local.ts profile copy; lib/storage/preferences-sync.ts; extension prefs-sync",
     spec: "01-onboarding.md, 07-extension.md",
   },
   {

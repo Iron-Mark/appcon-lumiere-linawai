@@ -10,7 +10,11 @@ describe("resolveOnboardingStep", () => {
     const step = resolveOnboardingStep(1, { detail: "key_points" });
     expect(step.id).toBe("wording");
     expect(step.question).toMatch(/key points/i);
-    expect(step.options.map((o) => o.value)).toEqual(["original", "plain"]);
+    expect(step.options.map((o) => o.value)).toEqual([
+      "original",
+      "plain",
+      "taglish",
+    ]);
     expect(step.options[0].hint).toMatch(/short list/i);
   });
 

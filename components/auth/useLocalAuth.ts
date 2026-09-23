@@ -9,6 +9,7 @@ import {
   type AuthStore,
   type AuthUser,
   type SavedItem,
+  type SignInInput,
 } from "@/lib/auth";
 
 export type LocalAuthState = {
@@ -16,7 +17,7 @@ export type LocalAuthState = {
   user: AuthUser | null;
   savedItems: SavedItem[];
   refresh: () => Promise<void>;
-  signIn: (input: { name: string; email: string }) => Promise<AuthUser>;
+  signIn: (input: SignInInput) => Promise<AuthUser>;
   signOut: () => Promise<void>;
   saveItem: AuthStore["saveItem"];
   removeSavedItem: (id: string) => Promise<void>;
@@ -63,7 +64,7 @@ export function useLocalAuth(): LocalAuthState {
   }, [refresh]);
 
   const signIn = useCallback(
-    async (input: { name: string; email: string }) => {
+    async (input: SignInInput) => {
       const next = await authStore.signIn(input);
       await refresh();
       return next;

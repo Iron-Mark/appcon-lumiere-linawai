@@ -3,6 +3,9 @@
  * Sign-in is never required to use Linaw.
  */
 
+/** localStorage key for the optional on-device profile. */
+export const AUTH_STORAGE_KEY = "linaw.auth.v1";
+
 export type AuthUser = {
   name: string;
   email: string;
@@ -18,6 +21,10 @@ export type SavedItem = {
 export type SignInInput = {
   name: string;
   email: string;
+  /** Required only when cloud auth is configured. Ignored by the local store. */
+  password?: string;
+  /** Cloud only. Local sign-in always creates or updates the on-device profile. */
+  mode?: "sign-in" | "sign-up";
 };
 
 /**

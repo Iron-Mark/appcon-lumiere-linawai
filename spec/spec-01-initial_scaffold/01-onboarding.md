@@ -20,7 +20,7 @@ Four steps, one preference dimension each. Stored values do not change; question
 | Step | Dimension | Choices (labels) | Stored values |
 | --- | --- | --- | --- |
 | 1 | Detail | Full · Key Points | `full` · `key_points` |
-| 2 | Wording | Original · Plain Language | `original` · `plain` |
+| 2 | Wording | Original · Plain Language · Taglish | `original` · `plain` · `taglish` |
 | 3 | Delivery | Read · Listen | `read` · `listen` |
 | 4 | Browser behavior | Auto-Clarify · Manual | `auto_adapt` · `manual` |
 

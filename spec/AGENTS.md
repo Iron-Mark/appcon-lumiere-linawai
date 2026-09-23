@@ -19,6 +19,7 @@ This file is the **only** file that may live directly in `spec/`. Everything els
 | --- | --- | --- | --- |
 | [`spec-01-initial_scaffold`](./spec-01-initial_scaffold/) | active | — | Contracts, shell, and MVP build tracks for onboarding, reading, fidelity, fixture, and extension |
 | [`spec-02-gemini-adapt`](./spec-02-gemini-adapt/) | wired, off by default | `spec-01-initial_scaffold` | `POST /api/adapt` can call Gemini when a key is set. With no key, the route stays on the fixture |
+| [`spec-03-demo-ship`](./spec-03-demo-ship/) | active | `spec-02-gemini-adapt` | Production URL whose golden path is a live model call. Fixture on a real notice fails the ship |
 
 ## How to use a phase folder
 

@@ -1,13 +1,15 @@
-import type {
-  AuthStore,
-  AuthUser,
-  SavedItem,
-  SaveItemResult,
-  SignInInput,
+import type { Preferences } from "@/lib/domain";
+import { toDomainPreferences } from "@/lib/storage/preferences-sync";
+import {
+  AUTH_STORAGE_KEY,
+  type AuthStore,
+  type AuthUser,
+  type SavedItem,
+  type SaveItemResult,
+  type SignInInput,
 } from "./port";
 
-/** localStorage key for optional device profile + saved titles. */
-export const AUTH_STORAGE_KEY = "linaw.auth.v1";
+export { AUTH_STORAGE_KEY };
 
 /** Same-tab listeners (storage events only fire across tabs). */
 export const AUTH_CHANGE_EVENT = "linaw:auth-change";
@@ -15,6 +17,8 @@ export const AUTH_CHANGE_EVENT = "linaw:auth-change";
 type AuthSnapshot = {
   user: AuthUser | null;
   savedItems: SavedItem[];
+  /** Preferences last saved while this profile was signed in. */
+  preferences?: Preferences | null;
 };
 
 const EMPTY: AuthSnapshot = { user: null, savedItems: [] };
@@ -51,10 +55,23 @@ function readSnapshot(): AuthSnapshot {
             typeof item.savedAt === "string",
         )
       : [];
-    return { user, savedItems };
+    return {
+      user,
+      savedItems,
+      preferences: toDomainPreferences(parsed.preferences),
+    };
   } catch {
     return EMPTY;
   }
+}
+
+/** Keep the signed-in profile's preference copy current. No-op when signed out. */
+export function attachPreferencesToSignedInProfile(
+  preferences: Preferences,
+): void {
+  const current = readSnapshot();
+  if (!current.user) return;
+  writeSnapshot({ ...current, preferences });
 }
 
 function writeSnapshot(next: AuthSnapshot): void {
@@ -88,6 +105,23 @@ export const localAuthStore: AuthStore = {
     const user: AuthUser = { name, email };
     const current = readSnapshot();
     writeSnapshot({ ...current, user });
+    const { preferenceStore } = await import("@/lib/storage/preferences");
+    const onDevice = await preferenceStore.get();
+    const saved = current.preferences ?? null;
+    if (saved && onDevice) {
+      const { shouldApplyRemotePreferences } = await import(
+        "@/lib/storage/preferences-sync"
+      );
+      if (shouldApplyRemotePreferences(onDevice, saved)) {
+        await preferenceStore.set(saved);
+      } else {
+        writeSnapshot({ ...readSnapshot(), user, preferences: onDevice });
+      }
+    } else if (saved && !onDevice) {
+      await preferenceStore.set(saved);
+    } else if (onDevice) {
+      writeSnapshot({ ...readSnapshot(), user, preferences: onDevice });
+    }
     return user;
   },
 

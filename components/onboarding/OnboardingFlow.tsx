@@ -45,11 +45,12 @@ export function OnboardingFlow({ editing = false }: { editing?: boolean }) {
         const existing = await preferenceStore.get();
         if (!cancelled && existing) {
           if (editing) {
-            // Onboarding only offers original | plain; clear other wording so Continue stays honest.
             const { wording, ...rest } = existing;
             setDraft({
               ...rest,
-              ...(wording === "original" || wording === "plain"
+              ...(wording === "original" ||
+              wording === "plain" ||
+              wording === "taglish"
                 ? { wording }
                 : {}),
             });
