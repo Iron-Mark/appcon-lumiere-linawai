@@ -43,6 +43,15 @@ import {
 import { findMainContentRoot } from "./extractor";
 import { getListenSettings, saveListenSettings } from "../storage/listen";
 import {
+  bestListenVoice,
+  DEVICE_VOICE_ID,
+  deviceVoiceName,
+  LINAW_VOICE_ID,
+  rankListenVoices,
+} from "@/lib/listen/rank";
+import { speakLinawVoice, stopLinawVoice } from "@/lib/listen/linaw-voice";
+import { extensionLinawTts } from "./linaw-sandbox";
+import {
   applyListenSettings,
   DEFAULT_LISTEN_SETTINGS,
   LISTEN_PITCHES,
@@ -315,12 +324,14 @@ export function Panel({
     DEFAULT_LISTEN_SETTINGS,
   );
   const [listenVoices, setListenVoices] = useState<ListenVoice[]>([]);
+  const [listenNote, setListenNote] = useState<string | null>(null);
 
   const sourceRef = useRef(source);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const comfortRef = useRef(comfort);
   const listenRef = useRef(listenSettings);
   const voicesRef = useRef(listenVoices);
+  const listenGen = useRef(0);
 
   sourceRef.current = source;
   comfortRef.current = comfort;
@@ -349,14 +360,17 @@ export function Panel({
   useEffect(() => {
     void getListenSettings().then(setListenSettings);
     const refresh = () => {
-      const listed = window.speechSynthesis
-        .getVoices()
-        .filter((voice) => voice.voiceURI)
-        .map((voice) => ({
-          voiceURI: voice.voiceURI,
-          name: voice.name,
-          lang: voice.lang,
-        }));
+      const listed = rankListenVoices(
+        window.speechSynthesis
+          .getVoices()
+          .filter((voice) => voice.voiceURI)
+          .map((voice) => ({
+            voiceURI: voice.voiceURI,
+            name: voice.name,
+            lang: voice.lang,
+            default: voice.default,
+          })),
+      );
       setListenVoices(listed);
     };
     if (typeof window !== "undefined" && window.speechSynthesis) {
@@ -435,6 +449,8 @@ export function Panel({
   }
 
   function stopSpeech() {
+    listenGen.current += 1;
+    stopLinawVoice();
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     utteranceRef.current = null;
@@ -454,6 +470,27 @@ export function Panel({
       return;
     }
 
+    if (listenRef.current.voiceURI === LINAW_VOICE_ID) {
+      const gen = listenGen.current;
+      setListening(true);
+      setListenNote(null);
+      void speakLinawVoice(plainText, listenRef.current.rate, listenRef.current.pitch, {
+        onNote: setListenNote,
+        load: async () => extensionLinawTts(),
+      }).then((ok) => {
+        if (gen !== listenGen.current) return;
+        if (!ok) {
+          listenWithDevice();
+          return;
+        }
+        setListening(false);
+      });
+      return;
+    }
+
+    listenWithDevice();
+
+    function listenWithDevice() {
     if (useFocus && pageBlocks.length > 0) {
       const index = clampFocusLine(focusIndex, pageBlocks.length);
       setListening(true);
@@ -521,6 +558,7 @@ export function Panel({
     utteranceRef.current = utter;
     setListening(true);
     window.speechSynthesis.speak(utter);
+    }
   }
 
   async function updatePrefs(patch: Partial<Preferences>) {
@@ -1051,13 +1089,24 @@ export function Panel({
                 );
               }}
             >
-              <option value="">This device</option>
+              <option value="">
+                {bestListenVoice(listenVoices)
+                  ? `Automatic · ${bestListenVoice(listenVoices)?.name}`
+                  : "Automatic"}
+              </option>
+              <option value={LINAW_VOICE_ID}>Linaw</option>
+              <option value={DEVICE_VOICE_ID}>
+                {deviceVoiceName(listenVoices)
+                  ? `This device · ${deviceVoiceName(listenVoices)}`
+                  : "This device"}
+              </option>
               {listenVoices.map((voice) => (
                 <option key={voice.voiceURI} value={voice.voiceURI}>
                   {voice.name} · {voice.lang}
                 </option>
               ))}
             </select>
+            {listenNote ? <p className="linaw-settings-label">{listenNote}</p> : null}
             <div className="linaw-segment" role="group" aria-label="Pitch">
               {LISTEN_PITCHES.map((pitch) => (
                 <button

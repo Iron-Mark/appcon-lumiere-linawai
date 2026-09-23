@@ -85,9 +85,9 @@ Local fixture work uses a campus-pilot source with a deadline, two groups, two t
 - `lib/adapt/http.ts` is already the client: it posts to `/api/adapt` and falls back to the fixture. `lib/adapt/index.ts` re-exports that client. Domain Zod types stay stable. Do not add other API routes; keep the model off unless the team sets a key (see **Do not turn Gemini on**).
 - Parallel tracks own fixed directories listed in [`docs/AGENTS.md`](./AGENTS.md).
 
-## Backend not connected
+## What is connected
 
-Unbuilt server work is listed in the app at [`/todo`](http://localhost:3000/todo) (footer link: “Backend not connected”) and in [`spec/spec-01-initial_scaffold/09-backend-todo.md`](../spec/spec-01-initial_scaffold/09-backend-todo.md).
+Server status is listed in the app at [`/todo`](http://localhost:3000/todo) (link: “What is connected”) and in [`spec/spec-01-initial_scaffold/09-backend-todo.md`](../spec/spec-01-initial_scaffold/09-backend-todo.md).
 
 ## For coding agents
 

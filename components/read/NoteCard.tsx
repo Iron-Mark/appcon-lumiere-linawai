@@ -20,6 +20,12 @@ import { FocusView } from "./FocusView";
 import { GlanceView } from "./GlanceView";
 import type { TextMark } from "./marks";
 import {
+  bestListenVoice,
+  DEVICE_VOICE_ID,
+  deviceVoiceName,
+  LINAW_VOICE_ID,
+} from "@/lib/listen/rank";
+import {
   LISTEN_PITCHES,
   LISTEN_RATES,
   PITCH_LABELS,
@@ -58,6 +64,7 @@ type NoteCardProps = {
   listenSettings?: ListenSettings;
   listenVoices?: ListenVoice[];
   onListenChange?: (patch: Partial<ListenSettings>) => void;
+  listenNote?: string | null;
   spoken?: SpokenRange | null;
   /** Evidence to highlight in the original view for the selected check. */
   originalHighlight?: { text: string; caution: boolean } | null;
@@ -94,6 +101,7 @@ export function NoteCard({
   listenSettings,
   listenVoices = [],
   onListenChange,
+  listenNote = null,
   spoken = null,
   originalHighlight = null,
   onJumpToChecks,
@@ -228,6 +236,7 @@ export function NoteCard({
                 settings={listenSettings}
                 voices={listenVoices}
                 onChange={onListenChange}
+                note={listenNote}
               />
             ) : null}
           </div>
@@ -377,11 +386,15 @@ function ListenMenu({
   settings,
   voices,
   onChange,
+  note,
 }: {
   settings: ListenSettings;
   voices: ListenVoice[];
   onChange: (patch: Partial<ListenSettings>) => void;
+  note?: string | null;
 }) {
+  const deviceName = deviceVoiceName(voices);
+  const automatic = bestListenVoice(voices);
   return (
     <details className="listen-menu font-ui">
       <summary className="inline-flex min-h-10 cursor-pointer list-none items-center rounded-lg px-3 text-[0.8125rem] font-medium text-ink-muted hover:bg-paper-inset hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60">
@@ -409,13 +422,20 @@ function ListenMenu({
             className="min-h-11 rounded-md border border-border bg-paper px-2 text-ink"
             onChange={(event) => onChange({ voiceURI: event.target.value })}
           >
-            <option value="">This device</option>
+            <option value="">
+              {automatic ? `Automatic · ${automatic.name}` : "Automatic"}
+            </option>
+            <option value={LINAW_VOICE_ID}>Linaw</option>
+            <option value={DEVICE_VOICE_ID}>
+              {deviceName ? `This device · ${deviceName}` : "This device"}
+            </option>
             {voices.map((voice) => (
               <option key={voice.voiceURI} value={voice.voiceURI}>
                 {voice.name} · {voice.lang}
               </option>
             ))}
           </select>
+          {note ? <span className="text-ink-muted">{note}</span> : null}
         </label>
         <div role="group" aria-label="Pitch" className="flex flex-wrap gap-1">
           {LISTEN_PITCHES.map((pitch) => (

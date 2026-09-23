@@ -106,6 +106,17 @@ await esbuild.build({
   outfile: path.join(__dirname, "dist/background.js"),
 });
 
+await esbuild.build({
+  ...shared,
+  entryPoints: [path.join(__dirname, "src/sandbox/index.ts")],
+  outfile: path.join(__dirname, "dist/sandbox.js"),
+  alias: {
+    "@": repoRoot,
+    fs: path.join(__dirname, "src/sandbox/fs-stub.js"),
+    path: path.join(__dirname, "src/sandbox/path-stub.js"),
+  },
+});
+
 const sidepanelEntry = path.join(__dirname, "src/sidepanel/index.tsx");
 if (existsSync(sidepanelEntry)) {
   await esbuild.build({
@@ -202,7 +213,8 @@ function collectExtensionFiles() {
 
   addFile("manifest.json");
   addFile("sidepanel.html");
-  for (const name of ["content.js", "background.js", "sidepanel.js"]) {
+  addFile("sandbox.html");
+  for (const name of ["content.js", "background.js", "sidepanel.js", "sandbox.js"]) {
     addFile(`dist/${name}`);
   }
   for (const name of ["icon16.png", "icon48.png", "icon128.png"]) {

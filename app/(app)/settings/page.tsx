@@ -95,6 +95,43 @@ export default function SettingsPage() {
               </span>
             </div>
           </li>
+          <li className="border-t border-border">
+            <Link
+              href="/legal?tab=privacy"
+              className="font-ui group flex min-h-11 cursor-pointer items-center gap-3 px-4 py-3.5 transition-colors hover:bg-action-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
+            >
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="text-sm font-semibold text-ink">
+                  Privacy notice
+                </span>
+                <span className="text-xs leading-relaxed text-ink-muted sm:text-sm">
+                  What stays on this device, and when a message can leave it.
+                </span>
+              </span>
+              <ChevronRight
+                className="size-4 shrink-0 text-ink-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-action"
+                aria-hidden="true"
+              />
+            </Link>
+          </li>
+          <li className="border-t border-border">
+            <Link
+              href="/legal?tab=terms"
+              className="font-ui group flex min-h-11 cursor-pointer items-center gap-3 px-4 py-3.5 transition-colors hover:bg-action-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
+            >
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="text-sm font-semibold text-ink">Terms</span>
+                <span className="text-xs leading-relaxed text-ink-muted sm:text-sm">
+                  What Linaw is, what you keep, and what the contest grant does
+                  not cover.
+                </span>
+              </span>
+              <ChevronRight
+                className="size-4 shrink-0 text-ink-subtle transition-transform group-hover:translate-x-0.5 group-hover:text-action"
+                aria-hidden="true"
+              />
+            </Link>
+          </li>
         </ul>
       </section>
     </main>

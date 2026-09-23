@@ -18,7 +18,7 @@ import {
   getDevelopmentSampleSource,
   type AdapterInfo,
 } from "@/lib/adapt";
-import { SignInDialog } from "@/components/auth";
+import { stashPendingPieceSave } from "@/lib/content/pendingSave";
 import { authStore } from "@/lib/auth";
 import {
   getPiece,
@@ -117,7 +117,6 @@ export function ReadingWorkspace({
     status: PieceStatus;
   } | null>(null);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
-  const [signInOpen, setSignInOpen] = useState(false);
   const [showingOriginal, setShowingOriginal] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -132,7 +131,6 @@ export function ReadingWorkspace({
       ) => Promise<void>)
     | null
   >(null);
-  const saveAfterSignInRef = useRef(false);
   const loadedPieceRef = useRef<string | null>(null);
   const openedFromPieceRef = useRef(false);
   const stopListenRef = useRef<() => void>(() => {});
@@ -153,6 +151,7 @@ export function ReadingWorkspace({
     spoken,
     settings: listenSettings,
     voices: listenVoices,
+    listenNote,
     start: startListen,
     stop: stopListen,
     toggle: toggleListen,
@@ -577,8 +576,12 @@ export function ReadingWorkspace({
     }
     const user = await authStore.getUser();
     if (!user) {
-      saveAfterSignInRef.current = true;
-      setSignInOpen(true);
+      stashPendingPieceSave({
+        id: activePieceId,
+        source,
+        status: statusFromOverall(result.overallStatus),
+      });
+      router.push("/account?next=/read");
       return;
     }
     try {
@@ -1096,7 +1099,7 @@ export function ReadingWorkspace({
             href="/todo"
             className="font-ui mt-2 inline-flex min-h-11 items-center text-sm text-ink-muted underline decoration-border underline-offset-4 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           >
-            Backend not connected
+            What is connected
           </Link>
         </div>
         <div style={{ marginLeft: "auto", minWidth: 0 }}>
@@ -1582,6 +1585,7 @@ export function ReadingWorkspace({
               listenSettings={listenSettings}
               listenVoices={listenVoices}
               onListenChange={updateListenSettings}
+              listenNote={listenNote}
               spoken={spoken}
               originalHighlight={originalHighlight}
               onJumpToChecks={jumpToChecks}
@@ -2065,19 +2069,6 @@ export function ReadingWorkspace({
           }
         }
       `}</style>
-      <SignInDialog
-        open={signInOpen}
-        onOpenChange={(open) => {
-          setSignInOpen(open);
-          if (!open) saveAfterSignInRef.current = false;
-        }}
-        onSignIn={async (input) => {
-          await authStore.signIn(input);
-          const shouldSave = saveAfterSignInRef.current;
-          saveAfterSignInRef.current = false;
-          if (shouldSave) await persistPiece();
-        }}
-      />
     </main>
   );
 }

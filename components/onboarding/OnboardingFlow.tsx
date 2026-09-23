@@ -220,7 +220,7 @@ export function OnboardingFlow({ editing = false }: { editing?: boolean }) {
               textUnderlineOffset: "0.2em",
             }}
           >
-            Backend not connected
+            What is connected
           </Link>
         </div>
 

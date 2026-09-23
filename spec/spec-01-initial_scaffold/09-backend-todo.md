@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Named plugs for unbuilt server work. Same list appears on the in-app `/todo` page (calm visual system; footer link “Backend not connected”). For the team—not part of the user demo path.
+Status of the server plugs. The same list is on `/todo` (link: “What is connected”). For the team—not part of the reading demo.
 
 ## Ownership
 
@@ -11,31 +11,32 @@ Named plugs for unbuilt server work. Same list appears on the in-app `/todo` pag
 
 ## Rows
 
-Each row: what, which file/function to replace or add, which spec.
+Each row: state, and where it lives.
 
-| Item | Replace / add | Spec |
+| Item | State | Where |
 | --- | --- | --- |
-| Gemini extraction + adaptation over `adapt()` - **wired, off unless a key is set** (spends tokens) | `app/api/adapt/route.ts` tries `app/api/adapt/model.ts` only when `GEMINI_API_KEY` or the OpenAI-compatible gateway env is set. Otherwise, and on model failure, it runs `lib/adapt/fixture.ts`. The seeded failure example never uses the model. | `05-client-port.md`, `spec-02-gemini-adapt` |
-| DeBERTa NLI — **wired, off unless `NLI_ENDPOINT` is set** | `runNliSlot` stays neutral with “Semantic check not connected” when unset. Optional local server: `nli-service/`. Not required for the demo. | `06-fidelity.md` |
-| Repair regeneration — **one retry only when a model key is already set** | `app/api/adapt/model.ts` calls `buildRepairPrompt` after `repair_required`. The fixture demo never calls it. | `06-fidelity.md`, `05-client-port.md` |
-| Preference sync across web and extension | Optional on-device account stores the preference copy (`lib/auth/local.ts`). The same-browser companion receives it through `lib/storage/preferences-sync.ts`. Nothing is uploaded. | `01-onboarding.md`, `07-extension.md` |
-| Saved source content | Reading workspace **Save on this device**. Samples stay unsaved until that click. No content table. | storage + future backend |
+| Hosted model over `adapt()` | **On.** Gemini, then the OpenAI-compatible gateway, then the fixture. The flagged example always uses the fixture. | `app/api/adapt/route.ts`, `spec-02-gemini-adapt` |
+| Repair retry | **On** when a model key is set and the guard returns `repair_required`. | `app/api/adapt/model.ts` |
+| On-device preferences and explicit save | **On.** | `lib/storage/preferences.ts`, Read **Save on this device** |
+| Gemini as the first provider | **Off.** Wired. Empty `GEMINI_API_KEY` skips it. | `spec-02-gemini-adapt` |
+| DeBERTa NLI | **Off** on the host. Unset `NLI_ENDPOINT` reports Not run. Local server: `nli-service/`. | `06-fidelity.md` |
+| Cloud account | **On.** Optional. Preferences and saved titles only. Source text is not stored. | `lib/auth/supabase.ts` |
 
 Eval corpus growth (20 → 50) is owned by the **evals / fidelity track**, not this backend checklist.
 
 ## Rules for implementers
 
-- Do not pretend these are connected in the consumer UI.
-- Fixture NLI field stays neutral with “Semantic check not connected” until wired.
-- Deterministic/relationship checks still return real statuses in-browser.
+- Say On only for a path the production app actually calls.
+- Unset NLI stays “Semantic check not connected” and the UI shows Not run.
+- Deterministic and relationship checks still return real statuses.
 
 ## Acceptance checks
 
-- [x] `/todo` lists only unbuilt server work (not feature marketing).
+- [x] `/todo` lists On and Off. It does not call a live path unbuilt.
 - [x] Each row names the function/file and spec.
-- [x] Footer (when reading track adds chrome) can link “Backend not connected” → `/todo`. The link is on onboarding and on the reading header.
+- [x] Onboarding and the reading header link “What is connected” → `/todo`.
 
 ## Out of scope
 
-- Implementing the backend in this scaffold phase.
+- Turning on Gemini, NLI, or the cloud account without the matching env vars.
 - Expanding `/todo` into a full project-management app.

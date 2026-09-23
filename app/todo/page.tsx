@@ -1,9 +1,9 @@
 /**
- * Team checklist of unbuilt backend plugs.
- * Not part of the user demo path — calm visual system matching Linaw paper/ink.
+ * Team status for server plugs. Not part of the reading demo.
  */
 
 type TodoRow = {
+  state: "On" | "Off";
   what: string;
   replace: string;
   spec: string;
@@ -11,32 +11,41 @@ type TodoRow = {
 
 const BACKEND_TODOS: TodoRow[] = [
   {
-    what: "Gemini extraction and adaptation over adapt() - wired, off unless a key is set (spends tokens)",
+    state: "On",
+    what: "Clarification uses a hosted language model. The fixture runs only for the flagged example, and when every provider fails.",
     replace:
-      "app/api/adapt/route.ts calls model.ts only when GEMINI_API_KEY or the gateway env is set; otherwise fixture.ts",
+      "app/api/adapt/route.ts tries Gemini, then the OpenAI-compatible gateway, then fixture.ts",
     spec: "05-client-port.md, spec-02-gemini-adapt",
   },
   {
-    what: "DeBERTa NLI - wired, off unless NLI_ENDPOINT is set (local nli-service; not required for the demo)",
-    replace: "lib/fidelity runNliSlot stays a neutral stub when the endpoint is unset",
-    spec: "06-fidelity.md",
-  },
-  {
-    what: "Repair regeneration - one retry only when a model key is already set; the fixture demo does not call it",
-    replace:
-      "app/api/adapt/model.ts calls buildRepairPrompt after repair_required",
+    state: "On",
+    what: "One repair retry runs after repair_required when a model key is set. The flagged example never calls it.",
+    replace: "app/api/adapt/model.ts calls buildRepairPrompt",
     spec: "06-fidelity.md, 05-client-port.md",
   },
   {
-    what: "Optional on-device account keeps preferences and the same-browser companion receives them (no cloud upload)",
-    replace: "lib/auth/local.ts profile copy; lib/storage/preferences-sync.ts; extension prefs-sync",
-    spec: "01-onboarding.md, 07-extension.md",
+    state: "On",
+    what: "Preferences stay on this device. A source is stored only after Save on this device.",
+    replace: "lib/storage/preferences.ts; Reading workspace save",
+    spec: "01-onboarding.md",
   },
   {
-    what: "Saved source content only if the user explicitly saves",
-    replace:
-      "Reading workspace Save on this device; samples stay unsaved until that click",
-    spec: "storage + future backend",
+    state: "Off",
+    what: "Gemini is wired and unkeyed. The gateway is the provider that answers today.",
+    replace: "Set GEMINI_API_KEY to put Gemini first. Empty key skips it.",
+    spec: "spec-02-gemini-adapt",
+  },
+  {
+    state: "Off",
+    what: "Semantic check (NLI) is wired and not running on this host. The reading screen says Not run.",
+    replace: "Set NLI_ENDPOINT to the local nli-service. Unset stays the disconnected stub.",
+    spec: "06-fidelity.md",
+  },
+  {
+    state: "On",
+    what: "An optional cloud account syncs preferences and saved titles. Source text is not stored there.",
+    replace: "lib/auth/supabase.ts; public.linaw_profiles",
+    spec: "01-onboarding.md, 07-extension.md",
   },
 ];
 
@@ -48,11 +57,11 @@ export default function TodoPage() {
           Linaw AI
         </p>
         <h1 className="font-reading text-3xl font-semibold tracking-tight text-ink">
-          Backend checklist
+          What is connected
         </h1>
         <p className="max-w-prose text-ink-muted">
-          Named plugs for work that is not connected yet. Each row names the
-          spec and what to replace or add when the backend lands.
+          The production app calls a hosted model. Rows marked Off are wired
+          and waiting on a key or a local service. Each row names the file.
         </p>
       </header>
 
@@ -70,6 +79,9 @@ export default function TodoPage() {
             </span>
             <div className="flex flex-col gap-2">
               <p className="font-ui text-base font-medium text-ink">
+                <span className="mr-2 text-sm uppercase tracking-wide text-ink-subtle">
+                  {row.state}
+                </span>
                 {row.what}
               </p>
               <p className="font-ui text-sm text-ink-muted">
@@ -85,7 +97,7 @@ export default function TodoPage() {
       </ol>
 
       <p className="text-sm text-ink-subtle">
-        Local adapt route is up; Gemini is still not connected.
+        Production clarification is on. Gemini and the semantic check are not.
       </p>
     </main>
   );

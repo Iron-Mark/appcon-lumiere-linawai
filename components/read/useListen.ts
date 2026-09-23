@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { LINAW_VOICE_ID } from "@/lib/listen/rank";
+import { speakLinawVoice, stopLinawVoice } from "@/lib/listen/linaw-voice";
+import { loadLinawTts } from "@/lib/listen/linaw-voice-web";
 import {
   applyListenSettings,
   DEFAULT_LISTEN_SETTINGS,
@@ -12,6 +15,7 @@ import {
   type ListenSettings,
   type ListenVoice,
 } from "@/lib/listen/settings";
+import { rankListenVoices } from "@/lib/listen/rank";
 
 export type { ListenPitch, ListenRate, ListenSettings, ListenVoice };
 
@@ -38,6 +42,7 @@ export function useListen(text: string) {
   const [settings, setSettings] = useState<ListenSettings>(DEFAULT_LISTEN_SETTINGS);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [spoken, setSpoken] = useState<SpokenRange | null>(null);
+  const [listenNote, setListenNote] = useState<string | null>(null);
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const textRef = useRef(text);
@@ -48,6 +53,7 @@ export function useListen(text: string) {
   const lastBoundaryRef = useRef<number>(0);
   const settingsRef = useRef<ListenSettings>(DEFAULT_LISTEN_SETTINGS);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+  const listenGen = useRef(0);
   const supported =
     typeof window !== "undefined" && Boolean(window.speechSynthesis);
 
@@ -70,6 +76,8 @@ export function useListen(text: string) {
   }, [supported]);
 
   const stop = useCallback(() => {
+    listenGen.current += 1;
+    stopLinawVoice();
     if (!supported) return;
     window.speechSynthesis.cancel();
     utteranceRef.current = null;
@@ -83,7 +91,34 @@ export function useListen(text: string) {
    * Boundaries are reported in the coordinates of `full`.
    */
   const speakFrom = useCallback(
-    (full: string, from: number) => {
+    (full: string, from: number, deviceFallback = false) => {
+      if (
+        settingsRef.current.voiceURI === LINAW_VOICE_ID &&
+        !deviceFallback
+      ) {
+        const slice = full.slice(from).trim();
+        if (!slice) {
+          stop();
+          return;
+        }
+        const gen = listenGen.current;
+        setListening(true);
+        setListenNote(null);
+        void speakLinawVoice(
+          slice,
+          settingsRef.current.rate,
+          settingsRef.current.pitch,
+          { onNote: setListenNote, load: loadLinawTts },
+        ).then((ok) => {
+          if (gen !== listenGen.current) return;
+          if (!ok) speakFrom(full, from, true);
+          else {
+            setListening(false);
+            setListenNote(null);
+          }
+        });
+        return;
+      }
       if (!supported) return;
       const slice = full.slice(from);
       const leading = slice.length - slice.trimStart().length;
@@ -198,13 +233,16 @@ export function useListen(text: string) {
     };
   }, []);
 
-  const listedVoices: ListenVoice[] = voices
-    .filter((voice) => voice.voiceURI)
-    .map((voice) => ({
-      voiceURI: voice.voiceURI,
-      name: voice.name,
-      lang: voice.lang,
-    }));
+  const listedVoices: ListenVoice[] = rankListenVoices(
+    voices
+      .filter((voice) => voice.voiceURI)
+      .map((voice) => ({
+        voiceURI: voice.voiceURI,
+        name: voice.name,
+        lang: voice.lang,
+        default: voice.default,
+      })),
+  );
 
   return {
     supported,
@@ -213,6 +251,7 @@ export function useListen(text: string) {
     spoken,
     settings,
     voices: listedVoices,
+    listenNote,
     start,
     stop,
     toggle,

@@ -25,9 +25,12 @@
       "run_at": "document_idle"
     }
   ],
+  "sandbox": {
+    "pages": ["sandbox.html"]
+  },
   "web_accessible_resources": [
     {
-      "resources": ["fonts/*"],
+      "resources": ["fonts/*", "sandbox.html", "dist/sandbox.js"],
       "matches": ["http://*/*", "https://*/*"]
     }
   ],

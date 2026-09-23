@@ -36,14 +36,14 @@ describe("applyListenSettings", () => {
     });
   });
 
-  it("falls back to the device default when the saved voice is missing", () => {
+  it("uses the clearest voice when the saved one is missing", () => {
     const target = { rate: 1, pitch: 1, voice: voices[1] };
     applyListenSettings(
       target,
       { voiceURI: "gone", pitch: 1, rate: 1 },
       voices,
     );
-    expect(target.voice).toBeNull();
-    expect(resolveListenVoice(voices, "")).toBeNull();
+    expect(target.voice).toEqual(voices[0]);
+    expect(resolveListenVoice(voices, "")).toEqual(voices[0]);
   });
 });
