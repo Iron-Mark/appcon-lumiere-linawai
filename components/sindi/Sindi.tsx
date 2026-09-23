@@ -144,44 +144,55 @@ function RaySvg({
       <title>Ray</title>
       <defs>
         <style>{`
+          /* Motion: transform/opacity only; fixed origin keeps layout bounds stable */
           .linaw-ray-spin,
           .linaw-ray-listen-side,
           .linaw-ray-warn {
+            transform-box: view-box;
             transform-origin: 32px 32px;
           }
           @keyframes linaw-ray-spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
           }
+          /* Cream trails as secondary activity cue — staggered opacity */
           @keyframes linaw-ray-arc-pulse {
-            0%, 100% { opacity: 0.35; }
-            50% { opacity: 0.75; }
+            0%, 100% { opacity: 0.28; }
+            50% { opacity: 0.8; }
           }
+          /* Attentive side-ray breathe; top/bottom rays stay clear and static */
           @keyframes linaw-ray-listen {
-            0%, 100% { transform: scale(1); opacity: 0.4; }
-            50% { transform: scale(0.92); opacity: 0.18; }
+            0%, 100% { transform: scale(1); opacity: 0.42; }
+            50% { transform: scale(0.9); opacity: 0.14; }
           }
+          /* Soft concerned sway — small angle range, not agitated */
           @keyframes linaw-ray-warn-breathe {
             0%, 100% { transform: rotate(-5deg); }
-            50% { transform: rotate(-8deg); }
+            50% { transform: rotate(-7deg); }
           }
           @media (prefers-reduced-motion: no-preference) {
             .linaw-ray-spin {
-              animation: linaw-ray-spin 3.2s linear infinite;
+              animation: linaw-ray-spin 3s linear infinite;
             }
-            .linaw-ray-arcs {
+            .linaw-ray-arc {
               animation: linaw-ray-arc-pulse 240ms ease-in-out infinite;
+            }
+            .linaw-ray-arc-b {
+              animation-delay: 80ms;
+            }
+            .linaw-ray-arc-c {
+              animation-delay: 160ms;
             }
             .linaw-ray-listen-side {
               animation: linaw-ray-listen 280ms ease-in-out infinite;
             }
             .linaw-ray-warn {
-              animation: linaw-ray-warn-breathe 2.4s ease-in-out infinite;
+              animation: linaw-ray-warn-breathe 2.6s ease-in-out infinite;
             }
           }
           @media (prefers-reduced-motion: reduce) {
             .linaw-ray-spin,
-            .linaw-ray-arcs,
+            .linaw-ray-arc,
             .linaw-ray-listen-side,
             .linaw-ray-warn {
               animation: none;
@@ -191,6 +202,9 @@ function RaySvg({
             }
             .linaw-ray-listen-side {
               opacity: 0.28;
+            }
+            .linaw-ray-arc {
+              opacity: 0.45;
             }
           }
         `}</style>
@@ -287,12 +301,12 @@ function ListeningSidePulse() {
         <rect
           key={`listen-${deg}`}
           x="29.5"
-          y="4"
+          y="3.75"
           width="5"
-          height="11"
+          height="11.5"
           rx="2.5"
           fill={RAY.ray}
-          opacity="0.35"
+          opacity="0.38"
           transform={`rotate(${deg} 32 32)`}
         />
       ))}
@@ -302,17 +316,17 @@ function ListeningSidePulse() {
 
 function MotionArcs() {
   return (
-    <g
-      className="linaw-ray-arcs"
-      fill="none"
-      stroke={RAY.cream}
-      strokeWidth="1.4"
-      strokeLinecap="round"
-    >
-      {/* Clockwise motion trails outside the pill rays */}
-      <path d="M11 30 A21 21 0 0 1 18 15" />
-      <path d="M14 42 A21 21 0 0 1 11 28" opacity="0.7" />
-      <path d="M53 34 A21 21 0 0 1 46 49" />
+    <g fill="none" stroke={RAY.cream} strokeWidth="1.45" strokeLinecap="round">
+      {/* Cream activity trails — opacity staggered; spin group carries rotation */}
+      <path className="linaw-ray-arc" d="M10.5 29.5 A21.5 21.5 0 0 1 18.5 14" />
+      <path
+        className="linaw-ray-arc linaw-ray-arc-b"
+        d="M13.5 43 A21.5 21.5 0 0 1 10.5 27.5"
+      />
+      <path
+        className="linaw-ray-arc linaw-ray-arc-c"
+        d="M53.5 34.5 A21.5 21.5 0 0 1 46 50"
+      />
     </g>
   );
 }
@@ -378,32 +392,32 @@ function Face({ look }: { look: RayLook }) {
     case "warning":
       return (
         <g>
-          {/* Soft concern brows — tilted in, not furrowed-angry */}
+          {/* Soft inward brows — concerned, not furrowed-angry */}
           <path
-            d="M23 26.5 Q27 25 30.5 27"
+            d="M23.5 26.8 Q27.2 25.6 30.5 27.4"
             fill="none"
             stroke={RAY.navy}
-            strokeWidth="1.45"
+            strokeWidth="1.4"
             strokeLinecap="round"
-            opacity="0.65"
+            opacity="0.55"
           />
           <path
-            d="M33.5 27 Q37 25 41 26.5"
+            d="M33.5 27.4 Q36.8 25.6 40.5 26.8"
             fill="none"
             stroke={RAY.navy}
-            strokeWidth="1.45"
+            strokeWidth="1.4"
             strokeLinecap="round"
-            opacity="0.65"
+            opacity="0.55"
           />
-          {/* Slightly inward ellipses — worried, not fierce */}
-          <ellipse cx="27.4" cy="31.6" rx="2.25" ry="2.55" fill={RAY.navy} />
-          <ellipse cx="36.6" cy="31.6" rx="2.25" ry="2.55" fill={RAY.navy} />
-          {/* Flat-to-wavy concerned mouth */}
+          {/* Slightly oval eyes, a touch lower — worried, not fierce */}
+          <ellipse cx="27.4" cy="32" rx="2.2" ry="2.45" fill={RAY.navy} />
+          <ellipse cx="36.6" cy="32" rx="2.2" ry="2.45" fill={RAY.navy} />
+          {/* Soft wavy concerned mouth */}
           <path
-            d="M28 39.2 Q30 37.8 32 39 Q34 40.2 36 39.2"
+            d="M28.2 39.4 Q30.2 38 32 39.1 Q33.8 40.2 35.8 39.4"
             fill="none"
             stroke={RAY.navy}
-            strokeWidth="1.65"
+            strokeWidth="1.55"
             strokeLinecap="round"
           />
         </g>

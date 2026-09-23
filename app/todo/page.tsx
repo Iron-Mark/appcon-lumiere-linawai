@@ -11,18 +11,18 @@ type TodoRow = {
 
 const BACKEND_TODOS: TodoRow[] = [
   {
-    what: "Gemini extraction and adaptation over adapt()",
+    what: "Gemini extraction and adaptation over adapt() — do not build yet (spends tokens)",
     replace:
-      "Add lib/adapt/http.ts using lib/adapt/prompts.ts; point lib/adapt/index.ts at it (no app/api in this slice)",
-    spec: "05-client-port.md",
+      "Add lib/adapt/http.ts using lib/adapt/prompts.ts; point lib/adapt/index.ts at it only after team go-ahead (no app/api in this slice)",
+    spec: "05-client-port.md, spec-02-gemini-adapt",
   },
   {
-    what: "DeBERTa NLI (non-blocking HF cross-encoder)",
+    what: "DeBERTa NLI (non-blocking HF cross-encoder) — do not build yet (remote model)",
     replace: "Wire into lib/fidelity runNliSlot (today: neutral stub)",
     spec: "06-fidelity.md",
   },
   {
-    what: "Repair regeneration",
+    what: "Repair regeneration — do not build yet (needs generative model)",
     replace:
       "Pipeline after repair_required; generative repair via buildRepairPrompt",
     spec: "06-fidelity.md, 05-client-port.md",
@@ -37,11 +37,6 @@ const BACKEND_TODOS: TodoRow[] = [
     replace:
       "Explicit user save on store boundary; off by default; do not silently write sample source",
     spec: "storage + future backend",
-  },
-  {
-    what: "Rest of the evaluation set beyond the one gold case",
-    replace: "evals/ growth (same format as the campus-pilot gold + corruption)",
-    spec: "06-fidelity.md",
   },
 ];
 

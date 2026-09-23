@@ -35,8 +35,77 @@ export const NEGATION_MARKERS = [
   "not",
 ] as const;
 
+/** Obligation strength (§12 must vs may). Order matters for scanning. */
+export const OBLIGATION_MARKERS = [
+  "must not",
+  "must",
+  "required to",
+  "shall not",
+  "shall",
+] as const;
+
+export const PERMISSION_MARKERS = ["may not", "may", "optional"] as const;
+
+const UNIT_PATTERN =
+  /\b(\d+(?:\.\d+)?)\s*(units?|people|persons|books|hours|minutes|days|kg|lbs?|percent|seats?|spots?|items?|restarts?)\b/gi;
+
+const WEEKDAY_NAMES = new Set([
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+]);
+
+export type QuantityUnit = { amount: string; unit: string };
+
 export function normalizeWhitespace(text: string): string {
   return text.replace(/\s+/g, " ").trim();
+}
+
+/** Quantity + unit pairs (e.g. "15 units", "2 books"). */
+export function extractQuantityUnits(text: string): QuantityUnit[] {
+  const withoutTimes = text.replace(TIME_PATTERN, " ");
+  const found: QuantityUnit[] = [];
+  for (const match of withoutTimes.matchAll(UNIT_PATTERN)) {
+    found.push({
+      amount: match[1],
+      unit: match[2].toLowerCase().replace(/s$/, ""),
+    });
+  }
+  return found;
+}
+
+/**
+ * Role-like subjects ahead of modal/action verbs (names/entities).
+ * Skips weekdays and lone sentence-start verbs.
+ */
+export function extractRoleSubjects(text: string): string[] {
+  const pattern =
+    /\b([A-Z][A-Za-z0-9'’-]*(?:\s+[A-Z][A-Za-z0-9'’-]*){0,3})\s+(?:should|must|may|arriv(?:e|es|ing)|collect(?:s|ing)?|submit(?:s|ting)?|claim(?:s|ing)?|borrow(?:s|ing)?|enter(?:s|ing)?|leav(?:e|es|ing)|assembl(?:e|es|ing)|rest(?:s|ing)?|cross(?:es|ing)?|hand(?:s|ing)?|approv(?:e|es|ing)|restart(?:s|ing)?)\b/g;
+  const found: string[] = [];
+  for (const match of text.matchAll(pattern)) {
+    const subject = match[1].trim();
+    if (WEEKDAY_NAMES.has(subject.toLowerCase())) continue;
+    if (subject.length < 3) continue;
+    found.push(subject);
+  }
+  return found;
+}
+
+export function hasObligationMarker(text: string): boolean {
+  const lower = text.toLowerCase();
+  // Positive obligation only — "must not" is negation, not "must".
+  if (/\bmust not\b/.test(lower) || /\bshall not\b/.test(lower)) return false;
+  return /\b(must|required to|shall)\b/.test(lower);
+}
+
+export function hasPermissionMarker(text: string): boolean {
+  const lower = text.toLowerCase();
+  if (/\bmay not\b/.test(lower)) return false;
+  return /\b(may|optional)\b/.test(lower);
 }
 
 export function normalizeTimeToken(raw: string): string | null {

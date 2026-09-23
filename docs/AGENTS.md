@@ -67,6 +67,12 @@ If your task names one track, stop at that directory. Do not open sibling track 
 
 Server routes, Gemini calls, Supabase, DeBERTa host, repair regeneration, account sync, OCR, PDF, healthcare, multi-agent stacks, and product-line forks (Learn / Work / Org / Public as separate apps).
 
+## Branches
+
+- **`main`** = production (GitHub default). **`dev`** = integration.
+- Cut feature branches from `dev` as `feat/short-name`. Open PRs into `dev`, not `main`.
+- Promote `dev` → `main` for production. Flow: `feat/*` → `dev` → `main`.
+
 ## AI workflow
 
 Long-form durable workflow for later agents and humans: [`docs/ai-workflow.md`](./ai-workflow.md). Keep this file as the short rules; do not duplicate the long guide at the repo root.
