@@ -1,2 +1,14 @@
 export { LandingPage } from "./LandingPage";
 export { LandingPage as default } from "./LandingPage";
+export { Navbar } from "./Navbar";
+export { Hero } from "./Hero";
+export { HeroDemoCard } from "./HeroDemoCard";
+export { HowItWorks } from "./HowItWorks";
+export { Features } from "./Features";
+export { Verification } from "./Verification";
+export { Playground } from "./Playground";
+export { GetStarted } from "./GetStarted";
+export { Faq } from "./Faq";
+export { Footer } from "./Footer";
+export { SectionHeading } from "./SectionHeading";
+export { Reveal } from "./Reveal";
