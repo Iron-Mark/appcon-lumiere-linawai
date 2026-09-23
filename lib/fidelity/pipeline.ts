@@ -15,6 +15,8 @@ export type FidelityGuardInput = {
   adaptedText: string;
   meaningMap: MeaningMap;
   preferences: Preferences;
+  /** Forwarded to the NLI slot when a local/service endpoint is available. */
+  nliEndpoint?: string;
 };
 
 export type FidelityGuardResult = {
@@ -25,13 +27,16 @@ export type FidelityGuardResult = {
 /**
  * Single pipeline entry the reading UI / adapt path can call.
  * Layers stay separate; results are concatenated, not collapsed to a boolean.
+ * NLI is optional: unset/failing endpoint keeps the disconnected stub.
  */
-export function runFidelityGuard(input: FidelityGuardInput): FidelityGuardResult {
-  const { source, adaptedText, meaningMap, preferences } = input;
+export async function runFidelityGuard(
+  input: FidelityGuardInput,
+): Promise<FidelityGuardResult> {
+  const { source, adaptedText, meaningMap, preferences, nliEndpoint } = input;
 
   const deterministic = runDeterministicChecks(meaningMap, adaptedText);
   const relationship = runRelationshipChecks(meaningMap, adaptedText);
-  const nli = runNliSlot({ source, adaptedText });
+  const nli = await runNliSlot({ source, adaptedText, endpoint: nliEndpoint });
   const flaggedIds = collectFlaggedFactIds(meaningMap, [
     ...deterministic,
     ...relationship,

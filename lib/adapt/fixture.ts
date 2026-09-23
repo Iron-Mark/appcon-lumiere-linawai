@@ -161,13 +161,13 @@ function hasSeededWarningReason(checks: Check[]): boolean {
  * Run the fidelity pipeline; if the seeded wrong-group reason would be lost,
  * keep it on the response.
  */
-function fidelityChecks(
+async function fidelityChecks(
   adaptedText: string,
   meaningMap: MeaningMap,
   preferences: Preferences,
   options?: { preserveSeededWarning?: boolean },
-): { checks: Check[]; overallStatus: CheckStatus } {
-  const result = runFidelityGuard({
+): Promise<{ checks: Check[]; overallStatus: CheckStatus }> {
+  const result = await runFidelityGuard({
     source: CAMPUS_PILOT_SOURCE,
     adaptedText,
     meaningMap,
@@ -228,10 +228,12 @@ function fallbackHappyPathChecks(): Check[] {
   ];
 }
 
-function seededFailureResponse(preferences: Preferences): AdaptResponse {
+async function seededFailureResponse(
+  preferences: Preferences,
+): Promise<AdaptResponse> {
   const meaningMap = campusPilotMeaningMap();
   const adaptedText = SEEDED_ADAPTED_TEXT;
-  const { checks, overallStatus } = fidelityChecks(
+  const { checks, overallStatus } = await fidelityChecks(
     adaptedText,
     meaningMap,
     preferences,
@@ -246,15 +248,15 @@ function seededFailureResponse(preferences: Preferences): AdaptResponse {
   };
 }
 
-function happyPathResponse(
+async function happyPathResponse(
   preferences: Preferences,
   source: string,
-): AdaptResponse {
+): Promise<AdaptResponse> {
   const meaningMap = campusPilotMeaningMap();
   const adaptedText = buildAdaptedText(preferences);
 
   if (shouldRunFidelityPipeline(source)) {
-    const { checks, overallStatus } = fidelityChecks(
+    const { checks, overallStatus } = await fidelityChecks(
       adaptedText,
       meaningMap,
       preferences,
@@ -281,8 +283,8 @@ function happyPathResponse(
  */
 export async function adapt(input: AdaptRequest): Promise<AdaptResponse> {
   const result = isSeededFailureRequest(input.source)
-    ? seededFailureResponse(input.preferences)
-    : happyPathResponse(input.preferences, input.source);
+    ? await seededFailureResponse(input.preferences)
+    : await happyPathResponse(input.preferences, input.source);
 
   return AdaptResponseSchema.parse(result);
 }
