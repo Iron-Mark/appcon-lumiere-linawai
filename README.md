@@ -38,36 +38,13 @@ Linaw AI addresses that risk with a personalized reading layer and a **Meaning C
 Linaw is not a generic chatbot, summarizer, or diagnostic tool. It is an **adaptive information communication system** for institutions and the people they serve. The initial beachhead is schools, universities, and organizations that send deadline-heavy information to students and members. The business model is B2B2C: institutions are the paying customers, while students, employees, members, and citizens are the end users.
 
 ## Product preview
+### Product screenshots
 
-The repository currently includes the Linaw app icon at [`public/linaw-logo-transparent.png`](public/linaw-logo-transparent.png). Add the supplied transparent logo and sunray artwork to `public/` when available, using these names:
-
-```text
-public/linaw-logo-transparent.png
-public/sunray.png
-```
-
-The landing page is designed to use those assets as the brand mark and background sunray. Keeping the image files in `public/` lets Next.js serve them at `/linaw-logo-transparent.png` and `/sunray.png`.
-
-### Demo media placeholders
-
-Keep the README visually clean by showing one strong product screenshot and linking the video and deployment separately:
-
-| Resource           | Replace with                                                 | Recommended presentation                                           |
-| ------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------ |
-| Product screenshot | `docs/media/linaw-reading-workspace.png`                     | Show the source, adapted note, and Meaning Check together          |
-| Video demo         | `docs/media/linaw-demo.mp4` or an unlisted YouTube/Loom link | Use a linked thumbnail rather than embedding a large player        |
-| Live demo          | The deployed Vercel URL                                      | Use one text link in the header and one button in the presentation |
-
-Add the screenshot only after capturing the final UI. For a five-minute pitch, the screenshot is the cleanest README visual; the video is best linked for reviewers who want to inspect the workflow.
-
-<!-- Optional after the files exist:
-![Linaw AI reading workspace](docs/media/linaw-reading-workspace.png)
-[Watch the 60-second demo](docs/media/linaw-demo.mp4)
--->
+### Video demo  
 
 ### Live demo
 
-**Vercel URL:** `https://appcon-lumiere-linawai.vercel.app/`
+### Vercel URL : [https://appcon-lumiere-linawai.vercel.app/](https://appcon-lumiere-linawai.vercel.app/)
 
 The live deployment should open the landing page and provide the working reading flow. Keep the video as a separate link so the README stays quick to scan.
 
