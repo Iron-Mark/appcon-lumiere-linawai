@@ -297,6 +297,56 @@ function SidePanelApp() {
         .linaw-sidepanel-container .linaw-reading-badge {
           color: #334155;
         }
+        /* Disclosure headers must scream \"button\": bordered white card,
+           bold dark label, green chevron chip on the right. */
+        .linaw-sidepanel-container .linaw-reading-disclosure,
+        .linaw-sidepanel-container .linaw-voice-disclosure {
+          background-color: #ffffff;
+          border: 1.5px solid #6b7a3f;
+          border-radius: 12px;
+          box-shadow: 0 1px 3px rgb(26 24 20 / 0.12);
+        }
+        .linaw-sidepanel-container .linaw-reading-summary,
+        .linaw-sidepanel-container .linaw-voice-summary {
+          color: #1a1814;
+          font-size: 0.85rem;
+          font-weight: 700;
+          min-height: 52px;
+        }
+        .linaw-sidepanel-container .linaw-reading-summary::before,
+        .linaw-sidepanel-container .linaw-voice-summary::before {
+          content: none;
+        }
+        .linaw-sidepanel-container .linaw-reading-summary::after,
+        .linaw-sidepanel-container .linaw-voice-summary::after {
+          content: "▾";
+          margin-left: auto;
+          width: 28px;
+          height: 28px;
+          border-radius: 9999px;
+          background-color: #4f5d2f;
+          color: #ffffff;
+          font-size: 15px;
+          line-height: 1;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .linaw-sidepanel-container details[open] > .linaw-reading-summary::after,
+        .linaw-sidepanel-container details[open] > .linaw-voice-summary::after {
+          content: "▴";
+        }
+        /* Primary actions get extra pop so they read at a glance. */
+        .linaw-sidepanel-container .linaw-listen-btn {
+          min-height: 52px;
+          font-size: 0.95rem;
+          box-shadow: 0 4px 12px rgb(79 93 47 / 0.45);
+        }
+        .linaw-sidepanel-container .linaw-copy-btn {
+          min-height: 48px;
+          box-shadow: 0 1px 3px rgb(26 24 20 / 0.12);
+        }
       `}</style>
 
       <header className="linaw-home-header">
