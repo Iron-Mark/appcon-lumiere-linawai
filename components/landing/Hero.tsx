@@ -54,8 +54,7 @@ export function Hero() {
                 Prefer a guided look first?{" "}
                 <a href="#try-it" className="landing-inline-link">
                   Try the live demo
-                </a>
-                {" "}
+                </a>{" "}
                 or{" "}
                 <a href="#get-started" className="landing-inline-link">
                   get the Chrome companion

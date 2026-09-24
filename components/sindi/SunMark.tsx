@@ -5,42 +5,20 @@ type SunMarkProps = {
 };
 
 /**
- * Quiet olive ray strokes for empty columns. Not the character.
- * Ray himself stays in Sindi.
+ * Decorative sunray asset used across landing sections.
  */
 export function SunMark({ className }: SunMarkProps) {
   return (
-    <svg
-      viewBox="0 0 80 80"
+    <img
+      src="/sunray.png"
+      alt=""
       aria-hidden="true"
-      focusable="false"
-      className={cn("text-action", className)}
-    >
-      <g
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.75"
-      >
-        {[0, 45, 90, 135].map((deg) => (
-          <line
-            key={deg}
-            x1="40"
-            y1="8"
-            x2="40"
-            y2="22"
-            transform={`rotate(${deg} 40 40)`}
-          />
-        ))}
-      </g>
-      <circle
-        cx="40"
-        cy="40"
-        r="10"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.75"
-      />
-    </svg>
+      className={cn(
+        "select-none object-contain opacity-100 contrast-125 saturate-125",
+        "drop-shadow-[0_0_28px_rgba(250,198,92,0.6)]",
+        "brightness-110",
+        className,
+      )}
+    />
   );
 }

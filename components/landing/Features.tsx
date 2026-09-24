@@ -18,7 +18,11 @@ import { SectionHeading } from "./SectionHeading";
 const VIEWS = [
   { icon: FileText, name: "Full", note: "The original, untouched" },
   { icon: ListChecks, name: "Key Points", note: "What matters, in order" },
-  { icon: MessageSquareText, name: "Plain Language", note: "Short words, short sentences" },
+  {
+    icon: MessageSquareText,
+    name: "Plain Language",
+    note: "Short words, short sentences",
+  },
   { icon: Headphones, name: "Listen", note: "Read aloud at your pace" },
 ];
 
@@ -45,7 +49,11 @@ const FEATURES = [
 function FeatureIcon({ icon: Icon }: { icon: typeof FileText }) {
   return (
     <span className="flex size-10 items-center justify-center rounded-lg bg-action-soft">
-      <Icon className="size-5 text-action" strokeWidth={1.75} aria-hidden="true" />
+      <Icon
+        className="size-5 text-action"
+        strokeWidth={1.75}
+        aria-hidden="true"
+      />
     </span>
   );
 }
@@ -77,7 +85,9 @@ export function Features() {
       className="landing-section landing-section--inset"
     >
       <div className="relative mx-auto max-w-6xl">
-        <SunMark className="pointer-events-none absolute -top-6 -left-2 size-16 opacity-30 md:size-20" />
+        <Reveal className="pointer-events-none absolute -top-[5rem] -left-[-6rem]">
+          <SunMark className="size-120 opacity-50 md:size-40" />
+        </Reveal>
         <SectionHeading
           id="features-title"
           eyebrow="Your preferences"

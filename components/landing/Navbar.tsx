@@ -19,9 +19,14 @@ export function Navbar() {
       >
         <Link
           href="#top"
-          className="font-reading inline-flex min-h-11 shrink-0 items-center text-xl font-semibold tracking-tight text-ink focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className="font-reading inline-flex min-h-11 shrink-0 items-center gap-2.5 text-xl font-semibold tracking-tight text-ink focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         >
-          Linaw AI
+          <img
+            src="/linaw-logo-transparent.png"
+            alt="Linaw AI logo"
+            className="h-8 w-8 rounded-md object-contain"
+          />
+          <span>Linaw AI</span>
           <span className="sr-only"> (home)</span>
         </Link>
 
