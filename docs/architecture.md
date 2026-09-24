@@ -21,11 +21,11 @@ Versions from `package.json` / `nli-service/requirements.txt`. Nothing else is a
 | UI kit | shadcn (`components.json` radix-nova): button, input, textarea, dialog, sheet, sidebar, table, toggle, toggle-group, tooltip, separator, skeleton. `radix-ui` 1.6.7, `class-variance-authority` 0.7.1, `clsx` 2.1.1, `tailwind-merge` 3.7.0, `lucide-react` 0.544. `cn` npm package is in `package.json` but unused (`lib/utils.ts` is `clsx` + `tailwind-merge`) |
 | Schemas | Zod 4.1 (`lib/domain`, evals, model parse) |
 | PDF | `pdfjs-dist` 5.4, worker in the browser, no upload |
-| Listen | Web Speech API (`speechSynthesis`) |
+| Listen | Linaw voice `en_US-hfc_female-medium` in the browser (`@diffusionstudio/vits-web`). If that play fails, the Web Speech API |
 | Intake | File drop / `<input type="file">` for `.txt` `.md` `.pdf` |
 | Share | `URL`, `btoa`/`atob` base64url |
-| Storage | `localStorage`, `sessionStorage`, `chrome.storage.local`. No database, no Redis, no Supabase |
-| Auth | none. Optional name/email in `localStorage` |
+| Storage | `localStorage`, `sessionStorage`, `chrome.storage.local`. Optional Supabase table `linaw_profiles` for the display name, preferences, and saved titles when the public env is set. Source text is not stored there |
+| Auth | On this device, name and email in `localStorage`, no password. Cloud sign-in uses a password when `NEXT_PUBLIC_SUPABASE_URL` and the publishable key are set |
 | HTTP | `fetch` only. No OpenAI SDK, no Gemini SDK, no AI SDK |
 
 ### Adapt / models
@@ -34,7 +34,7 @@ Versions from `package.json` / `nli-service/requirements.txt`. Nothing else is a
 | --- | --- |
 | Route | Next.js Route Handler, Node runtime, `app/api/adapt` — the only API route |
 | Gemini | `POST https://generativelanguage.googleapis.com/v1beta/models/{id}:generateContent`, default model `gemini-3.8-flash`, 40 s |
-| Gateway | `POST {LLM_API_BASE}/chat/completions`, Bearer key, default model `auto`, 75 s, `chat_template_kwargs.enable_thinking: false` |
+| Gateway | OpenAI-compatible `POST {LLM_API_BASE}/chat/completions`, Bearer key, default model `auto`, 75 s, `chat_template_kwargs.enable_thinking: false`. Not the OpenAI product |
 | Fixture | in-process TypeScript, `lib/adapt/fixture.ts` |
 
 ### Fidelity / NLI (`nli-service/`)
@@ -44,7 +44,7 @@ Versions from `package.json` / `nli-service/requirements.txt`. Nothing else is a
 | Guard | TypeScript in `lib/fidelity` (deterministic, relationship, NLI slot, coverage) |
 | API | FastAPI 0.141.1, uvicorn 0.53 |
 | Model runtime | PyTorch 2.14.0 (CPU), Hugging Face Transformers 5.17.0, SentencePiece 0.2.2 |
-| Checkpoint | `cross-encoder/nli-deberta-v3-base` from the Hub (base, not fine-tuned) |
+| Checkpoint | `cross-encoder/nli-deberta-v3-base` from the Hugging Face Hub (base, not fine-tuned). The hosted app calls `https://linaw-nli.onrender.com/predict`. That is this FastAPI service, not the Hugging Face inference API |
 
 ### Extension
 
