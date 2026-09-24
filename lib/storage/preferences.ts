@@ -108,12 +108,14 @@ export const localStoragePreferenceStore: PreferenceStore = {
     writeRaw(toStore);
     notifyPreferencesChanged(toStore);
     broadcastToExtension(toStore);
-    void import("@/lib/auth/local").then(({ attachPreferencesToSignedInProfile }) => {
-      attachPreferencesToSignedInProfile(toStore);
-    });
-    void import("@/lib/auth/supabase").then(({ pushPreferencesIfSignedIn }) =>
-      pushPreferencesIfSignedIn(toStore),
+    // Await so these loads finish inside the call. A floating import races
+    // test teardown and fails CI after the file's environment is gone.
+    const { attachPreferencesToSignedInProfile } = await import(
+      "@/lib/auth/local"
     );
+    attachPreferencesToSignedInProfile(toStore);
+    const { pushPreferencesIfSignedIn } = await import("@/lib/auth/supabase");
+    await pushPreferencesIfSignedIn(toStore);
   },
 
   async clear() {
