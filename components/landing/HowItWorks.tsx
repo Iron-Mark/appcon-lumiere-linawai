@@ -1,4 +1,9 @@
 import { ChevronRight } from "lucide-react";
+import {
+  KeyPoints,
+  MeaningCheck,
+  NoticeSheet,
+} from "@/components/illustrations";
 import { Sindi, SunMark, type SindiState } from "@/components/sindi";
 import { Reveal } from "./Reveal";
 import { SectionHeading } from "./SectionHeading";
@@ -7,21 +12,25 @@ const STEPS: {
   state: SindiState;
   label: string;
   description: string;
+  art: typeof NoticeSheet;
 }[] = [
   {
     state: "reading",
     label: "Read",
     description: "Open any article, memo, or PDF. Linaw quietly reads it with you.",
+    art: NoticeSheet,
   },
   {
     state: "working",
     label: "Adapt",
     description: "Switch to Key Points, Plain Language, or Listen in one tap.",
+    art: KeyPoints,
   },
   {
     state: "pass",
     label: "Verify",
     description: "Every condition, number, and deadline is checked against the source.",
+    art: MeaningCheck,
   },
 ];
 
@@ -73,6 +82,7 @@ export function HowItWorks() {
                 <p className="font-ui mt-2 leading-relaxed text-pretty text-ink-muted">
                   {step.description}
                 </p>
+                <step.art className="mt-4 h-24 w-40" />
               </div>
             </Reveal>
           ))}

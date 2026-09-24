@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AppWindow, Puzzle } from "lucide-react";
+import {
+  CompanionPanel,
+  DevSwitch,
+  OpenFolder,
+  WebWindow,
+  ZipFile,
+} from "@/components/illustrations";
 import { Reveal } from "./Reveal";
 import { SectionHeading } from "./SectionHeading";
 import { Button } from "@/components/ui/button";
@@ -82,13 +88,7 @@ export function GetStarted() {
 
         <div className="font-ui mx-auto mt-12 grid max-w-4xl gap-10 md:grid-cols-2 md:gap-0 md:divide-x md:divide-border">
           <Reveal delay={60} className="flex flex-col md:pr-10">
-            <span className="flex size-11 items-center justify-center rounded-lg bg-action-soft">
-              <AppWindow
-                className="size-5 text-action"
-                strokeWidth={1.75}
-                aria-hidden="true"
-              />
-            </span>
+            <WebWindow className="h-20 w-32" />
             <h3 className="font-reading mt-5 text-xl font-semibold text-ink">
               Web app
             </h3>
@@ -107,13 +107,7 @@ export function GetStarted() {
           </Reveal>
 
           <Reveal className="flex flex-col md:pl-10">
-            <span className="flex size-11 items-center justify-center rounded-lg bg-action-soft">
-              <Puzzle
-                className="size-5 text-action"
-                strokeWidth={1.75}
-                aria-hidden="true"
-              />
-            </span>
+            <CompanionPanel className="h-20 w-32" />
             <h3 className="font-reading mt-5 text-xl font-semibold text-ink">
               Chrome companion
             </h3>
@@ -196,39 +190,13 @@ function frame(show: boolean) {
 }
 
 function ZipArt({ show }: { show: boolean }) {
-  return (
-    <svg viewBox="0 0 280 160" className={frame(show)} fill="none">
-      <rect x="78" y="58" width="124" height="78" rx="8" stroke="#4f5d2f" strokeWidth="2" />
-      <path d="M78 78h124" stroke="#4f5d2f" strokeWidth="2" />
-      <rect x="118" y="28" width="44" height="36" rx="4" stroke="#4f5d2f" strokeWidth="2" />
-      <path d="M132 36h16M132 44h16M132 52h10" stroke="#4f5d2f" strokeWidth="2" />
-      <path d="M140 18v8" stroke="#4f5d2f" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
+  return <ZipFile className={frame(show)} />;
 }
 
 function DevModeArt({ show }: { show: boolean }) {
-  return (
-    <svg viewBox="0 0 280 160" className={frame(show)} fill="none">
-      <rect x="36" y="48" width="208" height="64" rx="10" stroke="#4f5d2f" strokeWidth="2" />
-      <circle cx="64" cy="80" r="10" stroke="#4f5d2f" strokeWidth="2" />
-      <path d="M64 74v12M58 80h12" stroke="#4f5d2f" strokeWidth="2" />
-      <rect x="148" y="68" width="72" height="24" rx="12" fill="#e4ecd4" stroke="#4f5d2f" strokeWidth="2" />
-      <circle cx="202" cy="80" r="8" fill="#4f5d2f" />
-    </svg>
-  );
+  return <DevSwitch className={frame(show)} />;
 }
 
 function FolderArt({ show }: { show: boolean }) {
-  return (
-    <svg viewBox="0 0 280 160" className={frame(show)} fill="none">
-      <path
-        d="M48 62h56l12 12h116v54a8 8 0 0 1-8 8H56a8 8 0 0 1-8-8V62z"
-        stroke="#4f5d2f"
-        strokeWidth="2"
-      />
-      <rect x="168" y="78" width="76" height="28" rx="6" fill="#4f5d2f" />
-      <path d="M184 92h44" stroke="#f3ebe0" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
+  return <OpenFolder className={frame(show)} />;
 }

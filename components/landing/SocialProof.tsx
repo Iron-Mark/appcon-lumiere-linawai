@@ -1,25 +1,29 @@
-import { GraduationCap, Megaphone, Users } from "lucide-react";
+import {
+  MeaningCheck,
+  NoticeSheet,
+  TaglishLines,
+} from "@/components/illustrations";
 import { SunMark } from "@/components/sindi";
 import { Reveal } from "./Reveal";
 import { SectionHeading } from "./SectionHeading";
 
 const USE_CASES = [
   {
-    icon: GraduationCap,
+    art: NoticeSheet,
     title: "Campus notices",
     quote:
       "Enrollment memos and adviser updates are easier to scan when the conditions stay visible.",
     persona: "Class adviser",
   },
   {
-    icon: Megaphone,
+    art: MeaningCheck,
     title: "HR and policy updates",
     quote:
       "Plain-language summaries help, but only if deadlines and approval rules do not disappear.",
     persona: "People ops lead",
   },
   {
-    icon: Users,
+    art: TaglishLines,
     title: "Family-facing updates",
     quote:
       "Parents can read in English or Taglish without losing who needs to sign what by Friday.",
@@ -51,13 +55,7 @@ export function SocialProof() {
               className="md:px-8 md:first:pl-0 md:last:pr-0"
             >
               <article className="font-ui flex flex-col gap-4 py-8 md:py-0">
-                <span className="flex size-11 items-center justify-center rounded-lg bg-action-soft">
-                  <item.icon
-                    className="size-5 text-action"
-                    strokeWidth={1.75}
-                    aria-hidden="true"
-                  />
-                </span>
+                <item.art className="h-16 w-28" />
                 <div className="flex flex-col gap-2">
                   <h3 className="font-reading m-0 text-lg font-semibold text-ink">
                     {item.title}

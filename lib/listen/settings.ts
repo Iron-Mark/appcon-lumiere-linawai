@@ -1,6 +1,6 @@
 /**
  * Listen display choices. Not part of the synced reading preferences.
- * "linaw" is the free downloaded voice and the starting choice.
+ * "linaw" is the free downloaded voice and the voice Listen starts on.
  * "device" is the browser default. A named voiceURI is one installed voice.
  */
 

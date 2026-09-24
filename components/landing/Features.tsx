@@ -1,12 +1,15 @@
 import {
-  EyeOff,
   FileText,
   Headphones,
-  Languages,
   ListChecks,
   MessageSquareText,
-  ShieldCheck,
 } from "lucide-react";
+import {
+  KeptOnDevice,
+  ListenPage,
+  MeaningCheck,
+  TaglishLines,
+} from "@/components/illustrations";
 import type { ReactNode } from "react";
 import { SunMark } from "@/components/sindi";
 import { Reveal } from "./Reveal";
@@ -21,25 +24,25 @@ const VIEWS = [
 
 const FEATURES = [
   {
-    icon: ShieldCheck,
+    art: MeaningCheck,
     title: "Meaning Check",
     body: "Warns when a condition, number, or deadline looks off — so you review the source, not trust a rewrite blindly.",
   },
   {
-    icon: Languages,
+    art: TaglishLines,
     title: "Taglish-aware",
     body: "Plain Language that sounds like how Filipinos talk: English, Tagalog, or both.",
     href: "#try-it",
     linkLabel: "Try Taglish in the demo",
   },
   {
-    icon: EyeOff,
+    art: KeptOnDevice,
     title: "Zero-disclosure by design",
     body: "No diagnosis, no sign-up form, no “accessibility mode.” Anyone can use it without identifying as struggling.",
   },
 ] as const;
 
-function FeatureIcon({ icon: Icon }: { icon: typeof ShieldCheck }) {
+function FeatureIcon({ icon: Icon }: { icon: typeof FileText }) {
   return (
     <span className="flex size-10 items-center justify-center rounded-lg bg-action-soft">
       <Icon className="size-5 text-action" strokeWidth={1.75} aria-hidden="true" />
@@ -84,14 +87,17 @@ export function Features() {
 
         {/* Band A — four adaptive views */}
         <Reveal className="mt-12">
-          <div>
-            <h3 className="font-reading text-xl font-semibold text-ink">
-              Four adaptive views
-            </h3>
-            <p className="mt-1 max-w-xl leading-relaxed text-pretty text-ink-muted">
-              Switch formats on the same content instantly. The source never
-              changes — only the shape it takes.
-            </p>
+          <div className="flex items-end justify-between gap-6">
+            <div>
+              <h3 className="font-reading text-xl font-semibold text-ink">
+                Four adaptive views
+              </h3>
+              <p className="mt-1 max-w-xl leading-relaxed text-pretty text-ink-muted">
+                Switch formats on the same content instantly. The source never
+                changes — only the shape it takes.
+              </p>
+            </div>
+            <ListenPage className="hidden h-20 w-32 shrink-0 md:block" />
           </div>
 
           <ul className="mt-8 grid list-none grid-cols-1 divide-y divide-border p-0 sm:grid-cols-2 md:grid-cols-4 md:divide-x md:divide-y-0">
@@ -131,7 +137,7 @@ export function Features() {
                 delay={60 * (i + 1)}
                 className="font-ui flex flex-col"
               >
-                <FeatureIcon icon={feature.icon} />
+                <feature.art className="h-20 w-32" />
                 <h3 className="mt-4 font-reading text-lg font-semibold text-ink">
                   {feature.title}
                 </h3>
