@@ -1113,6 +1113,9 @@ export function Panel({
           </button>
 
           <div className="linaw-listen-group">
+            <details className="linaw-voice-disclosure">
+              <summary className="linaw-voice-summary">Voice & pace</summary>
+              <div className="linaw-voice-controls">
             <label className="linaw-settings-label" htmlFor="linaw-listen-voice">
               Voice
             </label>
@@ -1172,6 +1175,8 @@ export function Panel({
                 </button>
               ))}
             </div>
+              </div>
+            </details>
             <button
               type="button"
               id="linaw-listen-btn"

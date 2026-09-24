@@ -20,14 +20,14 @@ This writes `extension/dist/` and simple icons under `extension/icons/` using es
 4. Select this folder: `extension/` (the directory that contains `manifest.json`)
 
 Toolbar icon: opens the side panel (shows the last pending selection, if any).  
-On-page: select text → **Clarify with Linaw** (works with Auto-Clarify off), or turn **Auto-Clarify** on in the panel.
+On-page: select text → **Clarify with Linaw** pill, or right-click → **Clarify with Linaw**. Selecting text never opens the panel on its own. Turn **Auto-Clarify** on in the panel for automatic article clarification.
 
 ## Behavior
 
 - **Preferences:** `chrome.storage.local` caches the same domain fields (`detail`, `wording`, `delivery`, `browserBehavior`, optional `updatedAt`). Default `browserBehavior` is `manual` (Auto-Clarify off).
 - **Sync:** on `http://localhost:3000` / `http://127.0.0.1:3000`, preferences sync with the web app’s localStorage (last-write-wins via `updatedAt`). No backend.
 - **Consent:** page text is not extracted or sent until the user clarifies a selection or explicitly enables Auto-Clarify. Per-origin **Disable on this site** stops the companion on that origin.
-- **Manual:** selection → clarify via `adapt()` from `lib/adapt` (never `fixture.ts` directly). The service worker asks the Linaw app at `http://127.0.0.1:3000` then `http://localhost:3000`. That app tries Gemini (`gemini-3.8-flash`), then the Pandev gateway, then the offline sample. Keys stay in the app, not in the extension. If Linaw is not running, the panel shows the offline example.
+- **Manual:** select text, then open explicitly via the **Clarify with Linaw** pill, right-click → **Clarify with Linaw**, or the toolbar icon. Clarifies via `adapt()` from `lib/adapt` (never `fixture.ts` directly). The service worker asks the Linaw app at `http://127.0.0.1:3000` then `http://localhost:3000`. That app tries Gemini (`gemini-3.8-flash`), then the Pandev gateway, then the offline sample. Keys stay in the app, not in the extension. If Linaw is not running, the panel shows the offline example.
 - **Auto-Clarify:** when enabled, a small deterministic main-text extractor runs, then the same `adapt()`. A model answer replaces that article.
 - **Panel:** Clarified by Linaw, current mode, Full/Key Points, Original/Plain, Listen, Show original, Meaning Check status, Open in Linaw web app (`http://localhost:3000/read`), Disable on this site.
 - **Listen:** Web Speech API on the displayed clarification only. Pace (slower / steady / faster) is extension-only.

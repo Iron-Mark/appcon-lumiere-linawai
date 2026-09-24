@@ -38,6 +38,51 @@ function ensurePanelBehavior(attempt = 1): void {
 
 ensurePanelBehavior();
 
+/**
+ * Right-click path: select text anywhere, then "Clarify with Linaw"
+ * from the context menu. Same explicit-open flow as the on-page pill.
+ */
+function ensureContextMenu(): void {
+  try {
+    chrome.contextMenus?.create({
+      id: "linaw-clarify",
+      title: "Clarify with Linaw",
+      contexts: ["selection"],
+    });
+  } catch {
+    // Already exists, or menus unsupported here.
+  }
+}
+
+if (typeof chrome !== "undefined" && chrome.runtime?.onInstalled) {
+  try {
+    chrome.runtime.onInstalled.addListener(() => ensureContextMenu());
+  } catch {
+    // Install hook unavailable — top-level call below still tries.
+  }
+}
+ensureContextMenu();
+
+if (typeof chrome !== "undefined" && chrome.contextMenus?.onClicked) {
+  try {
+    chrome.contextMenus.onClicked.addListener((info, tab) => {
+      if (info?.menuItemId !== "linaw-clarify") return;
+      if (tab?.id == null) return;
+      try {
+        void chrome.tabs
+          .sendMessage(tab.id, { type: "linaw.adaptSelection" })
+          .catch(() => {
+            // Content script missing on restricted pages.
+          });
+      } catch {
+        // Tabs unavailable.
+      }
+    });
+  } catch {
+    // Context menus unavailable — pill and toolbar still work.
+  }
+}
+
 // Fallback action click handler in case side panel behavior is not supported
 if (typeof chrome !== "undefined" && chrome.action?.onClicked) {
   chrome.action.onClicked.addListener(async (tab) => {

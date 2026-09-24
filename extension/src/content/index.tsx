@@ -133,11 +133,11 @@ export const PANEL_CSS = `
 .linaw-shell {
   position: absolute;
   z-index: 2147483646;
-  width: min(384px, calc(100vw - 32px));
-  max-width: 384px;
-  max-height: min(540px, calc(100vh - 32px));
+  width: min(400px, calc(100vw - 32px));
+  max-width: 400px;
+  max-height: min(600px, calc(100vh - 32px));
   overflow-y: auto;
-  border-radius: 16px;
+  border-radius: 18px;
   background-color: var(--color-paper-raised);
   border: 1px solid var(--color-paper-inset);
   box-shadow: 0 20px 25px -5px rgba(26, 24, 20, 0.1), 0 8px 10px -6px rgba(26, 24, 20, 0.08);
@@ -159,10 +159,10 @@ export const PANEL_CSS = `
 }
 
 .linaw-panel {
-  padding: 1rem;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -179,31 +179,34 @@ export const PANEL_CSS = `
   gap: 8px;
 }
 .linaw-sindi-wrap {
-  transform: scale(0.75);
+  transform: scale(0.85);
   transform-origin: left center;
   display: flex;
   align-items: center;
 }
 .linaw-brand-title {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--color-ink);
   letter-spacing: -0.025em;
 }
 .linaw-close-btn {
   background: transparent;
-  border: none;
-  color: var(--color-slate-400);
-  font-size: 1.1rem;
+  border: 1px solid transparent;
+  color: var(--color-slate-500);
+  font-size: 1rem;
   line-height: 1;
+  min-width: 36px;
+  min-height: 36px;
   padding: 4px 6px;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: color 150ms ease;
+  transition: color 150ms ease, background-color 150ms ease;
 }
 .linaw-close-btn:hover {
-  color: var(--color-slate-700);
+  color: var(--color-slate-800);
+  background-color: var(--color-paper-inset);
 }
 .linaw-status-pill {
   display: flex;
@@ -213,8 +216,8 @@ export const PANEL_CSS = `
   background-color: var(--color-pass-bg);
   border: 1px solid var(--color-pass-border);
   color: var(--color-pass);
-  border-radius: 9999px;
-  padding: 6px 12px;
+  border-radius: 14px;
+  padding: 8px 8px 8px 12px;
   font-size: 0.75rem;
   font-weight: 500;
 }
@@ -233,10 +236,10 @@ export const PANEL_CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   border-radius: 9999px;
-  font-size: 11px;
+  font-size: 12px;
   flex-shrink: 0;
 }
 .linaw-status-pill-badge.is-pass {
@@ -253,8 +256,8 @@ export const PANEL_CSS = `
   min-width: 0;
 }
 .linaw-status-pill-title {
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: 0.78rem;
+  font-weight: 600;
   color: var(--color-pass);
   line-height: 1.2;
 }
@@ -273,20 +276,23 @@ export const PANEL_CSS = `
 }
 .linaw-gear-btn {
   background: transparent;
-  border: none;
+  border: 1px solid var(--color-pass-border);
   color: var(--color-pass);
   font-size: 1rem;
-  min-width: 44px;
-  min-height: 44px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
   padding: 2px 4px;
-  border-radius: 4px;
+  border-radius: 9999px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 150ms ease;
+  transition: background-color 150ms ease, color 150ms ease;
 }
 .linaw-gear-btn:hover {
+  background-color: var(--color-action-soft);
   color: var(--color-brand-hover);
 }
 .linaw-status-pill.is-warning .linaw-gear-btn {
@@ -568,7 +574,7 @@ details[open] > .linaw-reading-summary::before {
 }
 .linaw-doc-title {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #0f172a;
   letter-spacing: -0.025em;
@@ -577,8 +583,8 @@ details[open] > .linaw-reading-summary::before {
 .linaw-content-card {
   background-color: var(--linaw-reading-bg, var(--color-paper));
   border: 1px solid var(--color-paper-inset);
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: 14px;
+  padding: 14px 16px;
   max-height: 38vh;
   overflow-y: auto;
 }
@@ -663,8 +669,8 @@ details[open] > .linaw-reading-summary::before {
   color: var(--color-slate-500);
 }
 .linaw-action-bar {
-  display: grid;
-  grid-template-columns: 1fr 1.4fr;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
   margin-top: 4px;
   align-items: stretch;
@@ -674,6 +680,7 @@ details[open] > .linaw-reading-summary::before {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  width: 100%;
   font-family: var(--font-ui);
   font-size: 0.85rem;
   font-weight: 500;
@@ -693,8 +700,50 @@ details[open] > .linaw-reading-summary::before {
 .linaw-listen-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
+}
+.linaw-voice-disclosure {
+  background-color: var(--color-paper);
+  border: 1px solid var(--color-paper-inset);
+  border-radius: 10px;
+  padding: 0;
+}
+.linaw-voice-summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-muted);
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  user-select: none;
+}
+.linaw-voice-summary::-webkit-details-marker { display: none; }
+.linaw-voice-summary::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 5px solid var(--color-ink-muted);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  margin-right: 8px;
+  transition: transform 150ms ease;
+}
+details[open] > .linaw-voice-summary::before {
+  transform: rotate(90deg);
+}
+.linaw-voice-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 12px 12px;
+  border-top: 1px solid var(--color-paper-inset);
+  padding-top: 10px;
 }
 .linaw-pace-segment {
   width: 100%;
@@ -710,6 +759,8 @@ details[open] > .linaw-reading-summary::before {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  order: -1;
+  font-weight: 600;
   font-family: var(--font-ui);
   font-size: 0.85rem;
   font-weight: 500;
@@ -757,11 +808,11 @@ details[open] > .linaw-reading-summary::before {
   color: var(--color-white);
   border: 1px solid var(--color-brand-hover);
   border-radius: 9999px;
-  padding: 8px 16px;
+  padding: 10px 20px;
   min-height: 44px;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  box-shadow: 0 8px 24px rgb(26 24 20 / 0.15);
+  box-shadow: 0 12px 28px rgb(26 24 20 / 0.22);
   cursor: pointer;
 }
 `;
@@ -1000,6 +1051,10 @@ function updateFab() {
 }
 
 async function handleTextSelection() {
+  // Grammarly-style: selecting text never opens the panel on its own.
+  // It stages the text (side panel reads it) and raises the
+  // "Clarify with Linaw" pill. The reader opens the panel explicitly
+  // via the pill, the right-click menu, or the toolbar icon.
   if (state.disabled) return;
   let sel: Selection | null = null;
   try {
@@ -1009,23 +1064,13 @@ async function handleTextSelection() {
   }
   if (!sel || sel.isCollapsed || sel.rangeCount === 0) return;
   const selection = sel.toString().replace(/\s+/g, " ").trim();
-  if (selection.length >= MIN_SELECTION_CHARS) {
-    try {
-      const range = sel.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      if (rect.width > 0 || rect.height > 0) {
-        state.position = calculatePopoverPosition(rect);
-      }
-    } catch {
-      state.position = null;
-    }
-    await safeSendSelection(selection);
-    await safeStorePending(selection);
-    state.replaceOnPage = selectionInsideArticle(
-      findMainContentRoot(document),
-      window.getSelection()?.anchorNode ?? null,
-    );
-    await openWithSource(selection);
+  if (selection.length < MIN_SELECTION_CHARS) return;
+  await safeSendSelection(selection);
+  await safeStorePending(selection);
+  try {
+    updateFab();
+  } catch {
+    // FAB is optional.
   }
 }
 
@@ -1228,7 +1273,8 @@ async function bootstrap() {
     closePanel();
   });
 
-  // Listen for text selection (mouseup); short phrases clarify too (MIN_SELECTION_CHARS)
+  // Listen for text selection (mouseup); stages the text and raises the pill.
+  // The panel only opens on explicit action: pill, context menu, toolbar.
   document.addEventListener("mouseup", (e: MouseEvent) => {
     try {
       if (state.host && e.composedPath().includes(state.host)) {
