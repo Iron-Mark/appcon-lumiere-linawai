@@ -16,8 +16,22 @@ function SidePanelApp() {
   const [preferences, setPreferences] =
     useState<ExtensionPreferences>(DEFAULT_PREFERENCES);
   const [source, setSource] = useState<string>("");
+  const [sourceOrigin, setSourceOrigin] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const loadGen = useRef(0);
+
+  /** Pending text may be a legacy bare string or a tagged { text, origin }. */
+  function parsePending(value: unknown): { text: string; origin: string } {
+    if (typeof value === "string") return { text: value.trim(), origin: "" };
+    if (value && typeof value === "object") {
+      const rec = value as Record<string, unknown>;
+      return {
+        text: typeof rec.text === "string" ? rec.text.trim() : "",
+        origin: typeof rec.origin === "string" ? rec.origin : "",
+      };
+    }
+    return { text: "", origin: "" };
+  }
 
   async function queryActiveTabOrigin(): Promise<string> {
     try {
@@ -58,12 +72,9 @@ function SidePanelApp() {
     try {
       const storage = await chrome.storage.local.get("pendingSourceText");
       if (gen !== loadGen.current) return;
-      const pending = storage.pendingSourceText;
-      if (typeof pending === "string" && pending.trim()) {
-        setSource(pending.trim());
-      } else {
-        setSource("");
-      }
+      const pending = parsePending(storage.pendingSourceText);
+      setSource(pending.text);
+      setSourceOrigin(pending.origin);
     } catch {
       if (gen === loadGen.current) setSource("");
     }
@@ -96,12 +107,9 @@ function SidePanelApp() {
             .catch(() => undefined);
         }
         if (changes.pendingSourceText) {
-          const nextText = changes.pendingSourceText.newValue;
-          if (typeof nextText === "string") {
-            setSource(nextText.trim());
-          } else if (nextText == null) {
-            setSource("");
-          }
+          const pending = parsePending(changes.pendingSourceText.newValue);
+          setSource(pending.text);
+          setSourceOrigin(pending.origin);
         }
       }
     };
@@ -247,6 +255,20 @@ function SidePanelApp() {
           background-color: #e4ebd4;
           text-decoration: underline;
         }
+        .linaw-source-note {
+          margin: 0;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: #5c564c;
+          background-color: #ffffff;
+          border: 1px dashed #b9ac93;
+          border-radius: 10px;
+          padding: 8px 12px;
+        }
+        .linaw-sidepanel-container .linaw-page-actions .linaw-segment-btn {
+          font-size: 0.72rem;
+          padding: 8px 6px;
+        }
         /* Side-panel-only visibility pass (floating card untouched):
            stronger borders, darker text, unmistakable active states. */
         .linaw-sidepanel-container .linaw-settings-label {
@@ -385,6 +407,12 @@ function SidePanelApp() {
           <p className="linaw-home-sub">Reading companion</p>
         </div>
       </header>
+
+      {source && sourceOrigin && origin && sourceOrigin !== origin ? (
+        <div className="linaw-source-note" role="note">
+          Selected on {sourceOrigin} — Disable acts on the current tab.
+        </div>
+      ) : null}
 
       {/* Restricted pages (chrome://, PDFs, webstore) expose no tab URL. */}
       {!origin && !isCurrentOriginDisabled && (

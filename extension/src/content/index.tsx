@@ -62,11 +62,23 @@ function chromeRuntime(): typeof chrome.runtime | null {
   }
 }
 
+function currentOrigin(): string {
+  try {
+    return window.location.origin || "";
+  } catch {
+    return "";
+  }
+}
+
 async function safeSendSelection(text: string): Promise<void> {
   try {
     const runtime = chromeRuntime();
     if (!runtime?.sendMessage) return;
-    await runtime.sendMessage({ type: "LINAW_TEXT_SELECTED", text });
+    await runtime.sendMessage({
+      type: "LINAW_TEXT_SELECTED",
+      text,
+      origin: currentOrigin(),
+    });
   } catch {
     // Background worker may be idle, asleep, or blocked on this page.
   }
@@ -75,7 +87,9 @@ async function safeSendSelection(text: string): Promise<void> {
 async function safeStorePending(text: string): Promise<void> {
   try {
     if (typeof chrome === "undefined" || !chrome.storage?.local) return;
-    await chrome.storage.local.set({ pendingSourceText: text });
+    await chrome.storage.local.set({
+      pendingSourceText: { text, origin: currentOrigin(), updatedAt: Date.now() },
+    });
   } catch {
     // Storage blocked (private mode / policy) — panel still works for this view.
   }

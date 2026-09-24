@@ -346,6 +346,7 @@ export function Panel({
   const voicesRef = useRef(listenVoices);
   const listenGen = useRef(0);
   const adaptGen = useRef(0);
+  const prefsDebounce = useRef<number | null>(null);
 
   sourceRef.current = source;
   comfortRef.current = comfort;
@@ -449,6 +450,11 @@ export function Panel({
   };
 
   useEffect(() => {
+    if (prefsDebounce.current) {
+      window.clearTimeout(prefsDebounce.current);
+      prefsDebounce.current = null;
+    }
+    setPageFeedback(null);
     if (!isCurrentOriginDisabled) {
       void runAdapt(preferences, source);
     }
@@ -456,7 +462,10 @@ export function Panel({
   }, [source, isCurrentOriginDisabled]);
 
   useEffect(() => {
-    return () => stopSpeech();
+    return () => {
+      if (prefsDebounce.current) window.clearTimeout(prefsDebounce.current);
+      stopSpeech();
+    };
   }, []);
 
   function spokenUtterance(text: string): SpeechSynthesisUtterance {
@@ -605,7 +614,14 @@ export function Panel({
       // Host torn down.
     }
     if (!isCurrentOriginDisabled) {
-      await runAdapt(saved, sourceRef.current);
+      // Debounce: rapid dropdown flips restyle cheaply but clarify once.
+      if (prefsDebounce.current) window.clearTimeout(prefsDebounce.current);
+      const snapshot = saved;
+      const src = sourceRef.current;
+      prefsDebounce.current = window.setTimeout(() => {
+        prefsDebounce.current = null;
+        void runAdapt(snapshot, src);
+      }, 250);
     }
   }
 

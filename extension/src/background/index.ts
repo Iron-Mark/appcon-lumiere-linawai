@@ -112,8 +112,12 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       message?.type === "LINAW_TEXT_SELECTED" &&
       typeof message.text === "string"
     ) {
+      // Tag the tab it came from so the side panel never shows one tab's
+      // highlight under another tab's name.
+      const origin = typeof message.origin === "string" ? message.origin : "";
+      const entry = { text: message.text, origin, updatedAt: Date.now() };
       void chrome.storage.local
-        .set({ pendingSourceText: message.text })
+        .set({ pendingSourceText: entry })
         .then(() => {
           sendResponse({ ok: true });
         })
