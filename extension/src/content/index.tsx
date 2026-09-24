@@ -25,6 +25,78 @@ import {
 
 const HOST_ID = "linaw-companion-root";
 
+/** Manual clarify needs only a short phrase; single-char drags are noise. */
+export const MIN_SELECTION_CHARS = 3;
+
+const RESTRICTED_PROTOCOLS = new Set([
+  "chrome:",
+  "chrome-extension:",
+  "edge:",
+  "about:",
+  "moz-extension:",
+  "view-source:",
+  "data:",
+  "blob:",
+]);
+
+export function isRestrictedPage(url: string = location.href): boolean {
+  try {
+    const protocol = new URL(url).protocol;
+    if (RESTRICTED_PROTOCOLS.has(protocol)) return true;
+    // Chrome Web Store and browser settings block content scripts entirely.
+    if (/^https?:\/\/(chrome\.google\.com\/webstore|chromewebstore\.google\.com)/.test(url)) return true;
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+function chromeRuntime(): typeof chrome.runtime | null {
+  try {
+    if (typeof chrome !== "undefined" && chrome.runtime?.id) return chrome.runtime;
+    // Content scripts can still use chrome.storage without runtime.id in some contexts.
+    if (typeof chrome !== "undefined" && chrome.runtime) return chrome.runtime;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function currentOrigin(): string {
+  try {
+    return window.location.origin || "";
+  } catch {
+    return "";
+  }
+}
+
+async function safeSendSelection(text: string): Promise<void> {
+  try {
+    const runtime = chromeRuntime();
+    if (!runtime?.sendMessage) return;
+    await runtime.sendMessage({
+      type: "LINAW_TEXT_SELECTED",
+      text,
+      origin: currentOrigin(),
+    });
+  } catch {
+    // Background worker may be idle, asleep, or blocked on this page.
+  }
+}
+
+async function safeStorePending(text: string): Promise<void> {
+  try {
+    if (typeof chrome === "undefined" || !chrome.storage?.local) return;
+    await chrome.storage.local.set({
+      pendingSourceText: { text, origin: currentOrigin(), updatedAt: Date.now() },
+    });
+  } catch {
+    // Storage blocked (private mode / policy) — panel still works for this view.
+  }
+}
+
+let bootstrapped = false;
+
 export const PANEL_CSS = `
 :host, * { box-sizing: border-box; }
 :host {
@@ -75,11 +147,11 @@ export const PANEL_CSS = `
 .linaw-shell {
   position: absolute;
   z-index: 2147483646;
-  width: min(384px, calc(100vw - 32px));
-  max-width: 384px;
-  max-height: min(540px, calc(100vh - 32px));
+  width: min(400px, calc(100vw - 32px));
+  max-width: 400px;
+  max-height: min(600px, calc(100vh - 32px));
   overflow-y: auto;
-  border-radius: 16px;
+  border-radius: 18px;
   background-color: var(--color-paper-raised);
   border: 1px solid var(--color-paper-inset);
   box-shadow: 0 20px 25px -5px rgba(26, 24, 20, 0.1), 0 8px 10px -6px rgba(26, 24, 20, 0.08);
@@ -101,10 +173,10 @@ export const PANEL_CSS = `
 }
 
 .linaw-panel {
-  padding: 1rem;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -121,31 +193,34 @@ export const PANEL_CSS = `
   gap: 8px;
 }
 .linaw-sindi-wrap {
-  transform: scale(0.75);
+  transform: scale(0.85);
   transform-origin: left center;
   display: flex;
   align-items: center;
 }
 .linaw-brand-title {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--color-ink);
   letter-spacing: -0.025em;
 }
 .linaw-close-btn {
   background: transparent;
-  border: none;
-  color: var(--color-slate-400);
-  font-size: 1.1rem;
+  border: 1px solid transparent;
+  color: var(--color-slate-500);
+  font-size: 1rem;
   line-height: 1;
+  min-width: 36px;
+  min-height: 36px;
   padding: 4px 6px;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: color 150ms ease;
+  transition: color 150ms ease, background-color 150ms ease;
 }
 .linaw-close-btn:hover {
-  color: var(--color-slate-700);
+  color: var(--color-slate-800);
+  background-color: var(--color-paper-inset);
 }
 .linaw-status-pill {
   display: flex;
@@ -155,8 +230,8 @@ export const PANEL_CSS = `
   background-color: var(--color-pass-bg);
   border: 1px solid var(--color-pass-border);
   color: var(--color-pass);
-  border-radius: 9999px;
-  padding: 6px 12px;
+  border-radius: 14px;
+  padding: 8px 8px 8px 12px;
   font-size: 0.75rem;
   font-weight: 500;
 }
@@ -175,10 +250,10 @@ export const PANEL_CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   border-radius: 9999px;
-  font-size: 11px;
+  font-size: 12px;
   flex-shrink: 0;
 }
 .linaw-status-pill-badge.is-pass {
@@ -195,8 +270,8 @@ export const PANEL_CSS = `
   min-width: 0;
 }
 .linaw-status-pill-title {
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: 0.78rem;
+  font-weight: 600;
   color: var(--color-pass);
   line-height: 1.2;
 }
@@ -214,28 +289,34 @@ export const PANEL_CSS = `
   color: #b45309;
 }
 .linaw-gear-btn {
-  background: transparent;
-  border: none;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-pass-border);
+  box-shadow: 0 1px 2px rgb(26 24 20 / 0.15);
   color: var(--color-pass);
-  font-size: 1rem;
-  min-width: 44px;
-  min-height: 44px;
+  font-size: 1.15rem;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
   padding: 2px 4px;
-  border-radius: 4px;
+  border-radius: 9999px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 150ms ease;
+  transition: background-color 150ms ease, color 150ms ease;
 }
 .linaw-gear-btn:hover {
+  background-color: var(--color-action-soft);
   color: var(--color-brand-hover);
 }
 .linaw-status-pill.is-warning .linaw-gear-btn {
   color: var(--color-warning);
 }
 .linaw-gear-btn.is-active {
-  color: var(--color-action);
+  background-color: var(--color-action);
+  border-color: var(--color-action);
+  color: var(--color-white);
 }
 .linaw-settings-drawer {
   background-color: var(--color-slate-50);
@@ -338,10 +419,30 @@ details[open] > .linaw-reading-summary::before {
   flex-direction: column;
   gap: 6px;
 }
+.linaw-page-feedback {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-ink-muted);
+}
+.linaw-page-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.linaw-page-actions .linaw-segment-btn {
+  width: 100%;
+  text-align: center;
+}
 .linaw-segment {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
+}
+.linaw-segment .linaw-segment-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 8px 4px;
+  text-align: center;
 }
 .linaw-segment-btn {
   font-family: var(--font-ui);
@@ -510,7 +611,7 @@ details[open] > .linaw-reading-summary::before {
 }
 .linaw-doc-title {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #0f172a;
   letter-spacing: -0.025em;
@@ -519,8 +620,8 @@ details[open] > .linaw-reading-summary::before {
 .linaw-content-card {
   background-color: var(--linaw-reading-bg, var(--color-paper));
   border: 1px solid var(--color-paper-inset);
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: 14px;
+  padding: 14px 16px;
   max-height: 38vh;
   overflow-y: auto;
 }
@@ -591,6 +692,9 @@ details[open] > .linaw-reading-summary::before {
   padding: 6px 10px;
   border-radius: 4px;
 }
+.linaw-content-card.is-working {
+  opacity: 0.65;
+}
 .linaw-error {
   margin: 0;
   font-size: 0.85rem;
@@ -602,8 +706,8 @@ details[open] > .linaw-reading-summary::before {
   color: var(--color-slate-500);
 }
 .linaw-action-bar {
-  display: grid;
-  grid-template-columns: 1fr 1.4fr;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
   margin-top: 4px;
   align-items: stretch;
@@ -613,6 +717,7 @@ details[open] > .linaw-reading-summary::before {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  width: 100%;
   font-family: var(--font-ui);
   font-size: 0.85rem;
   font-weight: 500;
@@ -632,8 +737,50 @@ details[open] > .linaw-reading-summary::before {
 .linaw-listen-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
+}
+.linaw-voice-disclosure {
+  background-color: var(--color-paper);
+  border: 1px solid var(--color-paper-inset);
+  border-radius: 10px;
+  padding: 0;
+}
+.linaw-voice-summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-muted);
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  user-select: none;
+}
+.linaw-voice-summary::-webkit-details-marker { display: none; }
+.linaw-voice-summary::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 5px solid var(--color-ink-muted);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  margin-right: 8px;
+  transition: transform 150ms ease;
+}
+details[open] > .linaw-voice-summary::before {
+  transform: rotate(90deg);
+}
+.linaw-voice-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 12px 12px;
+  border-top: 1px solid var(--color-paper-inset);
+  padding-top: 10px;
 }
 .linaw-pace-segment {
   width: 100%;
@@ -649,6 +796,8 @@ details[open] > .linaw-reading-summary::before {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  order: -1;
+  font-weight: 600;
   font-family: var(--font-ui);
   font-size: 0.85rem;
   font-weight: 500;
@@ -696,11 +845,11 @@ details[open] > .linaw-reading-summary::before {
   color: var(--color-white);
   border: 1px solid var(--color-brand-hover);
   border-radius: 9999px;
-  padding: 8px 16px;
+  padding: 10px 20px;
   min-height: 44px;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  box-shadow: 0 8px 24px rgb(26 24 20 / 0.15);
+  box-shadow: 0 12px 28px rgb(26 24 20 / 0.22);
   cursor: pointer;
 }
 `;
@@ -752,14 +901,17 @@ const state: HostState = {
   replaceOnPage: false,
 };
 
-function ensureHost(): ShadowRoot {
-  let host = document.getElementById(HOST_ID) as HTMLElement | null;
-  if (!host) {
-    host = document.createElement("div");
-    host.id = HOST_ID;
-    host.setAttribute("data-linaw", "companion");
-    document.documentElement.appendChild(host);
-  }
+function ensureHost(): ShadowRoot | null {
+  try {
+    const docRoot = document.documentElement;
+    if (!docRoot) return null;
+    let host = document.getElementById(HOST_ID) as HTMLElement | null;
+    if (!host) {
+      host = document.createElement("div");
+      host.id = HOST_ID;
+      host.setAttribute("data-linaw", "companion");
+      docRoot.appendChild(host);
+    }
   const shadow =
     host.shadowRoot ?? host.attachShadow({ mode: "open" });
   if (!shadow.querySelector("style[data-linaw-style]")) {
@@ -771,6 +923,9 @@ function ensureHost(): ShadowRoot {
   state.host = host;
   state.shadow = shadow;
   return shadow;
+  } catch {
+    return null;
+  }
 }
 
 function calculatePopoverPosition(rect: DOMRect): { top: number; left: number } {
@@ -805,7 +960,13 @@ function calculatePopoverPosition(rect: DOMRect): { top: number; left: number } 
 }
 
 function renderPanel() {
-  const shadow = ensureHost();
+  let shadow: ShadowRoot | null = null;
+  try {
+    shadow = ensureHost();
+  } catch {
+    return;
+  }
+  if (!shadow) return;
   let mount = shadow.querySelector("#linaw-mount") as HTMLElement | null;
   if (!mount) {
     mount = document.createElement("div");
@@ -823,7 +984,11 @@ function renderPanel() {
   }
 
   if (!state.root) {
-    state.root = createRoot(mount);
+    try {
+      state.root = createRoot(mount);
+    } catch {
+      return;
+    }
   }
 
   const positionStyle: Record<string, string> = state.position
@@ -886,7 +1051,13 @@ function renderPanel() {
 }
 
 function updateFab() {
-  const shadow = ensureHost();
+  let shadow: ShadowRoot | null = null;
+  try {
+    shadow = ensureHost();
+  } catch {
+    return;
+  }
+  if (!shadow) return;
   if (state.disabled || state.panelOpen) {
     state.fab?.remove();
     state.fab = null;
@@ -894,7 +1065,7 @@ function updateFab() {
   }
 
   const selection = getCurrentSelectionText();
-  if (!selection) {
+  if (!selection || selection.length < MIN_SELECTION_CHARS) {
     state.fab?.remove();
     state.fab = null;
     return;
@@ -917,30 +1088,26 @@ function updateFab() {
 }
 
 async function handleTextSelection() {
+  // Grammarly-style: selecting text never opens the panel on its own.
+  // It stages the text (side panel reads it) and raises the
+  // "Clarify with Linaw" pill. The reader opens the panel explicitly
+  // via the pill, the right-click menu, or the toolbar icon.
   if (state.disabled) return;
-  const sel = window.getSelection();
+  let sel: Selection | null = null;
+  try {
+    sel = window.getSelection();
+  } catch {
+    return;
+  }
   if (!sel || sel.isCollapsed || sel.rangeCount === 0) return;
   const selection = sel.toString().replace(/\s+/g, " ").trim();
-  if (selection.length >= 20) {
-    const range = sel.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-    if (rect.width > 0 || rect.height > 0) {
-      state.position = calculatePopoverPosition(rect);
-    }
-    try {
-      await chrome.runtime.sendMessage({
-        type: "LINAW_TEXT_SELECTED",
-        text: selection,
-      });
-    } catch {
-      // Background worker might be idle or asleep
-    }
-    await chrome.storage.local.set({ pendingSourceText: selection });
-    state.replaceOnPage = selectionInsideArticle(
-      findMainContentRoot(document),
-      window.getSelection()?.anchorNode ?? null,
-    );
-    await openWithSource(selection);
+  if (selection.length < MIN_SELECTION_CHARS) return;
+  await safeSendSelection(selection);
+  await safeStorePending(selection);
+  try {
+    updateFab();
+  } catch {
+    // FAB is optional.
   }
 }
 
@@ -950,31 +1117,46 @@ async function openWithSource(source: string) {
   if (!trimmed) return;
   state.source = trimmed;
   state.panelOpen = true;
-  state.preferences = await loadPreferences();
-  renderPanel();
-  updateFab();
+  try {
+    state.preferences = await loadPreferences();
+  } catch {
+    // Keep last known preferences when storage is blocked.
+  }
+  try {
+    renderPanel();
+  } catch {
+    state.panelOpen = false;
+    return;
+  }
+  try {
+    updateFab();
+  } catch {
+    // FAB is optional; panel is already open.
+  }
 }
 
 async function openWithSelection() {
-  const sel = window.getSelection();
+  let sel: Selection | null = null;
+  try {
+    sel = window.getSelection();
+  } catch {
+    sel = null;
+  }
   const selection = getCurrentSelectionText();
-  if (!selection) return;
+  if (!selection || selection.length < MIN_SELECTION_CHARS) return;
   if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
-    const rect = sel.getRangeAt(0).getBoundingClientRect();
-    if (rect.width > 0 || rect.height > 0) {
-      state.position = calculatePopoverPosition(rect);
+    try {
+      const rect = sel.getRangeAt(0).getBoundingClientRect();
+      if (rect.width > 0 || rect.height > 0) {
+        state.position = calculatePopoverPosition(rect);
+      }
+    } catch {
+      state.position = null;
     }
   }
-  if (selection.length >= 20) {
-    try {
-      await chrome.runtime.sendMessage({
-        type: "LINAW_TEXT_SELECTED",
-        text: selection,
-      });
-    } catch {
-      // Ignore
-    }
-    await chrome.storage.local.set({ pendingSourceText: selection });
+  if (selection.length >= MIN_SELECTION_CHARS) {
+    await safeSendSelection(selection);
+    await safeStorePending(selection);
   }
   state.replaceOnPage = selectionInsideArticle(
     findMainContentRoot(document),
@@ -989,69 +1171,212 @@ async function openWithSelection() {
  */
 async function maybeAutoAdapt() {
   if (state.disabled) return;
-  state.preferences = await loadPreferences();
-  if (!isAutoAdaptEnabled(state.preferences)) return;
-  const text = extractMainReadableText();
-  if (!text) return;
-  state.replaceOnPage = findMainContentRoot(document) != null;
-  state.position = null;
-  await chrome.storage.local.set({ pendingSourceText: text });
   try {
-    await chrome.runtime.sendMessage({
-      type: "LINAW_TEXT_SELECTED",
-      text,
-    });
+    state.preferences = await loadPreferences();
   } catch {
-    // service worker may be starting up
+    return;
   }
+  if (!isAutoAdaptEnabled(state.preferences)) return;
+  let text = "";
+  try {
+    text = extractMainReadableText();
+  } catch {
+    return;
+  }
+  if (!text) return;
+  try {
+    state.replaceOnPage = findMainContentRoot(document) != null;
+  } catch {
+    state.replaceOnPage = false;
+  }
+  state.position = null;
+  await safeStorePending(text);
+  await safeSendSelection(text);
   await openWithSource(text);
 }
 
+function closePanel() {
+  state.panelOpen = false;
+  state.position = null;
+  try {
+    renderPanel();
+  } catch {
+    // Panel already torn down.
+  }
+}
+
+/** Live-sync prefs + disabled sites so sidepanel/web changes apply without reload (P0-2). */
+function startPreferenceStorageSync(): void {
+  try {
+    if (typeof chrome === "undefined" || !chrome.storage?.onChanged) return;
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== "local" || !changes["linaw.preferences.v1"]) return;
+      void (async () => {
+        try {
+          const next = await loadPreferences();
+          const wasDisabled = state.disabled;
+          const origin = window.location.origin;
+          const nowDisabled = next.disabledOrigins.includes(origin);
+          state.preferences = next;
+          state.disabled = nowDisabled;
+          if (nowDisabled && !wasDisabled) {
+            try {
+              releasePageReadingHold();
+              clearPageReading();
+            } catch {
+              // Page already clean.
+            }
+            closePanel();
+            try {
+              updateFab();
+            } catch {
+              // Optional.
+            }
+            return;
+          }
+          if (state.panelOpen) {
+            try {
+              renderPanel();
+            } catch {
+              // Keep old panel on render failure.
+            }
+          }
+        } catch {
+          // Storage read failed; keep last known state.
+        }
+      })();
+    });
+  } catch {
+    // Storage sync unavailable — bootstrap values still work.
+  }
+}
+
 async function bootstrap() {
-  const origin = window.location.origin;
-  state.disabled = await isOriginDisabled(origin);
+  if (bootstrapped) return;
+  bootstrapped = true;
+  try {
+    if (isRestrictedPage()) return;
+  } catch {
+    return;
+  }
+
+  let origin = "";
+  try {
+    origin = window.location.origin;
+  } catch {
+    return;
+  }
+
+  try {
+    state.disabled = await isOriginDisabled(origin);
+  } catch {
+    state.disabled = false;
+  }
 
   // Preference sync with the Linaw web app (localhost) even when this origin is disabled.
-  startLinawPreferenceSync();
+  try {
+    startLinawPreferenceSync();
+  } catch {
+    // Web sync is optional.
+  }
+  startPreferenceStorageSync();
 
   // If disabled, do not attach listeners or perform automatic extraction
   if (state.disabled) {
     return;
   }
 
-  state.preferences = await loadPreferences();
-  syncPageReading(await getReadingComfort());
+  try {
+    state.preferences = await loadPreferences();
+  } catch {
+    state.preferences = DEFAULT_PREFERENCES;
+  }
+  try {
+    syncPageReading(await getReadingComfort());
+  } catch {
+    // Page styling is optional.
+  }
 
   // Listen for clicks outside the companion card to dismiss it
   document.addEventListener("mousedown", (e: MouseEvent) => {
     if (!state.panelOpen) return;
-    if (state.host && e.composedPath().includes(state.host)) {
+    try {
+      if (state.host && e.composedPath().includes(state.host)) {
+        return;
+      }
+    } catch {
       return;
     }
-    state.panelOpen = false;
-    state.position = null;
-    renderPanel();
+    closePanel();
   });
 
-  // Listen for text selection (mouseup); if length >= 20, position popover and adapt
+  // Listen for text selection (mouseup); stages the text and raises the pill.
+  // The panel only opens on explicit action: pill, context menu, toolbar.
   document.addEventListener("mouseup", (e: MouseEvent) => {
-    if (state.host && e.composedPath().includes(state.host)) {
+    try {
+      if (state.host && e.composedPath().includes(state.host)) {
+        return;
+      }
+    } catch {
       return;
     }
-    void handleTextSelection();
+    void handleTextSelection().catch(() => {
+      // Selection handling never breaks the page.
+    });
   });
 
   document.addEventListener("selectionchange", () => {
-    updateFab();
+    try {
+      updateFab();
+    } catch {
+      // FAB is optional.
+    }
   });
 
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message?.type === "linaw.adaptSelection") {
-      void openWithSelection().then(() => sendResponse({ ok: true }));
-      return true;
-    }
-    return undefined;
+  // Escape closes the panel and returns focus to the page.
+  document.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (e.key !== "Escape" || !state.panelOpen || e.defaultPrevented) return;
+    closePanel();
   });
+
+  // Keep an anchored panel inside the viewport when the window resizes.
+  window.addEventListener("resize", () => {
+    if (!state.panelOpen || !state.position) return;
+    try {
+      const cardWidth = Math.min(384, window.innerWidth - 32);
+      const margin = 16;
+      let left = Math.min(
+        state.position.left,
+        window.scrollX + window.innerWidth - cardWidth - margin,
+      );
+      left = Math.max(window.scrollX + margin, left);
+      let top = Math.min(
+        state.position.top,
+        window.scrollY + window.innerHeight - margin - 100,
+      );
+      top = Math.max(window.scrollY + margin, top);
+      if (left !== state.position.left || top !== state.position.top) {
+        state.position = { top, left };
+        renderPanel();
+      }
+    } catch {
+      // Keep the old position on failure.
+    }
+  });
+
+  try {
+    chrome.runtime?.onMessage?.addListener((message, _sender, sendResponse) => {
+      if (message?.type === "linaw.adaptSelection") {
+        void openWithSelection()
+          .then(() => sendResponse({ ok: true }))
+          .catch(() => sendResponse({ ok: false }));
+        return true;
+      }
+      return undefined;
+    });
+  } catch {
+    // Messaging unavailable — toolbar fallback disabled on this page.
+  }
 
   // If browserBehavior is auto, extract readable article/main text on page load as default content;
   // if "manual", strictly wait for user selection.

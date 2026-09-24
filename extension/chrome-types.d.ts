@@ -32,6 +32,10 @@ declare namespace chrome {
   };
 
   const runtime: {
+    id?: string;
+    onInstalled: {
+      addListener(callback: (details: { reason: string }) => void): void;
+    };
     onMessage: {
       addListener(
         callback: (
@@ -68,6 +72,23 @@ declare namespace chrome {
     };
   };
 
+
+  const contextMenus: {
+    create(options: {
+      id: string;
+      title: string;
+      contexts: string[];
+    }): Promise<string | number>;
+    removeAll(): Promise<void>;
+    onClicked: {
+      addListener(
+        callback: (
+          info: { menuItemId: string | number; selectionText?: string },
+          tab?: ChromeTab,
+        ) => void,
+      ): void;
+    };
+  };
 
   const action: {
     onClicked: {

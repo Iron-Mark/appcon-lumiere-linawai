@@ -36,12 +36,11 @@ function MobileNavBar() {
         title="Linaw"
         className="flex min-h-11 min-w-0 cursor-pointer items-center gap-2.5 overflow-hidden rounded-lg px-1 outline-none transition-colors duration-200 ease-out hover:bg-paper-inset/80 focus-visible:ring-2 focus-visible:ring-focus motion-reduce:transition-none"
       >
-        <span
-          aria-hidden
-          className="flex size-8 shrink-0 items-center justify-center rounded-md bg-ink text-sm font-semibold text-paper-raised"
-        >
-          L
-        </span>
+        <img
+          src="/linaw-logo-transparent.png"
+          alt="Linaw AI logo"
+          className="size-8 shrink-0 object-contain"
+        />
         <span className="whitespace-nowrap text-base font-semibold tracking-tight text-ink">
           Linaw
         </span>

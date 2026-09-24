@@ -65,7 +65,20 @@ import {
   splitReadingLines,
 } from "../reading-comfort/focus-line";
 
-const WEB_APP_READ_URL = "https://appcon-lumiere-linawai.vercel.app/read";
+const LINAW_PROD_READ_URL = "https://appcon-lumiere-linawai.vercel.app/read";
+
+/** Open the Linaw app the companion is actually talking to: local dev stays local. */
+function webAppReadUrl(): string {
+  try {
+    const origin = window.location.origin;
+    if (origin === "http://localhost:3000" || origin === "http://127.0.0.1:3000") {
+      return `${origin}/read`;
+    }
+  } catch {
+    // Fall through to production.
+  }
+  return LINAW_PROD_READ_URL;
+}
 
 export type PanelProps = {
   source: string;
@@ -324,6 +337,7 @@ export function Panel({
   );
   const [listenVoices, setListenVoices] = useState<ListenVoice[]>([]);
   const [listenNote, setListenNote] = useState<string | null>(null);
+  const [pageFeedback, setPageFeedback] = useState<string | null>(null);
 
   const sourceRef = useRef(source);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -331,6 +345,8 @@ export function Panel({
   const listenRef = useRef(listenSettings);
   const voicesRef = useRef(listenVoices);
   const listenGen = useRef(0);
+  const adaptGen = useRef(0);
+  const prefsDebounce = useRef<number | null>(null);
 
   sourceRef.current = source;
   comfortRef.current = comfort;
@@ -343,6 +359,8 @@ export function Panel({
     Boolean(origin) && disabledOrigins.includes(origin);
 
   useEffect(() => {
+    // Storage rejects when the extension was just reloaded (old tab).
+    // Swallow it: the panel still renders, just with defaults.
     void getReadingComfort().then((saved) => {
       comfortRef.current = saved;
       setComfort(saved);
@@ -353,11 +371,15 @@ export function Panel({
       }
       syncPageReading(saved);
       setPageOn(isPageReadingActive());
+    }).catch(() => {
+      // Extension reloaded under this tab — refresh the page for full function.
     });
   }, [isCurrentOriginDisabled]);
 
   useEffect(() => {
-    void getListenSettings().then(setListenSettings);
+    void getListenSettings().then(setListenSettings).catch(() => {
+      // Extension reloaded under this tab — voices stay default.
+    });
     const refresh = () => {
       const listed = rankListenVoices(
         window.speechSynthesis
@@ -390,10 +412,14 @@ export function Panel({
   const runAdapt = async (nextPrefs: Preferences, nextSource: string) => {
     const trimmed = nextSource.trim();
     if (!trimmed) {
+      adaptGen.current += 1;
       setError("Nothing to clarify yet. Select text on the page first.");
       setResponse(null);
+      setWorking(false);
       return;
     }
+    const gen = adaptGen.current + 1;
+    adaptGen.current = gen;
     setWorking(true);
     setError(null);
     setView("adapted");
@@ -404,12 +430,14 @@ export function Panel({
         source: trimmed,
         preferences: nextPrefs,
       });
+      if (gen !== adaptGen.current) return;
       setResponse(result);
       if (shouldReplacePageWords(result.adapter, replaceOnPage)) {
         const root = findMainContentRoot(document);
         if (root) showClarifiedText(root, result.adaptedText);
       }
     } catch (err) {
+      if (gen !== adaptGen.current) return;
       const message =
         err instanceof AdaptRequestError && err.message.trim()
           ? err.message.trim()
@@ -417,11 +445,16 @@ export function Panel({
       setError(message);
       setResponse(null);
     } finally {
-      setWorking(false);
+      if (gen === adaptGen.current) setWorking(false);
     }
   };
 
   useEffect(() => {
+    if (prefsDebounce.current) {
+      window.clearTimeout(prefsDebounce.current);
+      prefsDebounce.current = null;
+    }
+    setPageFeedback(null);
     if (!isCurrentOriginDisabled) {
       void runAdapt(preferences, source);
     }
@@ -429,7 +462,10 @@ export function Panel({
   }, [source, isCurrentOriginDisabled]);
 
   useEffect(() => {
-    return () => stopSpeech();
+    return () => {
+      if (prefsDebounce.current) window.clearTimeout(prefsDebounce.current);
+      stopSpeech();
+    };
   }, []);
 
   function spokenUtterance(text: string): SpeechSynthesisUtterance {
@@ -483,6 +519,10 @@ export function Panel({
           return;
         }
         setListening(false);
+      }).catch(() => {
+        if (gen !== listenGen.current) return;
+        setListenNote("Linaw voice was blocked — using device voice.");
+        listenWithDevice();
       });
       return;
     }
@@ -562,10 +602,26 @@ export function Panel({
 
   async function updatePrefs(patch: Partial<Preferences>) {
     const next = { ...preferences, ...patch };
-    const saved = await savePreferences(next);
-    onPreferencesChange(saved);
+    let saved: Preferences = next;
+    try {
+      saved = await savePreferences(next);
+    } catch {
+      // Storage dead (extension reloaded) — clarify with in-memory prefs.
+    }
+    try {
+      onPreferencesChange(saved);
+    } catch {
+      // Host torn down.
+    }
     if (!isCurrentOriginDisabled) {
-      await runAdapt(saved, sourceRef.current);
+      // Debounce: rapid dropdown flips restyle cheaply but clarify once.
+      if (prefsDebounce.current) window.clearTimeout(prefsDebounce.current);
+      const snapshot = saved;
+      const src = sourceRef.current;
+      prefsDebounce.current = window.setTimeout(() => {
+        prefsDebounce.current = null;
+        void runAdapt(snapshot, src);
+      }, 250);
     }
   }
 
@@ -573,22 +629,40 @@ export function Panel({
     const next = normalizeReadingComfort({ ...comfortRef.current, ...patch });
     comfortRef.current = next;
     setComfort(next);
-    const saved = await saveReadingComfort(patch, next);
+    setPageFeedback(null);
+    let saved = next;
+    try {
+      saved = await saveReadingComfort(patch, next);
+    } catch {
+      // Storage dead (extension reloaded) — apply in-memory only.
+    }
     comfortRef.current = saved;
     setComfort(saved);
     const touchesPage = Object.keys(patch).some((key) => key !== "listenPace");
     if (!touchesPage || isCurrentOriginDisabled) return;
     releasePageReadingHold();
-    syncPageReading(saved);
-    setPageOn(isPageReadingActive());
+    try {
+      syncPageReading(saved);
+    } catch {
+      // Page DOM not styleable here.
+    }
+    try {
+      setPageOn(isPageReadingActive());
+    } catch {
+      // Host torn down.
+    }
   }
 
   async function handleEnableSite(site: string) {
-    await enableOrigin(site);
-    const updated = await getPreferences();
-    onPreferencesChange(updated);
-    if (site === origin) {
-      await runAdapt(updated, sourceRef.current);
+    try {
+      await enableOrigin(site);
+      const updated = await getPreferences();
+      onPreferencesChange(updated);
+      if (site === origin) {
+        await runAdapt(updated, sourceRef.current);
+      }
+    } catch {
+      // Storage dead (extension reloaded) — refresh the page and retry.
     }
   }
 
@@ -615,11 +689,14 @@ export function Panel({
     view === "adapted" &&
     (preferences.detail === "key_points" || bulletItems.length > 1);
 
-  const docTitle =
+  const rawTitle =
     response?.meaningMap?.sourceIntent ||
     (typeof document !== "undefined" && document.title
       ? document.title
       : "Selected content");
+  // Site chrome titles (e.g. "YouTube") are not content titles — cap length.
+  const docTitle =
+    rawTitle.length > 120 ? `${rawTitle.slice(0, 117).trimEnd()}…` : rawTitle;
 
   const readingStyle = readingTextStyleVars(comfort) as CSSProperties;
 
@@ -701,6 +778,7 @@ export function Panel({
           className={`linaw-gear-btn ${settingsOpen ? "is-active" : ""}`}
           onClick={() => setSettingsOpen((open) => !open)}
           aria-label="Toggle settings"
+          aria-expanded={settingsOpen}
           title="Adjust preferences"
         >
           ⚙
@@ -820,7 +898,7 @@ export function Panel({
             <a
               id="linaw-webapp-link"
               className="linaw-text-link"
-              href={WEB_APP_READ_URL}
+              href={webAppReadUrl()}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -856,7 +934,7 @@ export function Panel({
         <details className="linaw-reading-disclosure">
           <summary className="linaw-reading-summary">Reading</summary>
           <div className="linaw-reading-controls">
-            <div className="linaw-comfort-row">
+            <div className="linaw-page-actions">
               <button
                 type="button"
                 id="linaw-on-this-page"
@@ -864,11 +942,21 @@ export function Panel({
                 className={`linaw-segment-btn ${pageOn ? "is-active" : ""}`}
                 aria-pressed={pageOn}
                 onClick={() => {
-                  syncPageReading(comfortRef.current, { force: true });
-                  setPageOn(isPageReadingActive());
+                  try {
+                    syncPageReading(comfortRef.current, { force: true });
+                    const on = isPageReadingActive();
+                    setPageOn(on);
+                    setPageFeedback(
+                      on
+                        ? "✓ Reading look applied to this page."
+                        : "No article found on this page to style.",
+                    );
+                  } catch {
+                    setPageFeedback("Could not style this page.");
+                  }
                 }}
               >
-                On this page
+                {pageOn ? "✓ On this page" : "On this page"}
               </button>
               <button
                 type="button"
@@ -876,13 +964,23 @@ export function Panel({
                 name="page-as-it-was"
                 className="linaw-segment-btn"
                 onClick={() => {
-                  holdOffPageReading();
+                  try {
+                    holdOffPageReading();
+                  } catch {
+                    // Page already plain.
+                  }
                   setPageOn(false);
+                  setPageFeedback("Page restored to its original look.");
                 }}
               >
                 Page as it was
               </button>
             </div>
+            {pageFeedback ? (
+              <p className="linaw-page-feedback" role="status">
+                {pageFeedback}
+              </p>
+            ) : null}
             <Segmented<TypeSize>
               name="type-size"
               label="Type size"
@@ -993,7 +1091,7 @@ export function Panel({
 
           <h2 className="linaw-doc-title">{docTitle}</h2>
 
-          <div className="linaw-content-card linaw-reading-text" style={readingStyle}>
+          <div className={`linaw-content-card linaw-reading-text${working ? " is-working" : ""}`} style={readingStyle} aria-busy={working}>
             {error ? (
               <p className="linaw-error">{error}</p>
             ) : working && !response ? (
@@ -1008,11 +1106,21 @@ export function Panel({
               />
             )}
 
+            {working && response && !error ? (
+              <p className="linaw-loading" role="status">Clarifying with your new settings…</p>
+            ) : null}
+
             {response?.overallStatus === "warning" && (
               <p className="linaw-check-warning">
                 ⚠ Important condition may have changed. Review source above.
               </p>
             )}
+
+            {replaceOnPage && response?.adapter === "fixture" && !error ? (
+              <p className="linaw-check-warning">
+                Offline example — the page was not replaced. Start Linaw on this computer for live replacement.
+              </p>
+            ) : null}
           </div>
         </section>
       )}
@@ -1030,6 +1138,8 @@ export function Panel({
               void navigator.clipboard.writeText(textToCopy).then(() => {
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
+              }).catch(() => {
+                setError("Copy was blocked by the browser — select the text manually.");
               });
             }}
           >
@@ -1074,6 +1184,9 @@ export function Panel({
           </button>
 
           <div className="linaw-listen-group">
+            <details className="linaw-voice-disclosure">
+              <summary className="linaw-voice-summary">Voice & pace</summary>
+              <div className="linaw-voice-controls">
             <label className="linaw-settings-label" htmlFor="linaw-listen-voice">
               Voice
             </label>
@@ -1133,6 +1246,8 @@ export function Panel({
                 </button>
               ))}
             </div>
+              </div>
+            </details>
             <button
               type="button"
               id="linaw-listen-btn"

@@ -18,6 +18,7 @@
 # production
 /build
 /extension/dist
+/public/linaw-chrome-extension.zip
 
 # misc
 .DS_Store

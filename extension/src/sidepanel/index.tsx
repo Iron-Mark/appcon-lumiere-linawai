@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Panel } from "../content/Panel";
 import { PANEL_CSS } from "../content/index";
@@ -16,10 +16,26 @@ function SidePanelApp() {
   const [preferences, setPreferences] =
     useState<ExtensionPreferences>(DEFAULT_PREFERENCES);
   const [source, setSource] = useState<string>("");
+  const [sourceOrigin, setSourceOrigin] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const loadGen = useRef(0);
+
+  /** Pending text may be a legacy bare string or a tagged { text, origin }. */
+  function parsePending(value: unknown): { text: string; origin: string } {
+    if (typeof value === "string") return { text: value.trim(), origin: "" };
+    if (value && typeof value === "object") {
+      const rec = value as Record<string, unknown>;
+      return {
+        text: typeof rec.text === "string" ? rec.text.trim() : "",
+        origin: typeof rec.origin === "string" ? rec.origin : "",
+      };
+    }
+    return { text: "", origin: "" };
+  }
 
   async function queryActiveTabOrigin(): Promise<string> {
     try {
+      if (typeof chrome === "undefined" || !chrome.tabs?.query) return "";
       const [tab] = await chrome.tabs.query({
         active: true,
         currentWindow: true,
@@ -39,68 +55,119 @@ function SidePanelApp() {
   }
 
   async function loadState() {
+    const gen = loadGen.current + 1;
+    loadGen.current = gen;
     const currentOrigin = await queryActiveTabOrigin();
+    if (gen !== loadGen.current) return;
     setOrigin(currentOrigin);
 
-    const prefs = await getPreferences();
-    setPreferences(prefs);
-
-    const storage = await chrome.storage.local.get("pendingSourceText");
-    const pending = storage.pendingSourceText;
-    if (typeof pending === "string" && pending.trim()) {
-      setSource(pending.trim());
-    } else {
-      setSource("");
+    try {
+      const prefs = await getPreferences();
+      if (gen !== loadGen.current) return;
+      setPreferences(prefs);
+    } catch {
+      // Keep defaults when storage is blocked.
     }
-    setLoading(false);
+
+    try {
+      const storage = await chrome.storage.local.get("pendingSourceText");
+      if (gen !== loadGen.current) return;
+      const pending = parsePending(storage.pendingSourceText);
+      setSource(pending.text);
+      setSourceOrigin(pending.origin);
+    } catch {
+      if (gen === loadGen.current) setSource("");
+    }
+    if (gen === loadGen.current) setLoading(false);
   }
 
   useEffect(() => {
-    void loadState();
+    loadGen.current += 1;
+    void loadState().catch(() => setLoading(false));
 
-    if (chrome.tabs?.onActivated) {
-      chrome.tabs.onActivated.addListener(() => {
-        void loadState();
-      });
-    }
-
-    if (chrome.tabs?.onUpdated) {
-      chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => {
-        if (changeInfo.status === "complete" || changeInfo.url) {
-          void loadState();
+    const onActivated = () => {
+      void loadState().catch(() => undefined);
+    };
+    const onUpdated = (
+      _tabId: number,
+      changeInfo: { status?: string; url?: string },
+    ) => {
+      if (changeInfo.status === "complete" || changeInfo.url) {
+        void loadState().catch(() => undefined);
+      }
+    };
+    const onStorage = (
+      changes: Record<string, { newValue?: unknown }>,
+      area: string,
+    ) => {
+      if (area === "local") {
+        if (changes["linaw.preferences.v1"]) {
+          void getPreferences()
+            .then(setPreferences)
+            .catch(() => undefined);
         }
-      });
-    }
-
-    if (chrome.storage?.onChanged) {
-      chrome.storage.onChanged.addListener((changes, area) => {
-        if (area === "local") {
-          if (changes["linaw.preferences.v1"]) {
-            void getPreferences().then(setPreferences);
-          }
-          if (changes.pendingSourceText) {
-            const nextText = changes.pendingSourceText.newValue;
-            if (typeof nextText === "string") {
-              setSource(nextText.trim());
-            }
-          }
+        if (changes.pendingSourceText) {
+          const pending = parsePending(changes.pendingSourceText.newValue);
+          setSource(pending.text);
+          setSourceOrigin(pending.origin);
         }
-      });
+      }
+    };
+
+    try {
+      chrome.tabs?.onActivated?.addListener(onActivated);
+    } catch {
+      // Tabs events unavailable.
     }
+    try {
+      chrome.tabs?.onUpdated?.addListener(onUpdated);
+    } catch {
+      // Tabs events unavailable.
+    }
+    try {
+      chrome.storage?.onChanged?.addListener(onStorage);
+    } catch {
+      // Storage events unavailable.
+    }
+    return () => {
+      try {
+        (chrome.tabs?.onActivated as unknown as { removeListener?: (cb: () => void) => void })?.removeListener?.(onActivated);
+      } catch {
+        // Ignore cleanup failure.
+      }
+      try {
+        (chrome.tabs?.onUpdated as unknown as { removeListener?: (cb: (...args: never[]) => void) => void })?.removeListener?.(onUpdated as (...args: never[]) => void);
+      } catch {
+        // Ignore cleanup failure.
+      }
+      try {
+        (chrome.storage?.onChanged as unknown as { removeListener?: (cb: (...args: never[]) => void) => void })?.removeListener?.(onStorage as (...args: never[]) => void);
+      } catch {
+        // Ignore cleanup failure.
+      }
+    };
   }, []);
 
   async function handleToggleSite() {
     if (!origin) return;
-    await toggleOriginDisabled(origin);
-    const updated = await getPreferences();
-    setPreferences(updated);
+    try {
+      await toggleOriginDisabled(origin);
+      const updated = await getPreferences();
+      setPreferences(updated);
+    } catch {
+      // Storage dead (extension reloaded) — reopen the panel and retry.
+    }
   }
 
   async function handleDisableSite() {
     if (!origin) return;
-    await disableOrigin(origin);
-    const updated = await getPreferences();
-    setPreferences(updated);
+    try {
+      await disableOrigin(origin);
+      const updated = await getPreferences();
+      setPreferences(updated);
+    } catch {
+      // Storage dead (extension reloaded) — reopen the panel and retry.
+    }
   }
 
   const isCurrentOriginDisabled =
@@ -121,16 +188,244 @@ function SidePanelApp() {
       <style>{`
         body {
           margin: 0;
-          padding: 12px;
-          background-color: #ffffff;
+          padding: 0;
+          background-color: #faf6f0;
           font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .linaw-sidepanel-container {
+          max-width: 480px;
+          margin: 0 auto;
+          padding: 16px 16px 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
         }
         .linaw-sidepanel-container .linaw-panel {
           border: none;
           box-shadow: none;
           padding: 0;
         }
+        .linaw-home-header {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 2px 2px 0;
+        }
+        .linaw-home-mark {
+          width: 30px;
+          height: 30px;
+          border-radius: 9999px;
+          background: radial-gradient(circle at 35% 35%, #6b7a3f, #4f5d2f);
+          box-shadow: 0 1px 3px rgb(26 24 20 / 0.25);
+          flex-shrink: 0;
+        }
+        .linaw-home-titles {
+          display: flex;
+          flex-direction: column;
+          line-height: 1.25;
+        }
+        .linaw-home-name {
+          margin: 0;
+          font-size: 1rem;
+          font-weight: 700;
+          letter-spacing: -0.01em;
+          color: #1a1814;
+        }
+        .linaw-home-sub {
+          margin: 0;
+          font-size: 0.72rem;
+          font-weight: 500;
+          color: #5c564c;
+        }
+        .linaw-home-footer {
+          display: flex;
+          justify-content: center;
+          padding-top: 4px;
+          border-top: 1px solid #e8dfd2;
+        }
+        .linaw-home-link {
+          font-size: 0.78rem;
+          font-weight: 600;
+          color: #4f5d2f;
+          text-decoration: none;
+          padding: 8px 12px;
+          border-radius: 8px;
+        }
+        .linaw-home-link:hover {
+          background-color: #e4ebd4;
+          text-decoration: underline;
+        }
+        .linaw-source-note {
+          margin: 0;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: #5c564c;
+          background-color: #ffffff;
+          border: 1px dashed #b9ac93;
+          border-radius: 10px;
+          padding: 8px 12px;
+        }
+        .linaw-sidepanel-container .linaw-page-actions .linaw-segment-btn {
+          font-size: 0.72rem;
+          padding: 8px 6px;
+        }
+        /* Side-panel-only visibility pass (floating card untouched):
+           stronger borders, darker text, unmistakable active states. */
+        .linaw-sidepanel-container .linaw-settings-label {
+          color: #292524;
+          font-size: 0.78rem;
+          font-weight: 700;
+        }
+        .linaw-sidepanel-container .linaw-select {
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: #1a1814;
+          background-color: #ffffff;
+          border-color: #b9ac93;
+          padding: 8px 10px;
+          max-width: 62%;
+        }
+        .linaw-sidepanel-container .linaw-segment-btn {
+          color: #1a1814;
+          background-color: #ffffff;
+          border-color: #a89a7c;
+          box-shadow: 0 1px 2px rgb(26 24 20 / 0.1);
+          font-size: 0.78rem;
+          font-weight: 600;
+        }
+        .linaw-sidepanel-container .linaw-segment-btn.is-active {
+          background-color: #4f5d2f;
+          border-color: #4f5d2f;
+          color: #ffffff;
+        }
+        .linaw-sidepanel-container .linaw-copy-btn {
+          background-color: #ffffff;
+          border-color: #b9ac93;
+          color: #1a1814;
+          font-weight: 600;
+        }
+        .linaw-sidepanel-container .linaw-toggle-original-btn {
+          color: #4f5d2f;
+          font-size: 0.8rem;
+          font-weight: 700;
+          background-color: #ffffff;
+          border: 1px solid #6b7a3f;
+          border-radius: 9999px;
+          padding: 8px 14px;
+        }
+        .linaw-sidepanel-container .linaw-reading-summary,
+        .linaw-sidepanel-container .linaw-voice-summary {
+          color: #1a1814;
+          font-size: 0.8rem;
+          min-height: 48px;
+        }
+        .linaw-sidepanel-container .linaw-text-link {
+          color: #4f5d2f;
+          font-size: 0.78rem;
+          font-weight: 600;
+          text-decoration: underline;
+          text-underline-offset: 2px;
+        }
+        .linaw-sidepanel-container .linaw-reading-controls,
+        .linaw-sidepanel-container .linaw-voice-controls {
+          padding-top: 8px;
+        }
+        .linaw-sidepanel-container .linaw-reading-badge {
+          color: #334155;
+        }
+        /* Disclosure headers must scream \"button\": bordered white card,
+           bold dark label, green chevron chip on the right. */
+        .linaw-sidepanel-container .linaw-reading-disclosure,
+        .linaw-sidepanel-container .linaw-voice-disclosure {
+          background-color: #ffffff;
+          border: 1.5px solid #6b7a3f;
+          border-radius: 12px;
+          box-shadow: 0 1px 3px rgb(26 24 20 / 0.12);
+        }
+        .linaw-sidepanel-container .linaw-reading-summary,
+        .linaw-sidepanel-container .linaw-voice-summary {
+          color: #1a1814;
+          font-size: 0.85rem;
+          font-weight: 700;
+          min-height: 48px;
+        }
+        .linaw-sidepanel-container .linaw-reading-summary::before,
+        .linaw-sidepanel-container .linaw-voice-summary::before {
+          content: none;
+        }
+        .linaw-sidepanel-container .linaw-reading-summary::after,
+        .linaw-sidepanel-container .linaw-voice-summary::after {
+          content: "▾";
+          margin-left: auto;
+          width: 28px;
+          height: 28px;
+          border-radius: 9999px;
+          background-color: #4f5d2f;
+          color: #ffffff;
+          font-size: 15px;
+          line-height: 1;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .linaw-sidepanel-container details[open] > .linaw-reading-summary::after,
+        .linaw-sidepanel-container details[open] > .linaw-voice-summary::after {
+          content: "▴";
+        }
+        /* Listen shares Copy's card language: white card, thick green
+           border, green label — filled olive only while speaking. */
+        .linaw-sidepanel-container .linaw-listen-btn {
+          background-color: #ffffff;
+          border: 2px solid #4f5d2f;
+          color: #4f5d2f;
+          min-height: 52px;
+          font-size: 0.95rem;
+          font-weight: 700;
+          box-shadow: 0 1px 3px rgb(26 24 20 / 0.12);
+        }
+        .linaw-sidepanel-container .linaw-listen-btn:hover {
+          background-color: #e4ebd4;
+          border-color: #3f4a25;
+        }
+        .linaw-sidepanel-container .linaw-listen-btn.is-listening {
+          background-color: #4f5d2f;
+          border-color: #4f5d2f;
+          color: #ffffff;
+          box-shadow: 0 4px 12px rgb(79 93 47 / 0.45);
+        }
+        .linaw-sidepanel-container .linaw-copy-btn {
+          min-height: 48px;
+          box-shadow: 0 1px 3px rgb(26 24 20 / 0.12);
+        }
       `}</style>
+
+      <header className="linaw-home-header">
+        <span className="linaw-home-mark" aria-hidden="true" />
+        <div className="linaw-home-titles">
+          <p className="linaw-home-name">Linaw</p>
+          <p className="linaw-home-sub">Reading companion</p>
+        </div>
+      </header>
+
+      {source && sourceOrigin && origin && sourceOrigin !== origin ? (
+        <div className="linaw-source-note" role="note">
+          Selected on {sourceOrigin} — Disable acts on the current tab.
+        </div>
+      ) : null}
+
+      {/* Restricted pages (chrome://, PDFs, webstore) expose no tab URL. */}
+      {!origin && !isCurrentOriginDisabled && (
+        <div
+          className="linaw-disabled-banner"
+          role="note"
+          style={{ marginBottom: "14px" }}
+        >
+          <p className="linaw-disabled-banner-text">
+            Linaw can&apos;t see this page (browser or PDF pages hide their address). Select text on an ordinary web page, then reopen the panel.
+          </p>
+        </div>
+      )}
 
       {/* Recovery State Banner for Side Panel when site is disabled */}
       {isCurrentOriginDisabled && (
@@ -169,6 +464,17 @@ function SidePanelApp() {
         }}
         onDisableSite={() => void handleDisableSite()}
       />
+
+      <footer className="linaw-home-footer">
+        <a
+          className="linaw-home-link"
+          href="https://appcon-lumiere-linawai.vercel.app/read"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Open Linaw web app ↗
+        </a>
+      </footer>
     </div>
   );
 }

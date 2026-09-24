@@ -4,13 +4,93 @@
  */
 import { fetchLinawJson } from "../linaw-origin";
 
-// Configure side panel behavior so clicking the action icon opens the side panel
-if (typeof chrome !== "undefined" && chrome.sidePanel?.setPanelBehavior) {
-  chrome.sidePanel
-    .setPanelBehavior({ openPanelOnActionClick: true })
-    .catch((error: unknown) => {
-      console.error("Failed to set side panel behavior:", error);
+/**
+ * Enable "click the toolbar icon opens the side panel".
+ * On a fresh unpacked load Chrome can reject the first call with "No SW"
+ * (worker not fully registered yet). That rejection is transient, so retry
+ * quietly a few times. Anything logged with console.error lands on
+ * chrome://extensions as a red Errors badge, so failures here stay silent —
+ * the action.onClicked fallback below keeps the icon useful until the
+ * behavior sticks.
+ */
+const PANEL_BEHAVIOR_RETRIES = 3;
+const PANEL_BEHAVIOR_RETRY_MS = 1500;
+
+function ensurePanelBehavior(attempt = 1): void {
+  if (typeof chrome === "undefined" || !chrome.sidePanel?.setPanelBehavior) {
+    return;
+  }
+  try {
+    chrome.sidePanel
+      .setPanelBehavior({ openPanelOnActionClick: true })
+      .catch(() => {
+        if (attempt < PANEL_BEHAVIOR_RETRIES) {
+          setTimeout(
+            () => ensurePanelBehavior(attempt + 1),
+            PANEL_BEHAVIOR_RETRY_MS,
+          );
+        }
+      });
+  } catch {
+    // sidePanel unsupported here — the action fallback below covers it.
+  }
+}
+
+ensurePanelBehavior();
+
+/**
+ * Right-click path: select text anywhere, then "Clarify with Linaw"
+ * from the context menu. Same explicit-open flow as the on-page pill.
+ * Menus persist across worker restarts, so always removeAll() first —
+ * creating a duplicate id rejects as Unchecked runtime.lastError.
+ */
+async function ensureContextMenu(): Promise<void> {
+  if (typeof chrome === "undefined" || !chrome.contextMenus) return;
+  try {
+    await chrome.contextMenus.removeAll();
+  } catch {
+    // Nothing to clear, or menus unsupported here.
+  }
+  try {
+    await chrome.contextMenus.create({
+      id: "linaw-clarify",
+      title: "Clarify with Linaw",
+      contexts: ["selection"],
     });
+  } catch {
+    // Menus unsupported here — pill and toolbar still work.
+  }
+}
+
+if (typeof chrome !== "undefined" && chrome.runtime?.onInstalled) {
+  try {
+    chrome.runtime.onInstalled.addListener(() => {
+      void ensureContextMenu();
+    });
+  } catch {
+    // Install hook unavailable — top-level call below still tries.
+  }
+}
+void ensureContextMenu();
+
+if (typeof chrome !== "undefined" && chrome.contextMenus?.onClicked) {
+  try {
+    chrome.contextMenus.onClicked.addListener((info, tab) => {
+      if (info?.menuItemId !== "linaw-clarify") return;
+      if (tab?.id == null) return;
+      try {
+        void chrome.tabs
+          .sendMessage(tab.id, { type: "linaw.adaptSelection" })
+          .catch(() => {
+            // Content script missing on restricted pages.
+          });
+      } catch {
+        // Tabs unavailable.
+      }
+    });
+  } catch {
+    // Context menus unavailable — pill and toolbar still work.
+  }
 }
 
 // Fallback action click handler in case side panel behavior is not supported
@@ -32,8 +112,12 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       message?.type === "LINAW_TEXT_SELECTED" &&
       typeof message.text === "string"
     ) {
+      // Tag the tab it came from so the side panel never shows one tab's
+      // highlight under another tab's name.
+      const origin = typeof message.origin === "string" ? message.origin : "";
+      const entry = { text: message.text, origin, updatedAt: Date.now() };
       void chrome.storage.local
-        .set({ pendingSourceText: message.text })
+        .set({ pendingSourceText: entry })
         .then(() => {
           sendResponse({ ok: true });
         })

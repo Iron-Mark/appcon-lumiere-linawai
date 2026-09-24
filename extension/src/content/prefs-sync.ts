@@ -75,7 +75,8 @@ export function startLinawPreferenceSync(): void {
     if (event.data.source !== LINAW_PREFS_SOURCE_WEB) return;
     const remote = toDomainPreferences(event.data.preferences);
     if (!remote) return;
-    void applyFromPage(remote);
+    // Storage rejects when the extension was just reloaded (old tab).
+    void applyFromPage(remote).catch(() => undefined);
   });
 
   let applyingFromPageStorage = false;
@@ -117,5 +118,5 @@ export function startLinawPreferenceSync(): void {
     } else if (page) {
       offerToPage(page);
     }
-  })();
+  })().catch(() => undefined);
 }

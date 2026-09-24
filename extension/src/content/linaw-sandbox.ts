@@ -17,17 +17,33 @@ function sandboxFrame(): Promise<Window> {
   if (frameWindow) return Promise.resolve(frameWindow);
   if (frameReady) return frameReady;
   frameReady = new Promise((resolve, reject) => {
-    const iframe = document.createElement("iframe");
-    const runtimeUrl = chrome.runtime?.getURL;
-    if (!runtimeUrl) {
-      reject(new Error("Linaw voice frame is only available in the extension."));
+    const failTimer = window.setTimeout(() => {
+      frameReady = null;
+      reject(new Error("Linaw voice frame did not start (blocked by this page)."));
+    }, 10_000);
+    let iframe: HTMLIFrameElement | null = null;
+    try {
+      iframe = document.createElement("iframe");
+      const runtimeUrl = chrome.runtime?.getURL;
+      if (!runtimeUrl) {
+        window.clearTimeout(failTimer);
+        frameReady = null;
+        reject(new Error("Linaw voice frame is only available in the extension."));
+        return;
+      }
+      iframe.hidden = true;
+      iframe.title = "Linaw voice";
+      iframe.src = runtimeUrl("sandbox.html");
+    } catch {
+      window.clearTimeout(failTimer);
+      frameReady = null;
+      reject(new Error("Linaw voice frame was blocked by this page."));
       return;
     }
-    iframe.hidden = true;
-    iframe.title = "Linaw voice";
-    iframe.src = runtimeUrl("sandbox.html");
     iframe.addEventListener("load", () => {
-      if (!iframe.contentWindow) {
+      window.clearTimeout(failTimer);
+      if (!iframe?.contentWindow) {
+        frameReady = null;
         reject(new Error("Linaw voice frame did not start."));
         return;
       }
@@ -35,9 +51,17 @@ function sandboxFrame(): Promise<Window> {
       resolve(iframe.contentWindow);
     });
     iframe.addEventListener("error", () => {
+      window.clearTimeout(failTimer);
+      frameReady = null;
       reject(new Error("Linaw voice frame did not load."));
     });
-    (document.documentElement ?? document.body).appendChild(iframe);
+    try {
+      (document.documentElement ?? document.body).appendChild(iframe);
+    } catch {
+      window.clearTimeout(failTimer);
+      frameReady = null;
+      reject(new Error("Linaw voice frame was blocked by this page."));
+    }
   });
   return frameReady;
 }
@@ -47,13 +71,15 @@ function callSandbox(
   text?: string,
 ): Promise<SandboxReply> {
   const id = nextId++;
+  // First predict can download the voice model; control ops stay short.
+  const timeoutMs = op === "predict" ? 60_000 : 10_000;
   return sandboxFrame().then(
     (target) =>
       new Promise((resolve, reject) => {
         const timer = window.setTimeout(() => {
           window.removeEventListener("message", onMessage);
-          reject(new Error("Linaw voice timed out."));
-        }, 120_000);
+          reject(new Error("Linaw voice timed out — using device voice instead."));
+        }, timeoutMs);
         const onMessage = (event: MessageEvent<SandboxReply>) => {
           if (event.source !== target) return;
           if (event.data?.source !== "linaw-sandbox" || event.data.id !== id) return;

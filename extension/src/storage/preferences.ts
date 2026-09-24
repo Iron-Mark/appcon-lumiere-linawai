@@ -137,7 +137,7 @@ export async function applySyncedDomainPreferences(
   return updatePreferences(
     {
       detail: remote.detail,
-      wording: remote.wording === "taglish" ? "plain" : remote.wording,
+      wording: remote.wording,
       delivery: remote.delivery,
       browserBehavior: remote.browserBehavior,
       updatedAt: remote.updatedAt,
