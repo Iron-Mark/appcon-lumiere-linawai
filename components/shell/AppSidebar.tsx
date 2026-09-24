@@ -80,12 +80,11 @@ export function AppSidebar() {
             onClick={closeMobileSheet}
             className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-2.5 overflow-hidden rounded-lg px-2 outline-none transition-colors duration-200 ease-out hover:bg-paper-inset/80 focus-visible:ring-2 focus-visible:ring-sidebar-ring motion-reduce:transition-none group-data-[collapsible=icon]:size-11 group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
           >
-            <span
-              aria-hidden
-              className="flex size-8 shrink-0 items-center justify-center rounded-md bg-ink text-sm font-semibold text-paper-raised"
-            >
-              L
-            </span>
+            <img
+              src="/linaw-logo-transparent.png"
+              alt="Linaw AI logo"
+              className="size-8 shrink-0 object-contain"
+            />
             <span className="whitespace-nowrap text-base font-semibold tracking-tight text-ink group-data-[collapsible=icon]:hidden">
               Linaw
             </span>
