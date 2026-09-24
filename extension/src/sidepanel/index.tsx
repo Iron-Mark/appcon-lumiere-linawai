@@ -172,16 +172,82 @@ function SidePanelApp() {
       <style>{`
         body {
           margin: 0;
-          padding: 12px;
-          background-color: #ffffff;
+          padding: 0;
+          background-color: #faf6f0;
           font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .linaw-sidepanel-container {
+          max-width: 480px;
+          margin: 0 auto;
+          padding: 16px 16px 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
         }
         .linaw-sidepanel-container .linaw-panel {
           border: none;
           box-shadow: none;
           padding: 0;
         }
+        .linaw-home-header {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 2px 2px 0;
+        }
+        .linaw-home-mark {
+          width: 30px;
+          height: 30px;
+          border-radius: 9999px;
+          background: radial-gradient(circle at 35% 35%, #6b7a3f, #4f5d2f);
+          box-shadow: 0 1px 3px rgb(26 24 20 / 0.25);
+          flex-shrink: 0;
+        }
+        .linaw-home-titles {
+          display: flex;
+          flex-direction: column;
+          line-height: 1.25;
+        }
+        .linaw-home-name {
+          margin: 0;
+          font-size: 1rem;
+          font-weight: 700;
+          letter-spacing: -0.01em;
+          color: #1a1814;
+        }
+        .linaw-home-sub {
+          margin: 0;
+          font-size: 0.72rem;
+          font-weight: 500;
+          color: #5c564c;
+        }
+        .linaw-home-footer {
+          display: flex;
+          justify-content: center;
+          padding-top: 4px;
+          border-top: 1px solid #e8dfd2;
+        }
+        .linaw-home-link {
+          font-size: 0.78rem;
+          font-weight: 600;
+          color: #4f5d2f;
+          text-decoration: none;
+          padding: 8px 12px;
+          border-radius: 8px;
+        }
+        .linaw-home-link:hover {
+          background-color: #e4ebd4;
+          text-decoration: underline;
+        }
       `}</style>
+
+      <header className="linaw-home-header">
+        <span className="linaw-home-mark" aria-hidden="true" />
+        <div className="linaw-home-titles">
+          <p className="linaw-home-name">Linaw</p>
+          <p className="linaw-home-sub">Reading companion</p>
+        </div>
+      </header>
 
       {/* Restricted pages (chrome://, PDFs, webstore) expose no tab URL. */}
       {!origin && !isCurrentOriginDisabled && (
@@ -233,6 +299,17 @@ function SidePanelApp() {
         }}
         onDisableSite={() => void handleDisableSite()}
       />
+
+      <footer className="linaw-home-footer">
+        <a
+          className="linaw-home-link"
+          href="https://appcon-lumiere-linawai.vercel.app/read"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Open Linaw web app ↗
+        </a>
+      </footer>
     </div>
   );
 }
