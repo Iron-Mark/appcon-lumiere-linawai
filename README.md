@@ -1,6 +1,6 @@
 # LINAW — Layered Intelligence for Narrative Adaptation & Watching
 
-![Linaw AI logo](public/linaw-logo-transparent.png)
+<img src="public/linaw-logo-transparent.png" alt="Linaw AI logo" width="112" />
 
 **Tagline:** Clarify the format. Preserve the meaning.
 
