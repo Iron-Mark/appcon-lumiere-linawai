@@ -337,6 +337,7 @@ export function Panel({
   );
   const [listenVoices, setListenVoices] = useState<ListenVoice[]>([]);
   const [listenNote, setListenNote] = useState<string | null>(null);
+  const [pageFeedback, setPageFeedback] = useState<string | null>(null);
 
   const sourceRef = useRef(source);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -357,6 +358,8 @@ export function Panel({
     Boolean(origin) && disabledOrigins.includes(origin);
 
   useEffect(() => {
+    // Storage rejects when the extension was just reloaded (old tab).
+    // Swallow it: the panel still renders, just with defaults.
     void getReadingComfort().then((saved) => {
       comfortRef.current = saved;
       setComfort(saved);
@@ -367,11 +370,15 @@ export function Panel({
       }
       syncPageReading(saved);
       setPageOn(isPageReadingActive());
+    }).catch(() => {
+      // Extension reloaded under this tab — refresh the page for full function.
     });
   }, [isCurrentOriginDisabled]);
 
   useEffect(() => {
-    void getListenSettings().then(setListenSettings);
+    void getListenSettings().then(setListenSettings).catch(() => {
+      // Extension reloaded under this tab — voices stay default.
+    });
     const refresh = () => {
       const listed = rankListenVoices(
         window.speechSynthesis
@@ -586,8 +593,17 @@ export function Panel({
 
   async function updatePrefs(patch: Partial<Preferences>) {
     const next = { ...preferences, ...patch };
-    const saved = await savePreferences(next);
-    onPreferencesChange(saved);
+    let saved: Preferences = next;
+    try {
+      saved = await savePreferences(next);
+    } catch {
+      // Storage dead (extension reloaded) — clarify with in-memory prefs.
+    }
+    try {
+      onPreferencesChange(saved);
+    } catch {
+      // Host torn down.
+    }
     if (!isCurrentOriginDisabled) {
       await runAdapt(saved, sourceRef.current);
     }
@@ -597,22 +613,40 @@ export function Panel({
     const next = normalizeReadingComfort({ ...comfortRef.current, ...patch });
     comfortRef.current = next;
     setComfort(next);
-    const saved = await saveReadingComfort(patch, next);
+    setPageFeedback(null);
+    let saved = next;
+    try {
+      saved = await saveReadingComfort(patch, next);
+    } catch {
+      // Storage dead (extension reloaded) — apply in-memory only.
+    }
     comfortRef.current = saved;
     setComfort(saved);
     const touchesPage = Object.keys(patch).some((key) => key !== "listenPace");
     if (!touchesPage || isCurrentOriginDisabled) return;
     releasePageReadingHold();
-    syncPageReading(saved);
-    setPageOn(isPageReadingActive());
+    try {
+      syncPageReading(saved);
+    } catch {
+      // Page DOM not styleable here.
+    }
+    try {
+      setPageOn(isPageReadingActive());
+    } catch {
+      // Host torn down.
+    }
   }
 
   async function handleEnableSite(site: string) {
-    await enableOrigin(site);
-    const updated = await getPreferences();
-    onPreferencesChange(updated);
-    if (site === origin) {
-      await runAdapt(updated, sourceRef.current);
+    try {
+      await enableOrigin(site);
+      const updated = await getPreferences();
+      onPreferencesChange(updated);
+      if (site === origin) {
+        await runAdapt(updated, sourceRef.current);
+      }
+    } catch {
+      // Storage dead (extension reloaded) — refresh the page and retry.
     }
   }
 
@@ -892,8 +926,18 @@ export function Panel({
                 className={`linaw-segment-btn ${pageOn ? "is-active" : ""}`}
                 aria-pressed={pageOn}
                 onClick={() => {
-                  syncPageReading(comfortRef.current, { force: true });
-                  setPageOn(isPageReadingActive());
+                  try {
+                    syncPageReading(comfortRef.current, { force: true });
+                    const on = isPageReadingActive();
+                    setPageOn(on);
+                    setPageFeedback(
+                      on
+                        ? "✓ Reading look applied to this page."
+                        : "No article found on this page to style.",
+                    );
+                  } catch {
+                    setPageFeedback("Could not style this page.");
+                  }
                 }}
               >
                 {pageOn ? "✓ On this page" : "On this page"}
@@ -904,13 +948,23 @@ export function Panel({
                 name="page-as-it-was"
                 className="linaw-segment-btn"
                 onClick={() => {
-                  holdOffPageReading();
+                  try {
+                    holdOffPageReading();
+                  } catch {
+                    // Page already plain.
+                  }
                   setPageOn(false);
+                  setPageFeedback("Page restored to its original look.");
                 }}
               >
                 Page as it was
               </button>
             </div>
+            {pageFeedback ? (
+              <p className="linaw-page-feedback" role="status">
+                {pageFeedback}
+              </p>
+            ) : null}
             <Segmented<TypeSize>
               name="type-size"
               label="Type size"

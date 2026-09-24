@@ -405,6 +405,12 @@ details[open] > .linaw-reading-summary::before {
   flex-direction: column;
   gap: 6px;
 }
+.linaw-page-feedback {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-ink-muted);
+}
 .linaw-page-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;

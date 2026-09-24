@@ -142,16 +142,24 @@ function SidePanelApp() {
 
   async function handleToggleSite() {
     if (!origin) return;
-    await toggleOriginDisabled(origin);
-    const updated = await getPreferences();
-    setPreferences(updated);
+    try {
+      await toggleOriginDisabled(origin);
+      const updated = await getPreferences();
+      setPreferences(updated);
+    } catch {
+      // Storage dead (extension reloaded) — reopen the panel and retry.
+    }
   }
 
   async function handleDisableSite() {
     if (!origin) return;
-    await disableOrigin(origin);
-    const updated = await getPreferences();
-    setPreferences(updated);
+    try {
+      await disableOrigin(origin);
+      const updated = await getPreferences();
+      setPreferences(updated);
+    } catch {
+      // Storage dead (extension reloaded) — reopen the panel and retry.
+    }
   }
 
   const isCurrentOriginDisabled =
@@ -242,8 +250,9 @@ function SidePanelApp() {
         /* Side-panel-only visibility pass (floating card untouched):
            stronger borders, darker text, unmistakable active states. */
         .linaw-sidepanel-container .linaw-settings-label {
-          color: #3d3830;
-          font-size: 0.75rem;
+          color: #292524;
+          font-size: 0.78rem;
+          font-weight: 700;
         }
         .linaw-sidepanel-container .linaw-select {
           font-size: 0.8rem;
@@ -257,7 +266,8 @@ function SidePanelApp() {
         .linaw-sidepanel-container .linaw-segment-btn {
           color: #1a1814;
           background-color: #ffffff;
-          border-color: #b9ac93;
+          border-color: #a89a7c;
+          box-shadow: 0 1px 2px rgb(26 24 20 / 0.1);
           font-size: 0.78rem;
           font-weight: 600;
         }
@@ -294,6 +304,10 @@ function SidePanelApp() {
           text-decoration: underline;
           text-underline-offset: 2px;
         }
+        .linaw-sidepanel-container .linaw-reading-controls,
+        .linaw-sidepanel-container .linaw-voice-controls {
+          padding-top: 8px;
+        }
         .linaw-sidepanel-container .linaw-reading-badge {
           color: #334155;
         }
@@ -311,7 +325,7 @@ function SidePanelApp() {
           color: #1a1814;
           font-size: 0.85rem;
           font-weight: 700;
-          min-height: 52px;
+          min-height: 48px;
         }
         .linaw-sidepanel-container .linaw-reading-summary::before,
         .linaw-sidepanel-container .linaw-voice-summary::before {
@@ -337,10 +351,25 @@ function SidePanelApp() {
         .linaw-sidepanel-container details[open] > .linaw-voice-summary::after {
           content: "▴";
         }
-        /* Primary actions get extra pop so they read at a glance. */
+        /* Listen shares Copy's card language: white card, thick green
+           border, green label — filled olive only while speaking. */
         .linaw-sidepanel-container .linaw-listen-btn {
+          background-color: #ffffff;
+          border: 2px solid #4f5d2f;
+          color: #4f5d2f;
           min-height: 52px;
           font-size: 0.95rem;
+          font-weight: 700;
+          box-shadow: 0 1px 3px rgb(26 24 20 / 0.12);
+        }
+        .linaw-sidepanel-container .linaw-listen-btn:hover {
+          background-color: #e4ebd4;
+          border-color: #3f4a25;
+        }
+        .linaw-sidepanel-container .linaw-listen-btn.is-listening {
+          background-color: #4f5d2f;
+          border-color: #4f5d2f;
+          color: #ffffff;
           box-shadow: 0 4px 12px rgb(79 93 47 / 0.45);
         }
         .linaw-sidepanel-container .linaw-copy-btn {
