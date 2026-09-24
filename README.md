@@ -1,18 +1,18 @@
-# Linaw AI
+# LINAW
+
+Layered Intelligence for Narrative Adaptation & Watching
 
 ![Linaw AI logo](public/linaw-logo-transparent.png)
 
 ### Clarify the format. Preserve the meaning.
 
-Linaw AI adapts important information to how each person prefers to receive it, then checks whether the critical meaning survived.
+Linaw is a browser extension (with a companion web app) that sits on top of content people already have open — a Google Classroom module, a school announcement, a memo, a PDF — and lets each reader choose how they receive it: Full, Key Points, Plain Language, or Listen. Every adapted version is then checked against the original for meaning drift — specifically the details most likely to break silently: dates, conditions, exceptions, and who-does-what-when. If something looks lost or changed, Linaw warns the reader instead of silently presenting an incomplete version as complete.
+
+Adaptive Information Communication System: one notice, rewritten into the format each reader absorbs, then cross-examined. Gemini generation, Meaning Maps, fact alignment, actor-value binding, and DeBERTa NLI keep the intended meaning intact.
 
 [Live app](#live-app) · [Architecture](docs/architecture.md) · [Security and privacy](SECURITY.md) · [MIT License](LICENSE)
 
 ## Product overview
-
-Important notices, lessons, policies, and instructions are usually written in one fixed format. People may instead need key points, plain language, full detail, or audio. Generic summarization can make a message easier to read while dropping a deadline, condition, exception, number, or responsibility.
-
-Linaw AI addresses that risk with a personalized reading layer and a **Meaning Check**. The original source remains authoritative; Linaw adapts the presentation and checks critical facts against the source before the reader relies on the result.
 
 ### What users can do
 
