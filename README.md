@@ -1,21 +1,12 @@
 # Linaw AI
 
-<p align="center">
-  <img src="public/linaw-logo-transparent.png" alt="Linaw AI logo" width="112" />
-</p>
+![Linaw AI logo](public/linaw-logo-transparent.png)
 
-<h3 align="center">Clarify the format. Preserve the meaning.</h3>
+### Clarify the format. Preserve the meaning.
 
-<p align="center">
-  Linaw AI adapts important information to how each person prefers to receive it, then checks whether the critical meaning survived.
-</p>
+Linaw AI adapts important information to how each person prefers to receive it, then checks whether the critical meaning survived.
 
-<p align="center">
-  <a href="#live-app">Live app</a> ·
-  <a href="docs/architecture.md">Architecture</a> ·
-  <a href="SECURITY.md">Security and privacy</a> ·
-  <a href="LICENSE">MIT License</a>
-</p>
+[Live app](#live-app) · [Architecture](docs/architecture.md) · [Security and privacy](SECURITY.md) · [MIT License](LICENSE)
 
 ## Product overview
 
@@ -40,6 +31,20 @@ Linaw is not a generic chatbot, summarizer, or diagnostic tool. It is an **adapt
 [https://appcon-lumiere-linawai.vercel.app/](https://appcon-lumiere-linawai.vercel.app/)
 
 The hosted app clarifies with Gemini. If Gemini does not return a note, it uses the OpenAI-compatible gateway. Meaning Check sends the source sentence and the claim to `https://linaw-nli.onrender.com/predict`.
+
+## Screens
+
+Phone, tablet, and desktop frames of each screen are in [docs/screenshots](docs/screenshots). The companion panel is not in these frames.
+
+![Clarify the format. Preserve the meaning.](docs/screenshots/linaw-walkthrough.gif)
+
+![Landing](docs/screenshots/desktop/01-landing.png)
+
+![Onboarding](docs/screenshots/desktop/02-onboarding-detail.png)
+
+![Reading workspace](docs/screenshots/desktop/06-read.png)
+
+![Clarified note and Meaning Check](docs/screenshots/desktop/12-read-glance.png)
 
 ## Run locally
 
@@ -95,7 +100,7 @@ The test suite covers the campus-pilot flow, fidelity cases, policy cases, and s
 
 ## Architecture
 
-Full write-up — surfaces, the single port, model provider order (Gemini → OpenAI-compatible gateway → fixture), the Fidelity Guard layers, storage, environment, and known limits: [`docs/architecture.md`](docs/architecture.md).
+Full write-up — surfaces, the single port, model provider order (Gemini → OpenAI-compatible gateway → fixture), the Fidelity Guard layers, storage, environment, and known limits: [docs/architecture.md](docs/architecture.md).
 
 One Next.js app. Every surface calls the same `adapt()` port. The port posts to `/api/adapt`, and uses the in-browser sample if that route fails.
 
@@ -135,6 +140,8 @@ flowchart LR
   W --> C
 ```
 
+
+
 ### Meaning Check pipeline
 
 Layers stay separate and are reported separately — never collapsed into one score. A layer that did not run says so.
@@ -155,9 +162,12 @@ flowchart TD
   OUT --> UI[Reading UI<br/>marks ↔ cards ↔ evidence]
 ```
 
+
+
 Verdict language is deliberately cautious ("No issue found in these checks.", "The time appears to be attached to the wrong group.") — it never claims a guarantee.
 
 ### Repository map
+
 
 | Path                | What lives there                                                      |
 | ------------------- | --------------------------------------------------------------------- |
@@ -172,7 +182,8 @@ Verdict language is deliberately cautious ("No issue found in these checks.", "T
 | `extension/`        | Manifest V3 Chrome companion                                          |
 | `spec/`             | Phase specifications and acceptance contracts                         |
 
-Privacy and data handling: [`SECURITY.md`](SECURITY.md). The only server route is `POST /api/adapt`; source text is not written to disk by Linaw. If a model provider is configured, source text is sent to that provider, so review its retention policy before using personal data.
+
+Privacy and data handling: [SECURITY.md](SECURITY.md). The only server route is `POST /api/adapt`; source text is not written to disk by Linaw. If a model provider is configured, source text is sent to that provider, so review its retention policy before using personal data.
 
 ## AI implementation
 
@@ -184,9 +195,9 @@ The adaptation path is deliberately provider-agnostic:
 
 Every model response is expected to return adapted text plus a structured Meaning Map with verbatim evidence. Unsupported or ungrounded facts are dropped before the Meaning Check runs. Provider keys remain server-side.
 
-## Ownership and intellectual property
+## Ownership and intellectual property 
 
-Linaw AI is licensed under the MIT License. See [`LICENSE`](LICENSE).
+Linaw AI is licensed under the MIT License. See [LICENSE](LICENSE).
 
 The license covers the software in this repository. It does not cover messages, files, or preferences a reader supplies. OTis Philippines Inc., organizer of AppCon 2026, may use that source code for marketing and sponsors. That use covers source code only. Packages in `node_modules` and the DeBERTa checkpoint stay under their own licenses.
 
@@ -194,8 +205,8 @@ A local run without a model key still uses the offline sample. `.env.example` do
 
 Human guide (what Linaw is, how to run, specs, extension, What Linaw runs at `/todo`):
 
-[`docs/README.md`](docs/README.md)
+[docs/README.md](docs/README.md)
 
-Agent guide: [`docs/AGENTS.md`](docs/AGENTS.md)
+Agent guide: [docs/AGENTS.md](docs/AGENTS.md)
 
-Product canon: [`docs/LINAW_AI_INITIAL-DRAFT_PROJECT_CONTEXT.md`](docs/LINAW_AI_INITIAL-DRAFT_PROJECT_CONTEXT.md)
+Product canon: [docs/LINAW_AI_INITIAL-DRAFT_PROJECT_CONTEXT.md](docs/LINAW_AI_INITIAL-DRAFT_PROJECT_CONTEXT.md)
