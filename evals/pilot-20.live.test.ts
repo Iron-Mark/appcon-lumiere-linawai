@@ -2,7 +2,7 @@ import { writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { allEvalCases } from "./registry";
 
-const URL =
+const ADAPT_URL =
   process.env.PILOT_URL ??
   "https://appcon-lumiere-linawai.vercel.app/api/adapt";
 
@@ -40,7 +40,7 @@ describe.skipIf(process.env.PILOT_LIVE !== "1")("20 live pilot clarifications", 
         const item = cases[i];
         const preferences = PROFILES[i % PROFILES.length];
         const started = Date.now();
-        const res = await fetch(URL, {
+        const res = await fetch(ADAPT_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ source: item.source, preferences }),
