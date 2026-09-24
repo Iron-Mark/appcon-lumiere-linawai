@@ -41,27 +41,37 @@ ensurePanelBehavior();
 /**
  * Right-click path: select text anywhere, then "Clarify with Linaw"
  * from the context menu. Same explicit-open flow as the on-page pill.
+ * Menus persist across worker restarts, so always removeAll() first —
+ * creating a duplicate id rejects as Unchecked runtime.lastError.
  */
-function ensureContextMenu(): void {
+async function ensureContextMenu(): Promise<void> {
+  if (typeof chrome === "undefined" || !chrome.contextMenus) return;
   try {
-    chrome.contextMenus?.create({
+    await chrome.contextMenus.removeAll();
+  } catch {
+    // Nothing to clear, or menus unsupported here.
+  }
+  try {
+    await chrome.contextMenus.create({
       id: "linaw-clarify",
       title: "Clarify with Linaw",
       contexts: ["selection"],
     });
   } catch {
-    // Already exists, or menus unsupported here.
+    // Menus unsupported here — pill and toolbar still work.
   }
 }
 
 if (typeof chrome !== "undefined" && chrome.runtime?.onInstalled) {
   try {
-    chrome.runtime.onInstalled.addListener(() => ensureContextMenu());
+    chrome.runtime.onInstalled.addListener(() => {
+      void ensureContextMenu();
+    });
   } catch {
     // Install hook unavailable — top-level call below still tries.
   }
 }
-ensureContextMenu();
+void ensureContextMenu();
 
 if (typeof chrome !== "undefined" && chrome.contextMenus?.onClicked) {
   try {

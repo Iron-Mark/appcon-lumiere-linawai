@@ -78,7 +78,8 @@ declare namespace chrome {
       id: string;
       title: string;
       contexts: string[];
-    }): void;
+    }): Promise<string | number>;
+    removeAll(): Promise<void>;
     onClicked: {
       addListener(
         callback: (
