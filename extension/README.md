@@ -34,6 +34,7 @@ On-page: select text → **Clarify with Linaw** (works with Auto-Clarify off), o
 - **On the page:** a model answer (`adapter: "model"`) replaces the article with plain paragraphs and list items. A fixture answer does not. A selection is written only when it sits inside the article; Auto-Clarify writes the whole article. **Page as it was** and **Disable on this site** restore the original words.
 - **Reading:** Type size, spacing, Clear face, tone, focus line, and deadline marks. **On this page** applies them to the article. Stored under `linaw.readingComfort.v1` — not synced with the web app. The repeat-call cache lives on the Linaw server (source + detail + wording, 50 entries, memory only).
 - **Sindi:** same states as the web mascot, smaller in the header; cautious Meaning Check copy only.
+- **Permissions:** Chrome shows "read and change all your data on websites" because the companion runs on `http(s)://*/*` (needed for select-to-clarify and Auto-Clarify on any article). It does not exfiltrate browsing: page text is only processed after you clarify a selection or opt into Auto-Clarify, adaptation runs through the Linaw app you chose (or the offline sample), and per-origin **Disable on this site** is honored.
 
 ## Fonts
 

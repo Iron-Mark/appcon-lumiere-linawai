@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Panel } from "../content/Panel";
 import { PANEL_CSS } from "../content/index";
@@ -17,9 +17,11 @@ function SidePanelApp() {
     useState<ExtensionPreferences>(DEFAULT_PREFERENCES);
   const [source, setSource] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const loadGen = useRef(0);
 
   async function queryActiveTabOrigin(): Promise<string> {
     try {
+      if (typeof chrome === "undefined" || !chrome.tabs?.query) return "";
       const [tab] = await chrome.tabs.query({
         active: true,
         currentWindow: true,
@@ -39,54 +41,103 @@ function SidePanelApp() {
   }
 
   async function loadState() {
+    const gen = loadGen.current + 1;
+    loadGen.current = gen;
     const currentOrigin = await queryActiveTabOrigin();
+    if (gen !== loadGen.current) return;
     setOrigin(currentOrigin);
 
-    const prefs = await getPreferences();
-    setPreferences(prefs);
-
-    const storage = await chrome.storage.local.get("pendingSourceText");
-    const pending = storage.pendingSourceText;
-    if (typeof pending === "string" && pending.trim()) {
-      setSource(pending.trim());
-    } else {
-      setSource("");
+    try {
+      const prefs = await getPreferences();
+      if (gen !== loadGen.current) return;
+      setPreferences(prefs);
+    } catch {
+      // Keep defaults when storage is blocked.
     }
-    setLoading(false);
+
+    try {
+      const storage = await chrome.storage.local.get("pendingSourceText");
+      if (gen !== loadGen.current) return;
+      const pending = storage.pendingSourceText;
+      if (typeof pending === "string" && pending.trim()) {
+        setSource(pending.trim());
+      } else {
+        setSource("");
+      }
+    } catch {
+      if (gen === loadGen.current) setSource("");
+    }
+    if (gen === loadGen.current) setLoading(false);
   }
 
   useEffect(() => {
-    void loadState();
+    loadGen.current += 1;
+    void loadState().catch(() => setLoading(false));
 
-    if (chrome.tabs?.onActivated) {
-      chrome.tabs.onActivated.addListener(() => {
-        void loadState();
-      });
-    }
-
-    if (chrome.tabs?.onUpdated) {
-      chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => {
-        if (changeInfo.status === "complete" || changeInfo.url) {
-          void loadState();
+    const onActivated = () => {
+      void loadState().catch(() => undefined);
+    };
+    const onUpdated = (
+      _tabId: number,
+      changeInfo: { status?: string; url?: string },
+    ) => {
+      if (changeInfo.status === "complete" || changeInfo.url) {
+        void loadState().catch(() => undefined);
+      }
+    };
+    const onStorage = (
+      changes: Record<string, { newValue?: unknown }>,
+      area: string,
+    ) => {
+      if (area === "local") {
+        if (changes["linaw.preferences.v1"]) {
+          void getPreferences()
+            .then(setPreferences)
+            .catch(() => undefined);
         }
-      });
-    }
-
-    if (chrome.storage?.onChanged) {
-      chrome.storage.onChanged.addListener((changes, area) => {
-        if (area === "local") {
-          if (changes["linaw.preferences.v1"]) {
-            void getPreferences().then(setPreferences);
-          }
-          if (changes.pendingSourceText) {
-            const nextText = changes.pendingSourceText.newValue;
-            if (typeof nextText === "string") {
-              setSource(nextText.trim());
-            }
+        if (changes.pendingSourceText) {
+          const nextText = changes.pendingSourceText.newValue;
+          if (typeof nextText === "string") {
+            setSource(nextText.trim());
+          } else if (nextText == null) {
+            setSource("");
           }
         }
-      });
+      }
+    };
+
+    try {
+      chrome.tabs?.onActivated?.addListener(onActivated);
+    } catch {
+      // Tabs events unavailable.
     }
+    try {
+      chrome.tabs?.onUpdated?.addListener(onUpdated);
+    } catch {
+      // Tabs events unavailable.
+    }
+    try {
+      chrome.storage?.onChanged?.addListener(onStorage);
+    } catch {
+      // Storage events unavailable.
+    }
+    return () => {
+      try {
+        (chrome.tabs?.onActivated as unknown as { removeListener?: (cb: () => void) => void })?.removeListener?.(onActivated);
+      } catch {
+        // Ignore cleanup failure.
+      }
+      try {
+        (chrome.tabs?.onUpdated as unknown as { removeListener?: (cb: (...args: never[]) => void) => void })?.removeListener?.(onUpdated as (...args: never[]) => void);
+      } catch {
+        // Ignore cleanup failure.
+      }
+      try {
+        (chrome.storage?.onChanged as unknown as { removeListener?: (cb: (...args: never[]) => void) => void })?.removeListener?.(onStorage as (...args: never[]) => void);
+      } catch {
+        // Ignore cleanup failure.
+      }
+    };
   }, []);
 
   async function handleToggleSite() {
@@ -131,6 +182,19 @@ function SidePanelApp() {
           padding: 0;
         }
       `}</style>
+
+      {/* Restricted pages (chrome://, PDFs, webstore) expose no tab URL. */}
+      {!origin && !isCurrentOriginDisabled && (
+        <div
+          className="linaw-disabled-banner"
+          role="note"
+          style={{ marginBottom: "14px" }}
+        >
+          <p className="linaw-disabled-banner-text">
+            Linaw can&apos;t see this page (browser or PDF pages hide their address). Select text on an ordinary web page, then reopen the panel.
+          </p>
+        </div>
+      )}
 
       {/* Recovery State Banner for Side Panel when site is disabled */}
       {isCurrentOriginDisabled && (

@@ -65,7 +65,20 @@ import {
   splitReadingLines,
 } from "../reading-comfort/focus-line";
 
-const WEB_APP_READ_URL = "https://appcon-lumiere-linawai.vercel.app/read";
+const LINAW_PROD_READ_URL = "https://appcon-lumiere-linawai.vercel.app/read";
+
+/** Open the Linaw app the companion is actually talking to: local dev stays local. */
+function webAppReadUrl(): string {
+  try {
+    const origin = window.location.origin;
+    if (origin === "http://localhost:3000" || origin === "http://127.0.0.1:3000") {
+      return `${origin}/read`;
+    }
+  } catch {
+    // Fall through to production.
+  }
+  return LINAW_PROD_READ_URL;
+}
 
 export type PanelProps = {
   source: string;
@@ -331,6 +344,7 @@ export function Panel({
   const listenRef = useRef(listenSettings);
   const voicesRef = useRef(listenVoices);
   const listenGen = useRef(0);
+  const adaptGen = useRef(0);
 
   sourceRef.current = source;
   comfortRef.current = comfort;
@@ -390,10 +404,14 @@ export function Panel({
   const runAdapt = async (nextPrefs: Preferences, nextSource: string) => {
     const trimmed = nextSource.trim();
     if (!trimmed) {
+      adaptGen.current += 1;
       setError("Nothing to clarify yet. Select text on the page first.");
       setResponse(null);
+      setWorking(false);
       return;
     }
+    const gen = adaptGen.current + 1;
+    adaptGen.current = gen;
     setWorking(true);
     setError(null);
     setView("adapted");
@@ -404,12 +422,14 @@ export function Panel({
         source: trimmed,
         preferences: nextPrefs,
       });
+      if (gen !== adaptGen.current) return;
       setResponse(result);
       if (shouldReplacePageWords(result.adapter, replaceOnPage)) {
         const root = findMainContentRoot(document);
         if (root) showClarifiedText(root, result.adaptedText);
       }
     } catch (err) {
+      if (gen !== adaptGen.current) return;
       const message =
         err instanceof AdaptRequestError && err.message.trim()
           ? err.message.trim()
@@ -417,7 +437,7 @@ export function Panel({
       setError(message);
       setResponse(null);
     } finally {
-      setWorking(false);
+      if (gen === adaptGen.current) setWorking(false);
     }
   };
 
@@ -483,6 +503,10 @@ export function Panel({
           return;
         }
         setListening(false);
+      }).catch(() => {
+        if (gen !== listenGen.current) return;
+        setListenNote("Linaw voice was blocked — using device voice.");
+        listenWithDevice();
       });
       return;
     }
@@ -615,11 +639,14 @@ export function Panel({
     view === "adapted" &&
     (preferences.detail === "key_points" || bulletItems.length > 1);
 
-  const docTitle =
+  const rawTitle =
     response?.meaningMap?.sourceIntent ||
     (typeof document !== "undefined" && document.title
       ? document.title
       : "Selected content");
+  // Site chrome titles (e.g. "YouTube") are not content titles — cap length.
+  const docTitle =
+    rawTitle.length > 120 ? `${rawTitle.slice(0, 117).trimEnd()}…` : rawTitle;
 
   const readingStyle = readingTextStyleVars(comfort) as CSSProperties;
 
@@ -820,7 +847,7 @@ export function Panel({
             <a
               id="linaw-webapp-link"
               className="linaw-text-link"
-              href={WEB_APP_READ_URL}
+              href={webAppReadUrl()}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -868,7 +895,7 @@ export function Panel({
                   setPageOn(isPageReadingActive());
                 }}
               >
-                On this page
+                {pageOn ? "✓ On this page" : "On this page"}
               </button>
               <button
                 type="button"
@@ -993,7 +1020,7 @@ export function Panel({
 
           <h2 className="linaw-doc-title">{docTitle}</h2>
 
-          <div className="linaw-content-card linaw-reading-text" style={readingStyle}>
+          <div className={`linaw-content-card linaw-reading-text${working ? " is-working" : ""}`} style={readingStyle} aria-busy={working}>
             {error ? (
               <p className="linaw-error">{error}</p>
             ) : working && !response ? (
@@ -1008,11 +1035,21 @@ export function Panel({
               />
             )}
 
+            {working && response && !error ? (
+              <p className="linaw-loading" role="status">Clarifying with your new settings…</p>
+            ) : null}
+
             {response?.overallStatus === "warning" && (
               <p className="linaw-check-warning">
                 ⚠ Important condition may have changed. Review source above.
               </p>
             )}
+
+            {replaceOnPage && response?.adapter === "fixture" && !error ? (
+              <p className="linaw-check-warning">
+                Offline example — the page was not replaced. Start Linaw on this computer for live replacement.
+              </p>
+            ) : null}
           </div>
         </section>
       )}
@@ -1030,6 +1067,8 @@ export function Panel({
               void navigator.clipboard.writeText(textToCopy).then(() => {
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
+              }).catch(() => {
+                setError("Copy was blocked by the browser — select the text manually.");
               });
             }}
           >

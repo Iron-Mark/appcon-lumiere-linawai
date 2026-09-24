@@ -358,7 +358,8 @@ export function showClarifiedText(root: Element, adaptedText: string): void {
   root.appendChild(clarifiedFragment(root.ownerDocument, adaptedText));
 }
 
-function restorePageWords(): void {
+/** Restore the site's original words, keeping any page styling. Explicit user action only. */
+export function restorePageWords(): void {
   if (!wordSnapshot) return;
   const { root, nodes } = wordSnapshot;
   wordSnapshot = null;
@@ -375,6 +376,11 @@ function clearPageStyles(): void {
   clickHandler = null;
   focusIndex = 0;
   focusEnabled = false;
+}
+
+/** Clear display styling/marks/focus but keep a clarified replacement intact. */
+export function clearPageDisplay(): void {
+  clearPageStyles();
 }
 
 export function clearPageReading(): void {
@@ -401,9 +407,15 @@ export function syncPageReading(
     return;
   }
   const doc = activeRoot?.ownerDocument ?? document;
-  const root = findMainContentRoot(doc);
+  // Prefer the already-styled root when it is still connected: after a
+  // clarified replacement the extractor can score the short new text as 0
+  // and return null/a different parent, which must not wipe the words.
+  const root =
+    activeRoot && activeRoot.isConnected
+      ? activeRoot
+      : findMainContentRoot(doc);
   if (!root) {
-    clearPageReading();
+    clearPageDisplay();
     return;
   }
   applyPageReading(root, comfort);

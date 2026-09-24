@@ -649,6 +649,9 @@ details[open] > .linaw-reading-summary::before {
   padding: 6px 10px;
   border-radius: 4px;
 }
+.linaw-content-card.is-working {
+  opacity: 0.65;
+}
 .linaw-error {
   margin: 0;
   font-size: 0.85rem;
@@ -1244,6 +1247,37 @@ async function bootstrap() {
       updateFab();
     } catch {
       // FAB is optional.
+    }
+  });
+
+  // Escape closes the panel and returns focus to the page.
+  document.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (e.key !== "Escape" || !state.panelOpen || e.defaultPrevented) return;
+    closePanel();
+  });
+
+  // Keep an anchored panel inside the viewport when the window resizes.
+  window.addEventListener("resize", () => {
+    if (!state.panelOpen || !state.position) return;
+    try {
+      const cardWidth = Math.min(384, window.innerWidth - 32);
+      const margin = 16;
+      let left = Math.min(
+        state.position.left,
+        window.scrollX + window.innerWidth - cardWidth - margin,
+      );
+      left = Math.max(window.scrollX + margin, left);
+      let top = Math.min(
+        state.position.top,
+        window.scrollY + window.innerHeight - margin - 100,
+      );
+      top = Math.max(window.scrollY + margin, top);
+      if (left !== state.position.left || top !== state.position.top) {
+        state.position = { top, left };
+        renderPanel();
+      }
+    } catch {
+      // Keep the old position on failure.
     }
   });
 
