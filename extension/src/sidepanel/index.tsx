@@ -239,6 +239,64 @@ function SidePanelApp() {
           background-color: #e4ebd4;
           text-decoration: underline;
         }
+        /* Side-panel-only visibility pass (floating card untouched):
+           stronger borders, darker text, unmistakable active states. */
+        .linaw-sidepanel-container .linaw-settings-label {
+          color: #3d3830;
+          font-size: 0.75rem;
+        }
+        .linaw-sidepanel-container .linaw-select {
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: #1a1814;
+          background-color: #ffffff;
+          border-color: #b9ac93;
+          padding: 8px 10px;
+          max-width: 62%;
+        }
+        .linaw-sidepanel-container .linaw-segment-btn {
+          color: #1a1814;
+          background-color: #ffffff;
+          border-color: #b9ac93;
+          font-size: 0.78rem;
+          font-weight: 600;
+        }
+        .linaw-sidepanel-container .linaw-segment-btn.is-active {
+          background-color: #4f5d2f;
+          border-color: #4f5d2f;
+          color: #ffffff;
+        }
+        .linaw-sidepanel-container .linaw-copy-btn {
+          background-color: #ffffff;
+          border-color: #b9ac93;
+          color: #1a1814;
+          font-weight: 600;
+        }
+        .linaw-sidepanel-container .linaw-toggle-original-btn {
+          color: #4f5d2f;
+          font-size: 0.8rem;
+          font-weight: 700;
+          background-color: #ffffff;
+          border: 1px solid #6b7a3f;
+          border-radius: 9999px;
+          padding: 8px 14px;
+        }
+        .linaw-sidepanel-container .linaw-reading-summary,
+        .linaw-sidepanel-container .linaw-voice-summary {
+          color: #1a1814;
+          font-size: 0.8rem;
+          min-height: 48px;
+        }
+        .linaw-sidepanel-container .linaw-text-link {
+          color: #4f5d2f;
+          font-size: 0.78rem;
+          font-weight: 600;
+          text-decoration: underline;
+          text-underline-offset: 2px;
+        }
+        .linaw-sidepanel-container .linaw-reading-badge {
+          color: #334155;
+        }
       `}</style>
 
       <header className="linaw-home-header">
