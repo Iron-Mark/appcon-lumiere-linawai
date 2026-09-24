@@ -32,6 +32,7 @@ declare namespace chrome {
   };
 
   const runtime: {
+    id?: string;
     onMessage: {
       addListener(
         callback: (

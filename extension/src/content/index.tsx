@@ -25,6 +25,64 @@ import {
 
 const HOST_ID = "linaw-companion-root";
 
+/** Manual clarify needs only a short phrase; single-char drags are noise. */
+export const MIN_SELECTION_CHARS = 3;
+
+const RESTRICTED_PROTOCOLS = new Set([
+  "chrome:",
+  "chrome-extension:",
+  "edge:",
+  "about:",
+  "moz-extension:",
+  "view-source:",
+  "data:",
+  "blob:",
+]);
+
+export function isRestrictedPage(url: string = location.href): boolean {
+  try {
+    const protocol = new URL(url).protocol;
+    if (RESTRICTED_PROTOCOLS.has(protocol)) return true;
+    // Chrome Web Store and browser settings block content scripts entirely.
+    if (/^https?:\/\/(chrome\.google\.com\/webstore|chromewebstore\.google\.com)/.test(url)) return true;
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+function chromeRuntime(): typeof chrome.runtime | null {
+  try {
+    if (typeof chrome !== "undefined" && chrome.runtime?.id) return chrome.runtime;
+    // Content scripts can still use chrome.storage without runtime.id in some contexts.
+    if (typeof chrome !== "undefined" && chrome.runtime) return chrome.runtime;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function safeSendSelection(text: string): Promise<void> {
+  try {
+    const runtime = chromeRuntime();
+    if (!runtime?.sendMessage) return;
+    await runtime.sendMessage({ type: "LINAW_TEXT_SELECTED", text });
+  } catch {
+    // Background worker may be idle, asleep, or blocked on this page.
+  }
+}
+
+async function safeStorePending(text: string): Promise<void> {
+  try {
+    if (typeof chrome === "undefined" || !chrome.storage?.local) return;
+    await chrome.storage.local.set({ pendingSourceText: text });
+  } catch {
+    // Storage blocked (private mode / policy) — panel still works for this view.
+  }
+}
+
+let bootstrapped = false;
+
 export const PANEL_CSS = `
 :host, * { box-sizing: border-box; }
 :host {
@@ -752,14 +810,17 @@ const state: HostState = {
   replaceOnPage: false,
 };
 
-function ensureHost(): ShadowRoot {
-  let host = document.getElementById(HOST_ID) as HTMLElement | null;
-  if (!host) {
-    host = document.createElement("div");
-    host.id = HOST_ID;
-    host.setAttribute("data-linaw", "companion");
-    document.documentElement.appendChild(host);
-  }
+function ensureHost(): ShadowRoot | null {
+  try {
+    const docRoot = document.documentElement;
+    if (!docRoot) return null;
+    let host = document.getElementById(HOST_ID) as HTMLElement | null;
+    if (!host) {
+      host = document.createElement("div");
+      host.id = HOST_ID;
+      host.setAttribute("data-linaw", "companion");
+      docRoot.appendChild(host);
+    }
   const shadow =
     host.shadowRoot ?? host.attachShadow({ mode: "open" });
   if (!shadow.querySelector("style[data-linaw-style]")) {
@@ -771,6 +832,9 @@ function ensureHost(): ShadowRoot {
   state.host = host;
   state.shadow = shadow;
   return shadow;
+  } catch {
+    return null;
+  }
 }
 
 function calculatePopoverPosition(rect: DOMRect): { top: number; left: number } {
@@ -805,7 +869,13 @@ function calculatePopoverPosition(rect: DOMRect): { top: number; left: number } 
 }
 
 function renderPanel() {
-  const shadow = ensureHost();
+  let shadow: ShadowRoot | null = null;
+  try {
+    shadow = ensureHost();
+  } catch {
+    return;
+  }
+  if (!shadow) return;
   let mount = shadow.querySelector("#linaw-mount") as HTMLElement | null;
   if (!mount) {
     mount = document.createElement("div");
@@ -823,7 +893,11 @@ function renderPanel() {
   }
 
   if (!state.root) {
-    state.root = createRoot(mount);
+    try {
+      state.root = createRoot(mount);
+    } catch {
+      return;
+    }
   }
 
   const positionStyle: Record<string, string> = state.position
@@ -886,7 +960,13 @@ function renderPanel() {
 }
 
 function updateFab() {
-  const shadow = ensureHost();
+  let shadow: ShadowRoot | null = null;
+  try {
+    shadow = ensureHost();
+  } catch {
+    return;
+  }
+  if (!shadow) return;
   if (state.disabled || state.panelOpen) {
     state.fab?.remove();
     state.fab = null;
@@ -894,7 +974,7 @@ function updateFab() {
   }
 
   const selection = getCurrentSelectionText();
-  if (!selection) {
+  if (!selection || selection.length < MIN_SELECTION_CHARS) {
     state.fab?.remove();
     state.fab = null;
     return;
@@ -918,24 +998,26 @@ function updateFab() {
 
 async function handleTextSelection() {
   if (state.disabled) return;
-  const sel = window.getSelection();
+  let sel: Selection | null = null;
+  try {
+    sel = window.getSelection();
+  } catch {
+    return;
+  }
   if (!sel || sel.isCollapsed || sel.rangeCount === 0) return;
   const selection = sel.toString().replace(/\s+/g, " ").trim();
-  if (selection.length >= 20) {
-    const range = sel.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-    if (rect.width > 0 || rect.height > 0) {
-      state.position = calculatePopoverPosition(rect);
-    }
+  if (selection.length >= MIN_SELECTION_CHARS) {
     try {
-      await chrome.runtime.sendMessage({
-        type: "LINAW_TEXT_SELECTED",
-        text: selection,
-      });
+      const range = sel.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      if (rect.width > 0 || rect.height > 0) {
+        state.position = calculatePopoverPosition(rect);
+      }
     } catch {
-      // Background worker might be idle or asleep
+      state.position = null;
     }
-    await chrome.storage.local.set({ pendingSourceText: selection });
+    await safeSendSelection(selection);
+    await safeStorePending(selection);
     state.replaceOnPage = selectionInsideArticle(
       findMainContentRoot(document),
       window.getSelection()?.anchorNode ?? null,
@@ -950,31 +1032,46 @@ async function openWithSource(source: string) {
   if (!trimmed) return;
   state.source = trimmed;
   state.panelOpen = true;
-  state.preferences = await loadPreferences();
-  renderPanel();
-  updateFab();
+  try {
+    state.preferences = await loadPreferences();
+  } catch {
+    // Keep last known preferences when storage is blocked.
+  }
+  try {
+    renderPanel();
+  } catch {
+    state.panelOpen = false;
+    return;
+  }
+  try {
+    updateFab();
+  } catch {
+    // FAB is optional; panel is already open.
+  }
 }
 
 async function openWithSelection() {
-  const sel = window.getSelection();
+  let sel: Selection | null = null;
+  try {
+    sel = window.getSelection();
+  } catch {
+    sel = null;
+  }
   const selection = getCurrentSelectionText();
-  if (!selection) return;
+  if (!selection || selection.length < MIN_SELECTION_CHARS) return;
   if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
-    const rect = sel.getRangeAt(0).getBoundingClientRect();
-    if (rect.width > 0 || rect.height > 0) {
-      state.position = calculatePopoverPosition(rect);
+    try {
+      const rect = sel.getRangeAt(0).getBoundingClientRect();
+      if (rect.width > 0 || rect.height > 0) {
+        state.position = calculatePopoverPosition(rect);
+      }
+    } catch {
+      state.position = null;
     }
   }
-  if (selection.length >= 20) {
-    try {
-      await chrome.runtime.sendMessage({
-        type: "LINAW_TEXT_SELECTED",
-        text: selection,
-      });
-    } catch {
-      // Ignore
-    }
-    await chrome.storage.local.set({ pendingSourceText: selection });
+  if (selection.length >= MIN_SELECTION_CHARS) {
+    await safeSendSelection(selection);
+    await safeStorePending(selection);
   }
   state.replaceOnPage = selectionInsideArticle(
     findMainContentRoot(document),
@@ -989,69 +1086,180 @@ async function openWithSelection() {
  */
 async function maybeAutoAdapt() {
   if (state.disabled) return;
-  state.preferences = await loadPreferences();
-  if (!isAutoAdaptEnabled(state.preferences)) return;
-  const text = extractMainReadableText();
-  if (!text) return;
-  state.replaceOnPage = findMainContentRoot(document) != null;
-  state.position = null;
-  await chrome.storage.local.set({ pendingSourceText: text });
   try {
-    await chrome.runtime.sendMessage({
-      type: "LINAW_TEXT_SELECTED",
-      text,
-    });
+    state.preferences = await loadPreferences();
   } catch {
-    // service worker may be starting up
+    return;
   }
+  if (!isAutoAdaptEnabled(state.preferences)) return;
+  let text = "";
+  try {
+    text = extractMainReadableText();
+  } catch {
+    return;
+  }
+  if (!text) return;
+  try {
+    state.replaceOnPage = findMainContentRoot(document) != null;
+  } catch {
+    state.replaceOnPage = false;
+  }
+  state.position = null;
+  await safeStorePending(text);
+  await safeSendSelection(text);
   await openWithSource(text);
 }
 
+function closePanel() {
+  state.panelOpen = false;
+  state.position = null;
+  try {
+    renderPanel();
+  } catch {
+    // Panel already torn down.
+  }
+}
+
+/** Live-sync prefs + disabled sites so sidepanel/web changes apply without reload (P0-2). */
+function startPreferenceStorageSync(): void {
+  try {
+    if (typeof chrome === "undefined" || !chrome.storage?.onChanged) return;
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== "local" || !changes["linaw.preferences.v1"]) return;
+      void (async () => {
+        try {
+          const next = await loadPreferences();
+          const wasDisabled = state.disabled;
+          const origin = window.location.origin;
+          const nowDisabled = next.disabledOrigins.includes(origin);
+          state.preferences = next;
+          state.disabled = nowDisabled;
+          if (nowDisabled && !wasDisabled) {
+            try {
+              releasePageReadingHold();
+              clearPageReading();
+            } catch {
+              // Page already clean.
+            }
+            closePanel();
+            try {
+              updateFab();
+            } catch {
+              // Optional.
+            }
+            return;
+          }
+          if (state.panelOpen) {
+            try {
+              renderPanel();
+            } catch {
+              // Keep old panel on render failure.
+            }
+          }
+        } catch {
+          // Storage read failed; keep last known state.
+        }
+      })();
+    });
+  } catch {
+    // Storage sync unavailable — bootstrap values still work.
+  }
+}
+
 async function bootstrap() {
-  const origin = window.location.origin;
-  state.disabled = await isOriginDisabled(origin);
+  if (bootstrapped) return;
+  bootstrapped = true;
+  try {
+    if (isRestrictedPage()) return;
+  } catch {
+    return;
+  }
+
+  let origin = "";
+  try {
+    origin = window.location.origin;
+  } catch {
+    return;
+  }
+
+  try {
+    state.disabled = await isOriginDisabled(origin);
+  } catch {
+    state.disabled = false;
+  }
 
   // Preference sync with the Linaw web app (localhost) even when this origin is disabled.
-  startLinawPreferenceSync();
+  try {
+    startLinawPreferenceSync();
+  } catch {
+    // Web sync is optional.
+  }
+  startPreferenceStorageSync();
 
   // If disabled, do not attach listeners or perform automatic extraction
   if (state.disabled) {
     return;
   }
 
-  state.preferences = await loadPreferences();
-  syncPageReading(await getReadingComfort());
+  try {
+    state.preferences = await loadPreferences();
+  } catch {
+    state.preferences = DEFAULT_PREFERENCES;
+  }
+  try {
+    syncPageReading(await getReadingComfort());
+  } catch {
+    // Page styling is optional.
+  }
 
   // Listen for clicks outside the companion card to dismiss it
   document.addEventListener("mousedown", (e: MouseEvent) => {
     if (!state.panelOpen) return;
-    if (state.host && e.composedPath().includes(state.host)) {
+    try {
+      if (state.host && e.composedPath().includes(state.host)) {
+        return;
+      }
+    } catch {
       return;
     }
-    state.panelOpen = false;
-    state.position = null;
-    renderPanel();
+    closePanel();
   });
 
-  // Listen for text selection (mouseup); if length >= 20, position popover and adapt
+  // Listen for text selection (mouseup); short phrases clarify too (MIN_SELECTION_CHARS)
   document.addEventListener("mouseup", (e: MouseEvent) => {
-    if (state.host && e.composedPath().includes(state.host)) {
+    try {
+      if (state.host && e.composedPath().includes(state.host)) {
+        return;
+      }
+    } catch {
       return;
     }
-    void handleTextSelection();
+    void handleTextSelection().catch(() => {
+      // Selection handling never breaks the page.
+    });
   });
 
   document.addEventListener("selectionchange", () => {
-    updateFab();
+    try {
+      updateFab();
+    } catch {
+      // FAB is optional.
+    }
   });
 
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message?.type === "linaw.adaptSelection") {
-      void openWithSelection().then(() => sendResponse({ ok: true }));
-      return true;
-    }
-    return undefined;
-  });
+  try {
+    chrome.runtime?.onMessage?.addListener((message, _sender, sendResponse) => {
+      if (message?.type === "linaw.adaptSelection") {
+        void openWithSelection()
+          .then(() => sendResponse({ ok: true }))
+          .catch(() => sendResponse({ ok: false }));
+        return true;
+      }
+      return undefined;
+    });
+  } catch {
+    // Messaging unavailable — toolbar fallback disabled on this page.
+  }
 
   // If browserBehavior is auto, extract readable article/main text on page load as default content;
   // if "manual", strictly wait for user selection.
