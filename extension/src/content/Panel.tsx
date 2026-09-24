@@ -728,6 +728,7 @@ export function Panel({
           className={`linaw-gear-btn ${settingsOpen ? "is-active" : ""}`}
           onClick={() => setSettingsOpen((open) => !open)}
           aria-label="Toggle settings"
+          aria-expanded={settingsOpen}
           title="Adjust preferences"
         >
           ⚙
@@ -883,7 +884,7 @@ export function Panel({
         <details className="linaw-reading-disclosure">
           <summary className="linaw-reading-summary">Reading</summary>
           <div className="linaw-reading-controls">
-            <div className="linaw-comfort-row">
+            <div className="linaw-page-actions">
               <button
                 type="button"
                 id="linaw-on-this-page"

@@ -275,14 +275,15 @@ export const PANEL_CSS = `
   color: #b45309;
 }
 .linaw-gear-btn {
-  background: transparent;
+  background-color: var(--color-white);
   border: 1px solid var(--color-pass-border);
+  box-shadow: 0 1px 2px rgb(26 24 20 / 0.15);
   color: var(--color-pass);
-  font-size: 1rem;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
+  font-size: 1.15rem;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
   padding: 2px 4px;
   border-radius: 9999px;
   cursor: pointer;
@@ -299,7 +300,9 @@ export const PANEL_CSS = `
   color: var(--color-warning);
 }
 .linaw-gear-btn.is-active {
-  color: var(--color-action);
+  background-color: var(--color-action);
+  border-color: var(--color-action);
+  color: var(--color-white);
 }
 .linaw-settings-drawer {
   background-color: var(--color-slate-50);
@@ -402,10 +405,24 @@ details[open] > .linaw-reading-summary::before {
   flex-direction: column;
   gap: 6px;
 }
+.linaw-page-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.linaw-page-actions .linaw-segment-btn {
+  width: 100%;
+  text-align: center;
+}
 .linaw-segment {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
+}
+.linaw-segment .linaw-segment-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 8px 4px;
+  text-align: center;
 }
 .linaw-segment-btn {
   font-family: var(--font-ui);
