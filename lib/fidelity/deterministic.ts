@@ -215,7 +215,8 @@ export function runDeterministicChecks(
       if (claimPresent) {
         const hasMarker =
           includesMarker(adaptedText, CONDITION_MARKERS) ||
-          (conditionText.length > 0 && includesPhrase(adaptedText, conditionText));
+          (conditionText.length > 0 &&
+            conditionPhraseKept(adaptedText, conditionText));
         if (!hasMarker) {
           checks.push({
             claim: describeFact(fact.id, fact.action, fact.condition ?? fact.value),
@@ -260,6 +261,35 @@ export function runDeterministicChecks(
   }
 
   return checks;
+}
+
+const CONDITION_FILLER = new Set([
+  "a",
+  "an",
+  "the",
+  "to",
+  "of",
+  "for",
+  "with",
+  "only",
+  "if",
+  "when",
+  "require",
+  "requires",
+  "required",
+  "must",
+]);
+
+/** English "require a signed pass" still counts when Taglish keeps "signed pass". */
+function conditionPhraseKept(adapted: string, phrase: string): boolean {
+  if (includesPhrase(adapted, phrase)) return true;
+  const tokens = phrase
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= 4 && !CONDITION_FILLER.has(token));
+  if (tokens.length === 0) return false;
+  const hay = adapted.toLowerCase();
+  return tokens.every((token) => hay.includes(token));
 }
 
 function describeFact(

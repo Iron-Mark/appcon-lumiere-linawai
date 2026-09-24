@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { runDeterministicChecks } from "./deterministic";
 import {
+  REASON_CONDITION_CHANGED,
   REASON_ENTITY_MISMATCH,
   REASON_NEGATION_REVIEW,
   REASON_OBLIGATION_CHANGED,
@@ -132,6 +133,56 @@ describe("deterministic Layer 1 §12 gaps", () => {
       "Residents must store enough water on Friday night.",
     );
     expect(known.some((c) => c.claim.includes("Residents"))).toBe(false);
+  });
+
+  it("keeps a Taglish negation that still says hindi", () => {
+    const map: MeaningMap = {
+      sourceIntent: "Boil water",
+      criticalFacts: [
+        {
+          id: "fact_ice",
+          type: "prohibition",
+          actor: null,
+          action: "allowed for drinking",
+          value: null,
+          condition: null,
+          exception: null,
+          negated: true,
+          evidence: "Ice from unboiled water is not allowed for drinking.",
+        },
+      ],
+    };
+    const checks = runDeterministicChecks(
+      map,
+      "Hindi allowed for drinking ang ice from unboiled water.",
+    );
+    expect(checks.some((c) => c.reason === REASON_NEGATION_REVIEW)).toBe(false);
+  });
+
+  it("keeps a Taglish condition when the English content words remain", () => {
+    const map: MeaningMap = {
+      sourceIntent: "Lab pass",
+      criticalFacts: [
+        {
+          id: "fact_pass",
+          type: "condition",
+          actor: null,
+          action: "Equipment loans",
+          value: "signed pass",
+          condition: "require a signed pass",
+          exception: null,
+          negated: false,
+          evidence: "Equipment loans require a signed pass.",
+        },
+      ],
+    };
+    const checks = runDeterministicChecks(
+      map,
+      "Kailangan ng signed pass para sa Equipment loans.",
+    );
+    expect(checks.some((c) => c.reason === REASON_CONDITION_CHANGED)).toBe(
+      false,
+    );
   });
 
   it("does not invent obligation warnings when modals are simply omitted", () => {

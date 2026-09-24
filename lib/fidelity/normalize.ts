@@ -32,7 +32,13 @@ export const NEGATION_MARKERS = [
   "can't",
   "never",
   "no longer",
+  "hindi pwedeng",
+  "hindi puwedeng",
+  "di pwedeng",
   "not",
+  "hindi",
+  "bawal",
+  "huwag",
 ] as const;
 
 /** Obligation strength (§12 must vs may). Order matters for scanning. */
