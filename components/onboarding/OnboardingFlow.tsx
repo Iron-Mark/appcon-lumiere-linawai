@@ -224,7 +224,7 @@ export function OnboardingFlow({ editing = false }: { editing?: boolean }) {
               textUnderlineOffset: "0.2em",
             }}
           >
-            What is connected
+            What Linaw runs
           </Link>
         </div>
 

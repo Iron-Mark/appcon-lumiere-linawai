@@ -43,9 +43,8 @@ export function LegalNotice({ initialTab }: { initialTab: Tab }) {
           Terms and privacy
         </h1>
         <p className="font-ui text-sm leading-relaxed text-ink-muted sm:text-base">
-          This notice is written by the Linaw team for a free build entered in
-          AppCon 2026. It is not a law-firm document, and Linaw is not a
-          registered company.
+          This notice accompanies Linaw AI. It is not a law-firm document,
+          and Linaw is not a registered company.
         </p>
       </header>
 
@@ -106,7 +105,9 @@ function TermsPanel() {
       </Section>
       <Section n="3" title="Using the app">
         An account is optional. If you add a name or email, it stays in this
-        browser. There is no password. You can stop using Linaw at any time.
+        browser. On this device there is no password. When cloud sign-in is
+        configured, the password stays with that account service. You can stop
+        using Linaw at any time.
         Clearing this site’s data in the browser removes the local profile,
         preferences, and saved pieces.
       </Section>
@@ -158,8 +159,8 @@ function PrivacyPanel() {
       <p>
         The Data Privacy Act of 2012 (Republic Act No. 10173) applies when a
         message contains personal information, such as a name, a schedule, or
-        a school detail. This notice says what this build actually does. We
-        do not invent an NPC registration number.
+        a school detail. This notice says what Linaw AI does with a message.
+        Linaw does not publish an NPC registration number.
       </p>
       <Section n="1" title="On this device">
         Preferences (detail, wording, delivery, and Auto-Clarify or Manual)
@@ -176,8 +177,10 @@ function PrivacyPanel() {
         adapter and the text is not sent to a model. A share link leaves the
         device when you send it, because the source is inside the URL. Listen
         uses the browser’s speech engine. Some voices stay on the device, and
-        some send the spoken line to the browser vendor. A semantic check
-        runs only if NLI_ENDPOINT is set, and then only to that address.
+        some send the spoken line to the browser vendor. The hosted app
+        sends the source sentence and the claim to
+        https://linaw-nli.onrender.com/predict for the semantic check. Linaw
+        does not store that exchange.
       </Section>
       <Section n="3" title="What we do not collect">
         There is no advertising network. Vercel Web Analytics counts page
@@ -202,8 +205,8 @@ function PrivacyPanel() {
       </Section>
       <Section n="6" title="Your choices">
         You can delete a saved piece, sign out, or clear this site’s data in
-        the browser. That is how access, correction, and deletion work in
-        this build. There is no separate privacy desk.
+        the browser. That is how access, correction, and deletion work.
+        There is no separate privacy desk.
       </Section>
       <Section n="7" title="Children and contact">
         Linaw is not directed at children. If you find a leak, open an issue

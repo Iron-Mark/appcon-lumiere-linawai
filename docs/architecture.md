@@ -156,7 +156,7 @@ flowchart TD
 
 1. **Deterministic** — times, weekdays, numbers, units, negation, must/may, condition/exception markers, names. Known values come from fact `value` / `condition` / `exception` **and** `evidence`.
 2. **Relationships** — actor stays attached to the value (seeded failure: mentors' 8:30 AM on everyone).
-3. **NLI** — optional. `POST NLI_ENDPOINT` `{ inputs: [{ text, text_pair }] }`, 4 s. Entailment pass, contradiction warning, neutral pass + inconclusive. Unset or fail → reason `Semantic check not connected.` UI: **Not run**, excluded from the verdict. Service: `nli-service/` (`cross-encoder/nli-deberta-v3-base`, default `:8001/predict`).
+3. **NLI.** The hosted app posts `{ inputs: [{ text, text_pair }] }` to `https://linaw-nli.onrender.com/predict` (`NLI_ENDPOINT` on Vercel production), with a 4 s limit. Entailment pass, contradiction warning, neutral pass + inconclusive. Unset or fail: reason `Semantic check not connected.` UI: **Not run**, excluded from the verdict. Local verifier: `nli-service/` (`cross-encoder/nli-deberta-v3-base`).
 4. **Coverage** — Key Points and Full. High-priority: condition, deadline, exception, prohibition. Facts already flagged by 1–2 are skipped. A missing deadline warns.
 
 `evals/` is the golden + seeded + fidelity cases. `npm test` runs them.
@@ -171,7 +171,7 @@ flowchart TD
 | `/content` | pieces on device |
 | `/settings` | preferences + optional local profile |
 | `/home` | redirects to `/content` |
-| `/todo` | backlog |
+| `/todo` | what is connected |
 | `extension/` | MV3; same `adapt()`. The service worker tries `https://appcon-lumiere-linawai.vercel.app`, then `http://127.0.0.1:3000`, then `http://localhost:3000`. A model answer replaces the main article (selection only if it sits inside that article; Auto-Clarify replaces the whole article). A fixture answer does not. **Page as it was** restores the original words |
 
 Share: `/read?s=<base64url>`, ≤ 4,000 source chars. Recipient's own preferences apply. PDF/text parse is client-side (`readSourceFile.ts`). Ungrounded map (no evidence substring in the pasted source) is shown as not produced from that text.
