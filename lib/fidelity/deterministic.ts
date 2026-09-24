@@ -10,7 +10,7 @@ import {
 import {
   CONDITION_MARKERS,
   EXCEPTION_MARKERS,
-  NEGATION_MARKERS,
+  hasNegation,
   containsNormalizedTime,
   extractNumbers,
   extractQuantityUnits,
@@ -33,6 +33,7 @@ import {
 export function runDeterministicChecks(
   meaningMap: MeaningMap,
   adaptedText: string,
+  source = "",
 ): Check[] {
   const checks: Check[] = [];
   const adaptedTimes = new Set(extractTimes(adaptedText));
@@ -141,11 +142,26 @@ export function runDeterministicChecks(
     }
   }
 
+  const sourceHaystack = source.toLowerCase();
+  if (sourceHaystack) {
+    for (const sentence of splitSentences(adaptedText)) {
+      for (const subject of extractRoleSubjects(sentence)) {
+        if (sourceHaystack.includes(subject.toLowerCase())) continue;
+        checks.push({
+          claim: `Name / group: ${subject}`,
+          status: "warning",
+          evidence: meaningMap.sourceIntent,
+          reason: REASON_ENTITY_MISMATCH,
+        });
+      }
+    }
+  }
+
   for (const fact of meaningMap.criticalFacts) {
     if (fact.negated) {
       const flipped =
         includesPhrase(adaptedText, fact.action ?? "") &&
-        !includesMarker(adaptedText, NEGATION_MARKERS);
+        !hasNegation(adaptedText);
       if (flipped && (fact.action || fact.value)) {
         checks.push({
           claim: describeFact(fact.id, fact.action, fact.value),

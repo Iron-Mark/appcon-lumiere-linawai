@@ -8,6 +8,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { SunMark } from "@/components/sindi";
 import { Reveal } from "./Reveal";
 import { SectionHeading } from "./SectionHeading";
 
@@ -72,7 +73,8 @@ export function Features() {
       aria-labelledby="features-title"
       className="landing-section landing-section--inset"
     >
-      <div className="mx-auto max-w-6xl">
+      <div className="relative mx-auto max-w-6xl">
+        <SunMark className="pointer-events-none absolute -top-6 -left-2 size-16 opacity-30 md:size-20" />
         <SectionHeading
           id="features-title"
           eyebrow="Your preferences"

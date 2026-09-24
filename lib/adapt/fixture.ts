@@ -210,41 +210,29 @@ async function fidelityChecks(
   return { checks, overallStatus };
 }
 
-/** Fallback when source is neither campus-pilot nor seeded (still offline). */
-function fallbackHappyPathChecks(): Check[] {
-  return [
-    {
-      claim: "Orientation seat must be confirmed by Thursday at 5 PM",
-      status: "pass",
-      evidence: DEADLINE_EVIDENCE,
-      reason: "Deadline matches the source.",
+const UNAVAILABLE_NOTE =
+  "Linaw could not clarify this message. The live model did not return a note, so this is not a rewrite of what you pasted. Your original text is still in the source.";
+
+/** Offline path for text that is not the campus sample. Never invent that sample. */
+function unavailableResponse(source: string): AdaptResponse {
+  const excerpt = source.trim().slice(0, 240);
+  return {
+    adaptedText: UNAVAILABLE_NOTE,
+    meaningMap: {
+      sourceIntent: "Clarification was not produced for this message.",
+      criticalFacts: [],
     },
-    {
-      claim: "Mentors arrive Friday at 8:30 AM",
-      status: "pass",
-      evidence: MENTOR_ARRIVAL_EVIDENCE,
-      reason: "Arrival time stays attached to mentors.",
-    },
-    {
-      claim: "Other members arrive at 9:00 AM",
-      status: "pass",
-      evidence: OTHER_MEMBERS_EVIDENCE,
-      reason: "Arrival time stays attached to other members.",
-    },
-    {
-      claim:
-        "Late confirmations require written approval from the program coordinator",
-      status: "pass",
-      evidence: LATE_CONFIRMATION_EVIDENCE,
-      reason: "Exception condition is preserved.",
-    },
-    {
-      claim: "Adapted claims are supported by the source",
-      status: "pass",
-      evidence: DEADLINE_EVIDENCE,
-      reason: "Semantic check not connected.",
-    },
-  ];
+    checks: [
+      {
+        claim: "A clarified note was produced from this text",
+        status: "warning",
+        evidence: excerpt,
+        reason:
+          "The live model did not return a note. This is not a clarification of what you pasted.",
+      },
+    ],
+    overallStatus: "warning",
+  };
 }
 
 async function seededFailureResponse(
@@ -288,12 +276,7 @@ async function happyPathResponse(
     };
   }
 
-  return {
-    adaptedText,
-    meaningMap,
-    checks: fallbackHappyPathChecks(),
-    overallStatus: "pass",
-  };
+  return unavailableResponse(source);
 }
 
 /**

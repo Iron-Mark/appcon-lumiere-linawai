@@ -43,7 +43,6 @@ import {
 import { findMainContentRoot } from "./extractor";
 import { getListenSettings, saveListenSettings } from "../storage/listen";
 import {
-  bestListenVoice,
   DEVICE_VOICE_ID,
   deviceVoiceName,
   LINAW_VOICE_ID,
@@ -1089,22 +1088,19 @@ export function Panel({
                 );
               }}
             >
-              <option value="">
-                {bestListenVoice(listenVoices)
-                  ? `Automatic · ${bestListenVoice(listenVoices)?.name}`
-                  : "Automatic"}
-              </option>
               <option value={LINAW_VOICE_ID}>Linaw</option>
               <option value={DEVICE_VOICE_ID}>
                 {deviceVoiceName(listenVoices)
                   ? `This device · ${deviceVoiceName(listenVoices)}`
                   : "This device"}
               </option>
-              {listenVoices.map((voice) => (
-                <option key={voice.voiceURI} value={voice.voiceURI}>
-                  {voice.name} · {voice.lang}
-                </option>
-              ))}
+              {listenSettings.voiceURI !== LINAW_VOICE_ID
+                ? listenVoices.map((voice) => (
+                    <option key={voice.voiceURI} value={voice.voiceURI}>
+                      {voice.name} · {voice.lang}
+                    </option>
+                  ))
+                : null}
             </select>
             {listenNote ? <p className="linaw-settings-label">{listenNote}</p> : null}
             <div className="linaw-segment" role="group" aria-label="Pitch">

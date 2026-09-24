@@ -1,7 +1,7 @@
 import type { ListenPitch, ListenRate } from "./settings";
 
 /** Piper Lessac low. Downloaded on first use, not stored in git. */
-export const LINAW_PIPER_ID = "en_US-lessac-low";
+export const LINAW_PIPER_ID = "en_US-hfc_female-medium";
 
 export const LINAW_DOWNLOAD_NOTE = "Downloading the Linaw voice…";
 export const LINAW_FALLBACK_NOTE = "This play used the device voice.";

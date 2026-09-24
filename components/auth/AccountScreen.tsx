@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, LockKeyhole, Mail, UserRound } from "lucide-react";
 
 import { HeroDemoCard } from "@/components/landing/HeroDemoCard";
+import { Sindi, SunMark } from "@/components/sindi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -99,10 +100,14 @@ export function AccountScreen() {
 
   return (
     <div className="grid min-h-[calc(100dvh-3.5rem)] md:min-h-dvh md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
-      <aside className="order-2 hidden flex-col justify-center gap-8 bg-paper px-8 py-12 md:order-1 md:flex lg:px-14">
-        <p className="font-reading m-0 max-w-sm text-2xl font-semibold tracking-tight text-ink">
-          Preferences follow this account. Text you paste does not.
-        </p>
+      <aside className="relative order-2 hidden flex-col justify-center gap-8 bg-paper px-8 py-12 md:order-1 md:flex lg:px-14">
+        <SunMark className="pointer-events-none absolute top-10 right-8 size-28 opacity-25 lg:right-14" />
+        <div className="flex max-w-md items-start gap-4">
+          <Sindi state="reading" line="" size={56} />
+          <p className="font-reading m-0 text-2xl font-semibold tracking-tight text-ink">
+            Preferences follow this account. Text you paste does not.
+          </p>
+        </div>
         <div className="max-w-xl">
           <HeroDemoCard />
         </div>

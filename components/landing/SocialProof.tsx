@@ -1,4 +1,5 @@
 import { GraduationCap, Megaphone, Users } from "lucide-react";
+import { SunMark } from "@/components/sindi";
 import { Reveal } from "./Reveal";
 import { SectionHeading } from "./SectionHeading";
 
@@ -32,7 +33,8 @@ export function SocialProof() {
       aria-labelledby="proof-title"
       className="landing-section landing-section--inset"
     >
-      <div className="mx-auto max-w-6xl">
+      <div className="relative mx-auto flex max-w-6xl flex-col items-center">
+        <SunMark className="mb-3 size-14 opacity-40" />
         <SectionHeading
           id="proof-title"
           eyebrow="Built for real notices"
@@ -41,7 +43,7 @@ export function SocialProof() {
           align="center"
         />
 
-        <div className="mt-12 grid divide-y divide-border md:grid-cols-3 md:divide-x md:divide-y-0">
+        <div className="mt-12 grid w-full divide-y divide-border md:grid-cols-3 md:divide-x md:divide-y-0">
           {USE_CASES.map((item, index) => (
             <Reveal
               key={item.title}

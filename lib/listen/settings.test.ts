@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyListenSettings,
+  DEFAULT_LISTEN_SETTINGS,
   normalizeListenSettings,
   resolveListenVoice,
 } from "./settings";
@@ -11,13 +12,18 @@ const voices = [
 ];
 
 describe("normalizeListenSettings", () => {
+  it("starts on the Linaw voice", () => {
+    expect(DEFAULT_LISTEN_SETTINGS.voiceURI).toBe("linaw");
+    expect(normalizeListenSettings(undefined).voiceURI).toBe("linaw");
+  });
+
   it("keeps allowed pitch and pace and drops the rest", () => {
     expect(
       normalizeListenSettings({ voiceURI: "fil-ph", pitch: 1.15, rate: 1.25 }),
     ).toEqual({ voiceURI: "fil-ph", pitch: 1.15, rate: 1.25 });
     expect(
       normalizeListenSettings({ voiceURI: 4, pitch: 9, rate: "fast" }),
-    ).toEqual({ voiceURI: "", pitch: 1, rate: 1 });
+    ).toEqual({ voiceURI: "linaw", pitch: 1, rate: 1 });
   });
 });
 
@@ -44,6 +50,6 @@ describe("applyListenSettings", () => {
       voices,
     );
     expect(target.voice).toEqual(voices[0]);
-    expect(resolveListenVoice(voices, "")).toEqual(voices[0]);
+    expect(resolveListenVoice(voices, "linaw")).toEqual(voices[0]);
   });
 });
