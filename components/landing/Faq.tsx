@@ -20,7 +20,9 @@ export function Faq() {
     >
       <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] md:items-start md:gap-16">
         <div className="relative md:sticky md:top-28">
-          <SunMark className="pointer-events-none absolute -top-4 right-0 size-28 opacity-30 md:size-36" />
+          <Reveal className="pointer-events-none absolute left-60 top-[-2rem]">
+            <SunMark className="size-28 opacity-60 md:size-40" />
+          </Reveal>
           <SectionHeading
             id="faq-title"
             eyebrow="FAQ"

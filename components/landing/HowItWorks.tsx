@@ -17,7 +17,8 @@ const STEPS: {
   {
     state: "reading",
     label: "Read",
-    description: "Open any article, memo, or PDF. Linaw quietly reads it with you.",
+    description:
+      "Open any article, memo, or PDF. Linaw quietly reads it with you.",
     art: NoticeSheet,
   },
   {
@@ -29,7 +30,8 @@ const STEPS: {
   {
     state: "pass",
     label: "Verify",
-    description: "Every condition, number, and deadline is checked against the source.",
+    description:
+      "Every condition, number, and deadline is checked against the source.",
     art: MeaningCheck,
   },
 ];
@@ -42,7 +44,9 @@ export function HowItWorks() {
       className="landing-section"
     >
       <div className="relative mx-auto max-w-6xl">
-        <SunMark className="pointer-events-none absolute top-0 right-0 hidden size-28 opacity-25 md:block" />
+        <Reveal className="pointer-events-none absolute top-[-0.5rem] right-0 hidden md:block">
+          <SunMark className="size-36 opacity-40" />
+        </Reveal>
         <SectionHeading
           id="how-title"
           eyebrow="How the web app works"
