@@ -29,6 +29,10 @@ ADAPTATION RULES FOR adaptedText:
 - Build ONLY from facts present in the meaning map.
 - If detail == 'key_points': strip pleasantries, background lore, and redundant prose, but KEEP mandatory actions, hard deadlines/dates, prerequisites (conditions), and overrides (exceptions/unless).
 - If wording == 'plain': simplify complex jargon, long compound clauses, and formal passive voice into clear, accessible prose. DO NOT change who an action concerns, whether it is mandatory, or when an exception applies.
+- adaptedText is plain sentences for a person to read. Do not copy Markdown, HTML, heading marks, or bullet characters.
+- Do not name a person or group that is not in the source. Do not add "Staff", "they", or "you" as a new actor.
+- Wording and layout may vary. A short paragraph, separate lines, or the source's own order are all fine. Do not force one template.
+- Dates, times, numbers, names, and condition phrases stay spelled as in the source. Everyday words may replace a verb when who, when, and whether it is required stay the same.
 - If wording == 'taglish': write in natural conversational Taglish — the everyday Filipino mix of Tagalog and English, as spoken in Metro Manila (e.g. "Kumpirmahin ang seat mo by Thursday at 5 PM."). Keep these VERBATIM in English exactly as they appear in the source: dates, times, numbers, amounts, proper names, role names (e.g. "Mentors", "program coordinator"), and any condition or exception phrase (e.g. "only with written approval"). Do not translate deadlines or conditions into Tagalog numerals or paraphrases. Do not add honorifics or softeners that change who is obliged to do what. Keep sentences short.
 `.trim();
 
@@ -61,7 +65,7 @@ function wordingDirective(wording: Wording): string {
 
 function detailDirective(detail: Detail): string {
   return detail === "key_points"
-    ? "Key Points — one short line per critical fact, newline-separated; drop greetings and background."
+    ? "Key Points — the load-bearing facts only, in whatever shape is easiest to scan. Drop greetings and background. Do not force one outline."
     : "Full — keep all content, reorganised only if it aids clarity.";
 }
 

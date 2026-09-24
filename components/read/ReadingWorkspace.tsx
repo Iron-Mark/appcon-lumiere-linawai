@@ -64,6 +64,7 @@ import {
   enforceSourceLength,
   readSourceFile,
   sanitizeSourceText,
+  toPlainSource,
   SOURCE_UPLOAD_ACCEPT,
   SOURCE_UPLOAD_LIMITS_ID,
   SOURCE_UPLOAD_LIMITS_TEXT,
@@ -263,7 +264,7 @@ export function ReadingWorkspace({
 
   const applyDraftText = useCallback(
     (raw: string, options?: { announce?: string; settle?: boolean }) => {
-      const checked = enforceSourceLength(sanitizeSourceText(raw));
+      const checked = enforceSourceLength(toPlainSource(raw));
       if (!checked.ok) {
         setError(checked.error);
         setUploadStatus(checked.error);
@@ -727,7 +728,7 @@ export function ReadingWorkspace({
 
     try {
       const clip = await navigator.clipboard.readText();
-      const incoming = sanitizeSourceText(clip);
+      const incoming = toPlainSource(clip);
       if (!incoming.trim()) {
         const message = "Clipboard is empty.";
         setError(message);
@@ -836,9 +837,8 @@ export function ReadingWorkspace({
 
   /**
    * True when the adapter's meaning map is not traceable to the text that was
-   * sent. Today that happens whenever the offline fixture receives anything
-   * other than its sample; with a live adapter it would flag a hallucinated map.
-   * Either way the reader must be told the note is not about their text.
+   * sent. A live model can return facts that are not in the paste.
+   * The offline fixture no longer substitutes the campus example for other text.
    *
    * Exception: the flagged sample source is intentionally short and is checked
    * against the campus-pilot Meaning Map so Meaning Check can show real evidence
@@ -1470,7 +1470,7 @@ export function ReadingWorkspace({
             <X aria-hidden="true" />
           </Button>
           <div className="read-guide-mascot" aria-hidden="true">
-            <Sindi state="empty" line="" className="read-guide-ray" />
+            <Sindi state="empty" line="" size={96} className="read-guide-ray" />
           </div>
           <div className="read-guide-heading">
             <p className="read-guide-eyebrow">How Linaw works</p>
@@ -1906,7 +1906,7 @@ export function ReadingWorkspace({
         /* Ray sits like a sticker over the panel's top-left corner; the panel's
            own padding clears it so the heading and steps stay on a clean grid. */
         .read-guide {
-          --guide-ray: 6.25rem;
+          --guide-ray: 8rem;
           position: relative;
           margin-top: 1.75rem;
           margin-left: 0.75rem;
@@ -2020,7 +2020,7 @@ export function ReadingWorkspace({
         }
         @media (max-width: 860px) {
           .read-guide {
-            --guide-ray: 5.5rem;
+            --guide-ray: 6.75rem;
             margin-left: 0.85rem;
             padding: 1.35rem 1.15rem 1.35rem;
           }

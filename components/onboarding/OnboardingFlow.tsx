@@ -80,8 +80,12 @@ export function OnboardingFlow({ editing = false }: { editing?: boolean }) {
 
   const goBack = useCallback(() => {
     setError(null);
+    if (stepIndex === 0) {
+      window.location.assign(editing ? "/settings" : "/");
+      return;
+    }
     setStepIndex((i) => Math.max(0, i - 1));
-  }, []);
+  }, [editing, stepIndex]);
 
   const persistAndLeave = useCallback(async () => {
     const { detail, wording, delivery, browserBehavior } = draft;
@@ -234,8 +238,13 @@ export function OnboardingFlow({ editing = false }: { editing?: boolean }) {
           <button
             type="button"
             onClick={goBack}
-            disabled={stepIndex === 0}
-            aria-label="Go back to previous step"
+            aria-label={
+              stepIndex === 0
+                ? editing
+                  ? "Back to settings"
+                  : "Back to Linaw"
+                : "Go back to previous step"
+            }
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -244,14 +253,9 @@ export function OnboardingFlow({ editing = false }: { editing?: boolean }) {
               height: "2.5rem",
               borderRadius: "999px",
               border: "none",
-              background:
-                stepIndex === 0 ? "transparent" : "var(--color-paper-inset)",
-              color:
-                stepIndex === 0
-                  ? "var(--color-ink-subtle)"
-                  : "var(--color-ink)",
-              cursor: stepIndex === 0 ? "default" : "pointer",
-              opacity: stepIndex === 0 ? 0.45 : 1,
+              background: "var(--color-paper-inset)",
+              color: "var(--color-ink)",
+              cursor: "pointer",
               flexShrink: 0,
             }}
           >

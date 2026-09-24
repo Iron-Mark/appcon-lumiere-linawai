@@ -10,7 +10,7 @@ import {
 import {
   CONDITION_MARKERS,
   EXCEPTION_MARKERS,
-  NEGATION_MARKERS,
+  hasNegation,
   containsNormalizedTime,
   extractNumbers,
   extractQuantityUnits,
@@ -33,6 +33,7 @@ import {
 export function runDeterministicChecks(
   meaningMap: MeaningMap,
   adaptedText: string,
+  source = "",
 ): Check[] {
   const checks: Check[] = [];
   const adaptedTimes = new Set(extractTimes(adaptedText));
@@ -141,11 +142,26 @@ export function runDeterministicChecks(
     }
   }
 
+  const sourceHaystack = source.toLowerCase();
+  if (sourceHaystack) {
+    for (const sentence of splitSentences(adaptedText)) {
+      for (const subject of extractRoleSubjects(sentence)) {
+        if (sourceHaystack.includes(subject.toLowerCase())) continue;
+        checks.push({
+          claim: `Name / group: ${subject}`,
+          status: "warning",
+          evidence: meaningMap.sourceIntent,
+          reason: REASON_ENTITY_MISMATCH,
+        });
+      }
+    }
+  }
+
   for (const fact of meaningMap.criticalFacts) {
     if (fact.negated) {
       const flipped =
         includesPhrase(adaptedText, fact.action ?? "") &&
-        !includesMarker(adaptedText, NEGATION_MARKERS);
+        !hasNegation(adaptedText);
       if (flipped && (fact.action || fact.value)) {
         checks.push({
           claim: describeFact(fact.id, fact.action, fact.value),
@@ -199,7 +215,8 @@ export function runDeterministicChecks(
       if (claimPresent) {
         const hasMarker =
           includesMarker(adaptedText, CONDITION_MARKERS) ||
-          (conditionText.length > 0 && includesPhrase(adaptedText, conditionText));
+          (conditionText.length > 0 &&
+            conditionPhraseKept(adaptedText, conditionText));
         if (!hasMarker) {
           checks.push({
             claim: describeFact(fact.id, fact.action, fact.condition ?? fact.value),
@@ -244,6 +261,35 @@ export function runDeterministicChecks(
   }
 
   return checks;
+}
+
+const CONDITION_FILLER = new Set([
+  "a",
+  "an",
+  "the",
+  "to",
+  "of",
+  "for",
+  "with",
+  "only",
+  "if",
+  "when",
+  "require",
+  "requires",
+  "required",
+  "must",
+]);
+
+/** English "require a signed pass" still counts when Taglish keeps "signed pass". */
+function conditionPhraseKept(adapted: string, phrase: string): boolean {
+  if (includesPhrase(adapted, phrase)) return true;
+  const tokens = phrase
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= 4 && !CONDITION_FILLER.has(token));
+  if (tokens.length === 0) return false;
+  const hay = adapted.toLowerCase();
+  return tokens.every((token) => hay.includes(token));
 }
 
 function describeFact(

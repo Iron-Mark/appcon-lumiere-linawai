@@ -32,7 +32,13 @@ export const NEGATION_MARKERS = [
   "can't",
   "never",
   "no longer",
+  "hindi pwedeng",
+  "hindi puwedeng",
+  "di pwedeng",
   "not",
+  "hindi",
+  "bawal",
+  "huwag",
 ] as const;
 
 /** Obligation strength (§12 must vs may). Order matters for scanning. */
@@ -84,7 +90,7 @@ export function extractQuantityUnits(text: string): QuantityUnit[] {
  */
 export function extractRoleSubjects(text: string): string[] {
   const pattern =
-    /\b([A-Z][A-Za-z0-9'’-]*(?:\s+[A-Z][A-Za-z0-9'’-]*){0,3})\s+(?:should|must|may|arriv(?:e|es|ing)|collect(?:s|ing)?|submit(?:s|ting)?|claim(?:s|ing)?|borrow(?:s|ing)?|enter(?:s|ing)?|leav(?:e|es|ing)|assembl(?:e|es|ing)|rest(?:s|ing)?|cross(?:es|ing)?|hand(?:s|ing)?|approv(?:e|es|ing)|restart(?:s|ing)?)\b/g;
+    /\b([A-Z][A-Za-z0-9'’-]*(?:\s+[A-Z][A-Za-z0-9'’-]*){0,3})\s+(?:should|must|may|will|arriv(?:e|es|ing)|collect(?:s|ing)?|submit(?:s|ting)?|claim(?:s|ing)?|borrow(?:s|ing)?|enter(?:s|ing)?|leav(?:e|es|ing)|assembl(?:e|es|ing)|rest(?:s|ing)?|cross(?:es|ing)?|hand(?:s|ing)?|approv(?:e|es|ing)|restart(?:s|ing)?)\b/g;
   const found: string[] = [];
   for (const match of text.matchAll(pattern)) {
     const subject = match[1].trim();
@@ -157,6 +163,16 @@ export function includesMarker(
 ): boolean {
   const lower = text.toLowerCase();
   return markers.some((marker) => lower.includes(marker));
+}
+
+/** "No requests" is a negation. "Notice" is not. */
+export function hasNegation(text: string): boolean {
+  if (/\bno\b/i.test(text)) return true;
+  const lower = text.toLowerCase();
+  return NEGATION_MARKERS.some((marker) => {
+    if (marker === "not") return /\bnot\b/i.test(text);
+    return lower.includes(marker);
+  });
 }
 
 export function includesPhrase(haystack: string, needle: string): boolean {

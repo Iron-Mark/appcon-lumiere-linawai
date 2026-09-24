@@ -34,7 +34,7 @@ export async function runFidelityGuard(
 ): Promise<FidelityGuardResult> {
   const { source, adaptedText, meaningMap, preferences, nliEndpoint } = input;
 
-  const deterministic = runDeterministicChecks(meaningMap, adaptedText);
+  const deterministic = runDeterministicChecks(meaningMap, adaptedText, source);
   const relationship = runRelationshipChecks(meaningMap, adaptedText);
   const nli = await runNliSlot({ source, adaptedText, endpoint: nliEndpoint });
   const flaggedIds = collectFlaggedFactIds(meaningMap, [

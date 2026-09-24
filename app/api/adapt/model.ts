@@ -112,7 +112,7 @@ OUTPUT FORMAT — return ONE JSON object and nothing else (no prose, no code fen
   ],
   "adaptedText": "the recipient-facing adaptation, following the TARGET PREFERENCES; use a newline between key points"
 }
-Rules: keep every value/condition/exception in the adaptedText spelled exactly as in the source. Facts must be grounded — if you cannot quote evidence verbatim, leave the fact out. Aim for 3–8 facts.
+Rules: keep every value/condition/exception in the adaptedText spelled exactly as in the source. Do not name a person or group that is not in the source. adaptedText is plain sentences, never Markdown or HTML. Wording and layout may vary; do not force one outline. Facts must be grounded — if you cannot quote evidence verbatim, leave the fact out. Aim for 3–8 facts.
 `.trim();
 
 export type ModelAdaptResult = {

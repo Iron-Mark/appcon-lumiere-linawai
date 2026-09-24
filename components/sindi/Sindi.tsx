@@ -14,6 +14,8 @@ export type SindiProps = {
   /** Optional override for the one short line. */
   line?: string;
   className?: string;
+  /** Pixel size of the sun. Reading defaults to 28; every other state defaults to 40. */
+  size?: number;
 };
 
 /** Sheet visual mapped from the product `state` prop. */
@@ -68,10 +70,10 @@ function lookFor(state: SindiState): RayLook {
  * Visible character is Ray (sun). Export name stays `Sindi` for stable imports.
  * No adapt calls, routing, or screen logic.
  */
-export function Sindi({ state, line, className }: SindiProps) {
+export function Sindi({ state, line, className, size }: SindiProps) {
   const text = line ?? DEFAULT_LINES[state];
   const look = lookFor(state);
-  const size = state === "reading" ? 28 : 40;
+  const sun = size ?? (state === "reading" ? 28 : 40);
 
   return (
     <div
@@ -91,8 +93,8 @@ export function Sindi({ state, line, className }: SindiProps) {
       <RaySvg
         look={look}
         style={{
-          width: size,
-          height: size,
+          width: sun,
+          height: sun,
           flexShrink: 0,
           overflow: "visible",
           transition:

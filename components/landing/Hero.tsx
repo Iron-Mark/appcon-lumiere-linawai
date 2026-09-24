@@ -22,12 +22,7 @@ export function Hero() {
       <div className="mx-auto grid max-w-6xl items-center gap-10 md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] md:gap-14 lg:gap-16">
         <div className="flex min-w-0 flex-col items-start text-left">
           <Reveal className="font-ui inline-flex items-center gap-2.5 rounded-full border border-border/70 bg-paper-raised/80 px-3 py-1.5">
-            <span
-              className="inline-flex origin-left scale-[0.72]"
-              aria-hidden="true"
-            >
-              <Sindi state="reading" line="" />
-            </span>
+            <Sindi state="reading" line="" />
             <span className="text-sm font-medium tracking-wide text-ink-muted">
               Personalized reading · meaning preserved
             </span>

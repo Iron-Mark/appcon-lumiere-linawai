@@ -1,7 +1,7 @@
 /**
  * Listen display choices. Not part of the synced reading preferences.
- * An empty voiceURI means automatic (the clearest installed voice).
- * "device" is the browser default. "linaw" is the free downloaded voice.
+ * "linaw" is the free downloaded voice and the voice Listen starts on.
+ * "device" is the browser default. A named voiceURI is one installed voice.
  */
 
 import { bestListenVoice, DEVICE_VOICE_ID, LINAW_VOICE_ID } from "./rank";
@@ -30,7 +30,7 @@ export type ListenVoice = {
 };
 
 export const DEFAULT_LISTEN_SETTINGS: ListenSettings = {
-  voiceURI: "",
+  voiceURI: LINAW_VOICE_ID,
   pitch: 1,
   rate: 1,
 };
@@ -53,7 +53,10 @@ function pickNumber<T extends number>(
 export function normalizeListenSettings(raw: unknown): ListenSettings {
   if (!raw || typeof raw !== "object") return { ...DEFAULT_LISTEN_SETTINGS };
   const record = raw as Partial<ListenSettings>;
-  const voiceURI = typeof record.voiceURI === "string" ? record.voiceURI : "";
+  const voiceURI =
+    typeof record.voiceURI === "string" && record.voiceURI.length > 0
+      ? record.voiceURI
+      : LINAW_VOICE_ID;
   return {
     voiceURI,
     pitch: pickNumber(record.pitch, LISTEN_PITCHES, DEFAULT_LISTEN_SETTINGS.pitch),

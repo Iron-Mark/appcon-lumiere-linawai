@@ -34,9 +34,47 @@ function extensionOf(name: string): string {
 
 export function sanitizeSourceText(raw: string): string {
   return raw
+    .replace(/^\uFEFF/, "")
     .replace(/\u0000/g, "")
     .replace(/\r\n/g, "\n")
     .replace(/\r/g, "\n");
+}
+
+/**
+ * Turn a raw .txt or .md notice into the prose the reader and the model share.
+ * Markup and mid-sentence wraps come out as sentences. Words stay.
+ */
+export function toPlainSource(raw: string): string {
+  let text = sanitizeSourceText(raw);
+  text = text.replace(/```[\s\S]*?```/g, (block) => block.replace(/```/g, ""));
+  text = text.replace(/!\[[^\]]*]\([^)]*\)/g, "");
+  text = text.replace(/\[([^\]]+)]\([^)]*\)/g, "$1");
+  text = text.replace(/^#{1,6}\s+/gm, "");
+  text = text.replace(/^\s{0,3}>\s?/gm, "");
+  text = text.replace(/^\s*(?:[-*+]|\d+[.)])\s+/gm, "");
+  text = text.replace(/\*\*([^*]+)\*\*/g, "$1");
+  text = text.replace(/__([^_]+)__/g, "$1");
+  text = text.replace(/(^|[\s])\*([^*\n]+)\*(?=[\s]|$)/g, "$1$2");
+  text = text.replace(/`([^`]+)`/g, "$1");
+  text = text.replace(/^\s*-{3,}\s*$/gm, "");
+
+  const lines = text.split("\n");
+  const merged: string[] = [];
+  for (const line of lines) {
+    const current = line.trim();
+    if (!current) {
+      merged.push("");
+      continue;
+    }
+    const previous = merged.length > 0 ? merged[merged.length - 1]! : "";
+    if (previous && !/[.!?:"']$/.test(previous) && /^[a-z(]/.test(current)) {
+      merged[merged.length - 1] = `${previous} ${current}`;
+    } else {
+      merged.push(current);
+    }
+  }
+
+  return merged.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 export function enforceSourceLength(text: string): SourceFileResult {
@@ -82,7 +120,7 @@ function validateFileMeta(file: File): SourceFileResult | null {
 async function readTextFile(file: File): Promise<SourceFileResult> {
   try {
     const raw = await file.text();
-    return enforceSourceLength(raw);
+    return enforceSourceLength(toPlainSource(raw));
   } catch {
     return { ok: false, error: "Could not read that file." };
   }

@@ -19,12 +19,7 @@ import { AdaptedText } from "./AdaptedText";
 import { FocusView } from "./FocusView";
 import { GlanceView } from "./GlanceView";
 import type { TextMark } from "./marks";
-import {
-  bestListenVoice,
-  DEVICE_VOICE_ID,
-  deviceVoiceName,
-  LINAW_VOICE_ID,
-} from "@/lib/listen/rank";
+import { DEVICE_VOICE_ID, deviceVoiceName, LINAW_VOICE_ID } from "@/lib/listen/rank";
 import {
   LISTEN_PITCHES,
   LISTEN_RATES,
@@ -394,7 +389,6 @@ function ListenMenu({
   note?: string | null;
 }) {
   const deviceName = deviceVoiceName(voices);
-  const automatic = bestListenVoice(voices);
   return (
     <details className="listen-menu font-ui">
       <summary className="inline-flex min-h-10 cursor-pointer list-none items-center rounded-lg px-3 text-[0.8125rem] font-medium text-ink-muted hover:bg-paper-inset hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60">
@@ -422,18 +416,17 @@ function ListenMenu({
             className="min-h-11 rounded-md border border-border bg-paper px-2 text-ink"
             onChange={(event) => onChange({ voiceURI: event.target.value })}
           >
-            <option value="">
-              {automatic ? `Automatic · ${automatic.name}` : "Automatic"}
-            </option>
             <option value={LINAW_VOICE_ID}>Linaw</option>
             <option value={DEVICE_VOICE_ID}>
               {deviceName ? `This device · ${deviceName}` : "This device"}
             </option>
-            {voices.map((voice) => (
-              <option key={voice.voiceURI} value={voice.voiceURI}>
-                {voice.name} · {voice.lang}
-              </option>
-            ))}
+            {settings.voiceURI !== LINAW_VOICE_ID
+              ? voices.map((voice) => (
+                  <option key={voice.voiceURI} value={voice.voiceURI}>
+                    {voice.name} · {voice.lang}
+                  </option>
+                ))
+              : null}
           </select>
           {note ? <span className="text-ink-muted">{note}</span> : null}
         </label>

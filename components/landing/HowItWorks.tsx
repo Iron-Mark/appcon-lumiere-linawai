@@ -1,22 +1,36 @@
-import { BookOpen, ChevronRight, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import {
+  KeyPoints,
+  MeaningCheck,
+  NoticeSheet,
+} from "@/components/illustrations";
+import { Sindi, SunMark, type SindiState } from "@/components/sindi";
 import { Reveal } from "./Reveal";
 import { SectionHeading } from "./SectionHeading";
 
-const STEPS = [
+const STEPS: {
+  state: SindiState;
+  label: string;
+  description: string;
+  art: typeof NoticeSheet;
+}[] = [
   {
-    icon: BookOpen,
+    state: "reading",
     label: "Read",
     description: "Open any article, memo, or PDF. Linaw quietly reads it with you.",
+    art: NoticeSheet,
   },
   {
-    icon: SlidersHorizontal,
+    state: "working",
     label: "Adapt",
     description: "Switch to Key Points, Plain Language, or Listen in one tap.",
+    art: KeyPoints,
   },
   {
-    icon: ShieldCheck,
+    state: "pass",
     label: "Verify",
     description: "Every condition, number, and deadline is checked against the source.",
+    art: MeaningCheck,
   },
 ];
 
@@ -27,20 +41,21 @@ export function HowItWorks() {
       aria-labelledby="how-title"
       className="landing-section"
     >
-      <div className="mx-auto max-w-6xl">
+      <div className="relative mx-auto max-w-6xl">
+        <SunMark className="pointer-events-none absolute top-0 right-0 hidden size-28 opacity-25 md:block" />
         <SectionHeading
           id="how-title"
           eyebrow="How the web app works"
           title="Three steps, zero guesswork."
           description="Choose preferences, adapt a notice, then review Meaning Check. The original stays one step away."
         />
-        <ol className="mt-12 grid list-none gap-0 divide-y divide-border p-0 md:grid-cols-3 md:divide-x md:divide-y-0">
+        <ol className="mt-8 grid list-none gap-0 divide-y divide-border p-0 md:grid-cols-3 md:divide-x md:divide-y-0">
           {STEPS.map((step, i) => (
             <Reveal
               as="li"
               key={step.label}
               delay={i * 80}
-              className="relative flex flex-col gap-4 py-8 md:px-8 md:py-0 md:first:pl-0 md:last:pr-0"
+              className="relative flex flex-col gap-4 py-6 md:px-8 md:py-0 md:first:pl-0 md:last:pr-0"
             >
               <div className="flex items-center gap-3">
                 <span
@@ -49,13 +64,7 @@ export function HowItWorks() {
                 >
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <span className="flex size-11 items-center justify-center rounded-lg bg-action-soft">
-                  <step.icon
-                    className="size-5 text-action"
-                    strokeWidth={1.75}
-                    aria-hidden="true"
-                  />
-                </span>
+                <Sindi state={step.state} line="" size={44} />
                 {i < STEPS.length - 1 ? (
                   <span
                     aria-hidden="true"
@@ -73,6 +82,7 @@ export function HowItWorks() {
                 <p className="font-ui mt-2 leading-relaxed text-pretty text-ink-muted">
                   {step.description}
                 </p>
+                <step.art className="mt-4 h-24 w-40" />
               </div>
             </Reveal>
           ))}
