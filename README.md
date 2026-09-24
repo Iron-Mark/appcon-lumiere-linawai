@@ -11,13 +11,11 @@
 </p>
 
 <p align="center">
-  <a href="#live-demo">Live demo</a> ·
+  <a href="#live-app">Live app</a> ·
   <a href="docs/architecture.md">Architecture</a> ·
   <a href="SECURITY.md">Security and privacy</a> ·
   <a href="LICENSE">MIT License</a>
 </p>
-
-> **Demo status:** The repository runs locally without an API key through its offline fixture. Add the deployed Vercel URL to the [Live demo](#live-demo) section before submission.
 
 ## Product overview
 
@@ -28,7 +26,7 @@ Linaw AI addresses that risk with a personalized reading layer and a **Meaning C
 ### What users can do
 
 - Choose **Full Detail** or **Key Points**.
-- Choose **Original Wording** or **Plain Language**, including Taglish where supported.
+- Choose **Original**, **Plain Language**, or **Taglish**.
 - Read the result in text, at-a-glance, one-at-a-time, or Listen mode.
 - Inspect critical facts, evidence, and warnings in the Meaning Check.
 - Save pieces on the device, create share links, and use the Chrome companion.
@@ -37,16 +35,11 @@ Linaw AI addresses that risk with a personalized reading layer and a **Meaning C
 
 Linaw is not a generic chatbot, summarizer, or diagnostic tool. It is an **adaptive information communication system** for institutions and the people they serve. The initial beachhead is schools, universities, and organizations that send deadline-heavy information to students and members. The business model is B2B2C: institutions are the paying customers, while students, employees, members, and citizens are the end users.
 
-## Product preview
-### Product screenshots
+## Live app
 
-### Video demo  
+[https://appcon-lumiere-linawai.vercel.app/](https://appcon-lumiere-linawai.vercel.app/)
 
-### Live demo
-
-### Vercel URL : [https://appcon-lumiere-linawai.vercel.app/](https://appcon-lumiere-linawai.vercel.app/)
-
-The live deployment should open the landing page and provide the working reading flow. Keep the video as a separate link so the README stays quick to scan.
+The hosted app clarifies with Gemini. If Gemini does not return a note, it uses the OpenAI-compatible gateway. Meaning Check sends the source sentence and the claim to `https://linaw-nli.onrender.com/predict`.
 
 ## Run locally
 
@@ -54,7 +47,7 @@ The live deployment should open the landing page and provide the working reading
 
 - Node.js 20 or newer
 - npm
-- Python 3.11 or newer only if enabling the optional NLI verifier
+- Python 3.11 or newer only for a local copy of the semantic check
 
 ### Web application
 
@@ -65,11 +58,11 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-The app works without a model key by using the campus-pilot offline fixture. To enable live model adaptation, copy `.env.example` to `.env.local` and configure one of the documented providers. Never commit `.env.local` or API keys.
+A local run without a model key uses the offline sample for the campus notice, and says when a note was not produced from other text. Copy `.env.example` to `.env.local` to call Gemini or the gateway. Never commit `.env.local` or API keys.
 
-### Optional semantic verifier
+### Semantic check
 
-The NLI layer is optional and runs locally through the FastAPI service:
+The hosted app sets `NLI_ENDPOINT` to `https://linaw-nli.onrender.com/predict`. A local run can use the same service from this repository:
 
 ```bash
 cd nli-service
@@ -80,7 +73,7 @@ pip install -r requirements.txt
 uvicorn app:app --host 127.0.0.1 --port 8001
 ```
 
-Then set `NLI_ENDPOINT=http://127.0.0.1:8001/predict` for server-side checks and `NEXT_PUBLIC_NLI_ENDPOINT=http://127.0.0.1:8001/predict` for the browser reading path. When it is unavailable, Linaw reports that layer as **Not run** rather than pretending it checked the claim.
+Then set `NLI_ENDPOINT=http://127.0.0.1:8001/predict`. When the endpoint is unset, or the call does not answer within 4 seconds, that layer stays out of the verdict and the screen says the semantic check did not run.
 
 ### Chrome extension
 
@@ -88,7 +81,7 @@ Then set `NLI_ENDPOINT=http://127.0.0.1:8001/predict` for server-side checks and
 npm run build
 ```
 
-In Chrome, open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select the generated `extension/` directory. The extension expects the Linaw app at `127.0.0.1:3000` or `localhost:3000`.
+In Chrome, open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select `extension/`. The extension asks `https://appcon-lumiere-linawai.vercel.app`, then `http://127.0.0.1:3000`, then `http://localhost:3000`.
 
 ## Validation
 
@@ -104,7 +97,7 @@ The test suite covers the campus-pilot flow, fidelity cases, policy cases, and s
 
 Full write-up — surfaces, the single port, model provider order (Gemini → OpenAI-compatible gateway → fixture), the Fidelity Guard layers, storage, environment, and known limits: [`docs/architecture.md`](docs/architecture.md).
 
-One Next.js app. Every surface calls the same `adapt()` port; the port decides where adaptation happens (today: try `/api/adapt`, fall back to the in-browser fixture).
+One Next.js app. Every surface calls the same `adapt()` port. The port posts to `/api/adapt`, and uses the in-browser sample if that route fails.
 
 ```mermaid
 flowchart LR
@@ -135,7 +128,7 @@ flowchart LR
   S --> W
   A --> H
   H -- "route absent / fails" --> F
-  H -.-> R["app/api/adapt<br/>model only if a key is set"]
+  H -.-> R["app/api/adapt<br/>Gemini, then gateway"]
   F --> M --> G
   G --> W
   P --> W
@@ -152,7 +145,7 @@ flowchart TD
   ADP[Clarified note] --> L1
   MAP --> L1[1 · Deterministic fact compare<br/>dates, times, numbers]
   MAP --> L2[2 · Actor–value relationships<br/>who ↔ when stay paired]
-  SRC --> L3[3 · Semantic verification NLI<br/>DeBERTa via NLI_ENDPOINT · optional]
+  SRC --> L3[3 · Semantic verification NLI<br/>DeBERTa via NLI_ENDPOINT]
   ADP --> L3
   L1 --> FLAG[flagged fact ids]
   L2 --> FLAG
@@ -185,21 +178,21 @@ Privacy and data handling: [`SECURITY.md`](SECURITY.md). The only server route i
 
 The adaptation path is deliberately provider-agnostic:
 
-1. **Gemini** is tried when `GEMINI_API_KEY` is configured.
-2. An **OpenAI-compatible gateway** is tried when `LLM_API_BASE` and `LLM_API_KEY` are configured.
-3. The **offline fixture** keeps the prototype usable when no model is configured or a provider fails.
+1. **Gemini** runs when `GEMINI_API_KEY` or `GOOGLE_GENERATIVE_AI_API_KEY` is set. The hosted app uses this first.
+2. An **OpenAI-compatible gateway** runs when `LLM_API_BASE` and `LLM_API_KEY` are set, and Gemini does not return a note.
+3. The **offline sample** runs when no model is configured, when every provider fails, and for the warning notice.
 
 Every model response is expected to return adapted text plus a structured Meaning Map with verbatim evidence. Unsupported or ungrounded facts are dropped before the Meaning Check runs. Provider keys remain server-side.
 
 ## Ownership and intellectual property
 
-Linaw AI is open source under the MIT License. The participating team retains ownership of its original code, designs, concepts, and innovations. Third-party dependencies remain under their respective licenses; see `package.json` and the relevant upstream projects for dependency details.
+Linaw AI is licensed under the MIT License. See [`LICENSE`](LICENSE).
 
-Proprietary services, when configured, are optional integrations rather than requirements for the core prototype. The public repository remains runnable with the offline fixture, and `.env.example` documents how to substitute or connect a provider.
+The license covers the software in this repository. It does not cover messages, files, or preferences a reader supplies. OTis Philippines Inc., organizer of AppCon 2026, may use that source code for marketing and sponsors. That use covers source code only. Packages in `node_modules` and the DeBERTa checkpoint stay under their own licenses.
 
-See [`LICENSE`](LICENSE) for the full license terms.
+A local run without a model key still uses the offline sample. `.env.example` documents Gemini, the gateway, the semantic check, and the optional cloud account.
 
-Human guide (what Linaw is, how to run, specs, extension, `/todo`):
+Human guide (what Linaw is, how to run, specs, extension, What Linaw runs at `/todo`):
 
 [`docs/README.md`](docs/README.md)
 

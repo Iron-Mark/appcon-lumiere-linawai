@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Status of the server plugs. The same list is on `/todo` (link: “What is connected”). For the team—not part of the reading demo.
+Status of what the hosted app runs. The same list is on `/todo` (link: “What Linaw runs”).
 
 ## Ownership
 
@@ -15,11 +15,10 @@ Each row: state, and where it lives.
 
 | Item | State | Where |
 | --- | --- | --- |
-| Hosted model over `adapt()` | **On.** Gemini, then the OpenAI-compatible gateway, then the fixture. The flagged example always uses the fixture. | `app/api/adapt/route.ts`, `spec-02-gemini-adapt` |
-| Repair retry | **On** when a model key is set and the guard returns `repair_required`. | `app/api/adapt/model.ts` |
-| On-device preferences and explicit save | **On.** | `lib/storage/preferences.ts`, Read **Save on this device** |
-| Gemini as the first provider | **Off.** Wired. Empty `GEMINI_API_KEY` skips it. | `spec-02-gemini-adapt` |
-| DeBERTa NLI | **Off** on the host. Unset `NLI_ENDPOINT` reports Not run. Local server: `nli-service/`. | `06-fidelity.md` |
+| Hosted model over `adapt()` | **On.** Gemini first, then the OpenAI-compatible gateway, then the fixture. `GET /api/adapt` lists `gemini`, then `openai-compatible`. The flagged example always uses the fixture. | `app/api/adapt/route.ts`, `spec-02-gemini-adapt` |
+| Repair retry | **On** when a model key is set and the guard returns `repair_required`. The flagged example never calls it. | `app/api/adapt/model.ts` |
+| On-device preferences and explicit save | **On.** Preferences stay on the device unless cloud sign-in is configured. A source is stored only after Save on this device. | `lib/storage/preferences.ts` |
+| DeBERTa NLI | **On** for the hosted app. `NLI_ENDPOINT` on Vercel production is `https://linaw-nli.onrender.com/predict`. A failed call, or one that exceeds 4 seconds, reports Not run. | `06-fidelity.md`, `lib/fidelity/nli.ts` |
 | Cloud account | **On.** Optional. Preferences and saved titles only. Source text is not stored. | `lib/auth/supabase.ts` |
 
 Eval corpus growth (20 → 50) is owned by the **evals / fidelity track**, not this backend checklist.
@@ -27,16 +26,16 @@ Eval corpus growth (20 → 50) is owned by the **evals / fidelity track**, not t
 ## Rules for implementers
 
 - Say On only for a path the production app actually calls.
-- Unset NLI stays “Semantic check not connected” and the UI shows Not run.
+- A failed or unset NLI call stays “Semantic check not connected” and the UI shows Not run.
 - Deterministic and relationship checks still return real statuses.
 
 ## Acceptance checks
 
-- [x] `/todo` lists On and Off. It does not call a live path unbuilt.
+- [x] `/todo` lists what production calls. It does not mark a missing path as On.
 - [x] Each row names the function/file and spec.
-- [x] Onboarding and the reading header link “What is connected” → `/todo`.
+- [x] Onboarding and the reading header link “What Linaw runs” → `/todo`.
 
 ## Out of scope
 
-- Turning on Gemini, NLI, or the cloud account without the matching env vars.
+- Claiming a provider is On when the production env var is unset.
 - Expanding `/todo` into a full project-management app.

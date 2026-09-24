@@ -19,3 +19,16 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Additional notice
+
+This license covers the Linaw AI software in this repository.
+It does not cover messages, files, or preferences a reader supplies to the app.
+
+OTis Philippines Inc., organizer of AppCon 2026, may use that source code for
+marketing and sponsors. That use follows the published AppCon 2026 judging
+guideline and covers source code only.
+
+Packages under node_modules and the DeBERTa checkpoint named in nli-service/
+stay under their own licenses. This repository does not include those model
+weights.

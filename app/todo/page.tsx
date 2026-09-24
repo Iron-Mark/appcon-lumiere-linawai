@@ -5,7 +5,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Team status for server plugs. Not part of the reading demo.
+ * What the hosted app runs. Not part of the reading screen.
  */
 
 type TodoRow = {
@@ -18,38 +18,32 @@ type TodoRow = {
 const BACKEND_TODOS: TodoRow[] = [
   {
     state: "On",
-    what: "Clarification uses a hosted language model. The fixture runs only for the flagged example, and when every provider fails.",
+    what: "Gemini writes the clarified note. When Gemini does not return one, the gateway does. The warning notice stays off the model, so Meaning Check can show a changed fact.",
     replace:
-      "app/api/adapt/route.ts tries Gemini, then the OpenAI-compatible gateway, then fixture.ts",
+      "app/api/adapt/route.ts. GET /api/adapt lists gemini, then openai-compatible.",
     spec: "05-client-port.md, spec-02-gemini-adapt",
   },
   {
     state: "On",
-    what: "One repair retry runs after repair_required when a model key is set. The flagged example never calls it.",
+    what: "When Meaning Check requires a repair, Linaw asks for one revised note. The warning notice does not.",
     replace: "app/api/adapt/model.ts calls buildRepairPrompt",
     spec: "06-fidelity.md, 05-client-port.md",
   },
   {
     state: "On",
-    what: "Preferences stay on this device. A source is stored only after Save on this device.",
+    what: "Reading preferences stay on this device unless the reader signs in. A message is kept only after Save on this device.",
     replace: "lib/storage/preferences.ts; Reading workspace save",
     spec: "01-onboarding.md",
   },
   {
-    state: "Off",
-    what: "Gemini is wired and unkeyed. The gateway is the provider that answers today.",
-    replace: "Set GEMINI_API_KEY to put Gemini first. Empty key skips it.",
-    spec: "spec-02-gemini-adapt",
-  },
-  {
-    state: "Off",
-    what: "Semantic check (NLI) is wired and not running on this host. The reading screen says Not run.",
-    replace: "Set NLI_ENDPOINT to the local nli-service. Unset stays the disconnected stub.",
+    state: "On",
+    what: "Meaning Check sends the source sentence and the claim to a hosted DeBERTa verifier. If that check does not answer within 4 seconds, it stays out of the verdict and the other checks still stand.",
+    replace: "NLI_ENDPOINT on Vercel production is https://linaw-nli.onrender.com/predict",
     spec: "06-fidelity.md",
   },
   {
     state: "On",
-    what: "An optional cloud account syncs preferences and saved titles. Source text is not stored there.",
+    what: "A cloud account keeps preferences and saved titles. It does not keep the message.",
     replace: "lib/auth/supabase.ts; public.linaw_profiles",
     spec: "01-onboarding.md, 07-extension.md",
   },
@@ -63,11 +57,11 @@ export default function TodoPage() {
           Linaw AI
         </p>
         <h1 className="font-reading text-3xl font-semibold tracking-tight text-ink">
-          What is connected
+          What Linaw runs
         </h1>
         <p className="max-w-prose text-ink-muted">
-          The production app calls a hosted model. Rows marked Off are wired
-          and waiting on a key or a local service. Each row names the file.
+          Linaw clarifies a notice with Gemini, then checks that the critical
+          facts still match. Each part below is running.
         </p>
       </header>
 
@@ -86,12 +80,12 @@ export default function TodoPage() {
             <div className="flex flex-col gap-2">
               <p className="font-ui text-base font-medium text-ink">
                 <span className="mr-2 text-sm uppercase tracking-wide text-ink-subtle">
-                  {row.state}
+                  {row.state === "On" ? "Live" : row.state}
                 </span>
                 {row.what}
               </p>
               <p className="font-ui text-sm text-ink-muted">
-                <span className="text-ink-subtle">Replace / add · </span>
+                <span className="text-ink-subtle">Where · </span>
                 <code className="text-ink">{row.replace}</code>
               </p>
               <p className="font-ui text-sm text-ink-subtle">
@@ -103,7 +97,7 @@ export default function TodoPage() {
       </ol>
 
       <p className="text-sm text-ink-subtle">
-        Production clarification is on. Gemini and the semantic check are not.
+        The warning notice is there so a changed meaning can be seen on purpose.
       </p>
     </main>
   );

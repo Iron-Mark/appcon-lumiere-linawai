@@ -1104,7 +1104,7 @@ export function ReadingWorkspace({
             href="/todo"
             className="font-ui mt-2 inline-flex min-h-11 items-center text-sm text-ink-muted underline decoration-border underline-offset-4 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           >
-            What is connected
+            What Linaw runs
           </Link>
         </div>
         <div style={{ marginLeft: "auto", minWidth: 0 }}>
