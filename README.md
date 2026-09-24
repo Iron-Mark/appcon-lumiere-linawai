@@ -1,23 +1,104 @@
 # Linaw AI
 
-**Clarify the format. Preserve the meaning.**
+<p align="center">
+  <img src="public/linaw-logo-transparent.png" alt="Linaw AI logo" width="112" />
+</p>
 
-Linaw takes one message — a notice, an email, a lesson — and gives it back to each reader in the format they chose (key points or full detail, plain or original wording, read or listened to), then runs a **Meaning Check** that compares every critical fact in the adapted note against the source before the reader relies on it.
+<h3 align="center">Clarify the format. Preserve the meaning.</h3>
 
-## Status — what is live and what is not
+<p align="center">
+  Linaw AI adapts important information to how each person prefers to receive it, then checks whether the critical meaning survived.
+</p>
 
-Kept literally accurate; update it when the code changes.
+<p align="center">
+  <a href="#live-demo">Live demo</a> ·
+  <a href="docs/architecture.md">Architecture</a> ·
+  <a href="SECURITY.md">Security and privacy</a> ·
+  <a href="LICENSE">MIT License</a>
+</p>
 
-| Part | State tonight |
-| --- | --- |
-| Reading workspace, preferences (detail · wording incl. **Taglish** · delivery), three note layouts (text · at a glance · one at a time), Listen with word tracking, PDF/text intake, saved pieces on device, share links (`/read?s=…`) | **Live** in the browser |
-| Meaning Check layers 1, 2, 4 — deterministic fact compare, actor–value relationships, critical-fact coverage (`lib/fidelity/`) | **Live** rule-based logic; tested in `evals/` |
-| Meaning Check layer 3 — semantic verification (NLI) | **Live when the local verifier is running.** `/api/adapt` calls `lib/fidelity/nli.ts`, which posts to the DeBERTa service in `nli-service/` (`cross-encoder/nli-deberta-v3-base`) via `NLI_ENDPOINT`. When the service is down or the env var is unset, the layer reports *Not run* and is excluded from the verdict |
-| The adaptation itself (`adapt()` in `lib/adapt/`) | **Client port posts to `/api/adapt`.** With no model key, the route runs the offline sample adapter (`fixture.ts`), and the browser falls back to that fixture if the route fails. The fixture adapts the campus-pilot example (original, plain, or Taglish) and its seeded failure case. For other input, the UI says the note was not produced from that text |
-| Live model path (Gemini, then Pandev, inside `/api/adapt`) | **Wired.** Gemini runs when `GEMINI_API_KEY` is set (default model `gemini-3.8-flash`). Otherwise, or if Gemini fails, the OpenAI-compatible gateway runs when `LLM_API_BASE` and `LLM_API_KEY` are set. The seeded failure example never uses a model. A successful model answer is cached in server memory (source + detail + wording, 50 entries, not on disk). See `SECURITY.md` and `.env.example`. Do not commit a key |
-| Chrome extension (`extension/`) | Builds (`node extension/build.mjs`). Load unpacked from `extension/`. The service worker asks the Linaw app at `127.0.0.1:3000` then `localhost:3000`. A model answer replaces the article; the offline sample does not. **Page as it was** restores the original words |
+> **Demo status:** The repository runs locally without an API key through its offline fixture. Add the deployed Vercel URL to the [Live demo](#live-demo) section before submission.
 
-Run: `npm install && npm run dev` → http://localhost:3000. Check: `npm run typecheck && npm test`. CI runs both plus `next build` on every push.
+## Product overview
+
+Important notices, lessons, policies, and instructions are usually written in one fixed format. People may instead need key points, plain language, full detail, or audio. Generic summarization can make a message easier to read while dropping a deadline, condition, exception, number, or responsibility.
+
+Linaw AI addresses that risk with a personalized reading layer and a **Meaning Check**. The original source remains authoritative; Linaw adapts the presentation and checks critical facts against the source before the reader relies on the result.
+
+### What users can do
+
+- Choose **Full Detail** or **Key Points**.
+- Choose **Original Wording** or **Plain Language**, including Taglish where supported.
+- Read the result in text, at-a-glance, one-at-a-time, or Listen mode.
+- Inspect critical facts, evidence, and warnings in the Meaning Check.
+- Save pieces on the device, create share links, and use the Chrome companion.
+
+### Why it matters
+
+Linaw is not a generic chatbot, summarizer, or diagnostic tool. It is an **adaptive information communication system** for institutions and the people they serve. The initial beachhead is schools, universities, and organizations that send deadline-heavy information to students and members. The business model is B2B2C: institutions are the paying customers, while students, employees, members, and citizens are the end users.
+
+## Product preview
+### Product screenshots
+
+### Video demo  
+
+### Live demo
+
+### Vercel URL : [https://appcon-lumiere-linawai.vercel.app/](https://appcon-lumiere-linawai.vercel.app/)
+
+The live deployment should open the landing page and provide the working reading flow. Keep the video as a separate link so the README stays quick to scan.
+
+## Run locally
+
+### Requirements
+
+- Node.js 20 or newer
+- npm
+- Python 3.11 or newer only if enabling the optional NLI verifier
+
+### Web application
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+The app works without a model key by using the campus-pilot offline fixture. To enable live model adaptation, copy `.env.example` to `.env.local` and configure one of the documented providers. Never commit `.env.local` or API keys.
+
+### Optional semantic verifier
+
+The NLI layer is optional and runs locally through the FastAPI service:
+
+```bash
+cd nli-service
+python -m venv .venv
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn app:app --host 127.0.0.1 --port 8001
+```
+
+Then set `NLI_ENDPOINT=http://127.0.0.1:8001/predict` for server-side checks and `NEXT_PUBLIC_NLI_ENDPOINT=http://127.0.0.1:8001/predict` for the browser reading path. When it is unavailable, Linaw reports that layer as **Not run** rather than pretending it checked the claim.
+
+### Chrome extension
+
+```bash
+npm run build
+```
+
+In Chrome, open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select the generated `extension/` directory. The extension expects the Linaw app at `127.0.0.1:3000` or `localhost:3000`.
+
+## Validation
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+The test suite covers the campus-pilot flow, fidelity cases, policy cases, and seeded meaning-preservation failures.
 
 ## Architecture
 
@@ -85,20 +166,38 @@ Verdict language is deliberately cautious ("No issue found in these checks.", "T
 
 ### Repository map
 
-| Path | What lives there |
-| --- | --- |
-| `app/` | Next.js routes: landing, onboarding, `/read`, `/content`, `/settings` |
-| `components/read/` | Reading workspace, Meaning Check rail, Listen, share links, toasts |
-| `components/sindi/` | Ray, the mascot — presentational, driven by a `state` prop |
-| `lib/domain/` | Zod schemas: preferences, meaning map, checks, adapt request/response |
-| `lib/adapt/` | The single `adapt()` port and its implementations |
-| `lib/fidelity/` | Fidelity Guard layers and the pipeline entry |
-| `evals/` | Golden campus-pilot case, seeded corruption, fidelity cases (vitest) |
-| `nli-service/` | Local FastAPI DeBERTa NLI verifier + evaluation scripts |
-| `extension/` | Manifest V3 Chrome companion |
-| `spec/` | Phase specs — the build contract; `docs/` — canon, agent rules, AppCon research |
+| Path                | What lives there                                                      |
+| ------------------- | --------------------------------------------------------------------- |
+| `app/`              | Next.js routes: landing, onboarding, `/read`, `/content`, `/settings` |
+| `components/read/`  | Reading workspace, Meaning Check rail, Listen, share links, toasts    |
+| `components/sindi/` | Ray, the mascot — presentational, driven by a `state` prop            |
+| `lib/domain/`       | Zod schemas: preferences, meaning map, checks, adapt request/response |
+| `lib/adapt/`        | The single `adapt()` port and its implementations                     |
+| `lib/fidelity/`     | Fidelity Guard layers and the pipeline entry                          |
+| `evals/`            | Golden campus-pilot case, seeded corruption, fidelity cases (vitest)  |
+| `nli-service/`      | Local FastAPI DeBERTa NLI verifier + evaluation scripts               |
+| `extension/`        | Manifest V3 Chrome companion                                          |
+| `spec/`             | Phase specifications and acceptance contracts                         |
 
-Privacy and data handling: [`SECURITY.md`](SECURITY.md).
+Privacy and data handling: [`SECURITY.md`](SECURITY.md). The only server route is `POST /api/adapt`; source text is not written to disk by Linaw. If a model provider is configured, source text is sent to that provider, so review its retention policy before using personal data.
+
+## AI implementation
+
+The adaptation path is deliberately provider-agnostic:
+
+1. **Gemini** is tried when `GEMINI_API_KEY` is configured.
+2. An **OpenAI-compatible gateway** is tried when `LLM_API_BASE` and `LLM_API_KEY` are configured.
+3. The **offline fixture** keeps the prototype usable when no model is configured or a provider fails.
+
+Every model response is expected to return adapted text plus a structured Meaning Map with verbatim evidence. Unsupported or ungrounded facts are dropped before the Meaning Check runs. Provider keys remain server-side.
+
+## Ownership and intellectual property
+
+Linaw AI is open source under the MIT License. The participating team retains ownership of its original code, designs, concepts, and innovations. Third-party dependencies remain under their respective licenses; see `package.json` and the relevant upstream projects for dependency details.
+
+Proprietary services, when configured, are optional integrations rather than requirements for the core prototype. The public repository remains runnable with the offline fixture, and `.env.example` documents how to substitute or connect a provider.
+
+See [`LICENSE`](LICENSE) for the full license terms.
 
 Human guide (what Linaw is, how to run, specs, extension, `/todo`):
 

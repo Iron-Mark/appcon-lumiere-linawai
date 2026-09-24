@@ -26,16 +26,30 @@ export const metadata: Metadata = {
     template: "%s · Linaw AI",
   },
   description,
+  icons: {
+    icon: "/linaw-logo-transparent.png",
+    shortcut: "/linaw-logo-transparent.png",
+    apple: "/linaw-logo-transparent.png",
+  },
   openGraph: {
     type: "website",
     siteName: "Linaw AI",
     title: "Linaw AI",
     description,
+    images: [
+      {
+        url: "/linaw-logo-transparent.png",
+        width: 512,
+        height: 512,
+        alt: "Linaw AI logo",
+      },
+    ],
   },
   twitter: {
     card: "summary",
     title: "Linaw AI",
     description,
+    images: ["/linaw-logo-transparent.png"],
   },
 };
 
@@ -45,7 +59,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn(lora.variable, raleway.variable, "font-sans")}>
+    <html
+      lang="en"
+      className={cn(lora.variable, raleway.variable, "font-sans")}
+    >
       <body className="font-ui antialiased">
         <a href="#main-content" className="skip-to-content">
           Skip to content

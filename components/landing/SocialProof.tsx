@@ -38,7 +38,9 @@ export function SocialProof() {
       className="landing-section landing-section--inset"
     >
       <div className="relative mx-auto flex max-w-6xl flex-col items-center">
-        <SunMark className="mb-3 size-14 opacity-40" />
+        <Reveal className="mb-[-2rem]">
+          <SunMark className="size-40 opacity-100" />
+        </Reveal>
         <SectionHeading
           id="proof-title"
           eyebrow="Built for real notices"
@@ -61,7 +63,9 @@ export function SocialProof() {
                     {item.title}
                   </h3>
                   <blockquote className="m-0 border-none p-0 text-sm leading-relaxed text-ink-muted">
-                    <p className="m-0 text-pretty">&ldquo;{item.quote}&rdquo;</p>
+                    <p className="m-0 text-pretty">
+                      &ldquo;{item.quote}&rdquo;
+                    </p>
                   </blockquote>
                   <p className="m-0 text-sm font-medium text-ink-subtle">
                     — {item.persona}

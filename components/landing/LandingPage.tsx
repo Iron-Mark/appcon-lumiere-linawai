@@ -36,6 +36,15 @@ export function LandingPage() {
   return (
     <div className="landing-shell relative min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-paper text-ink">
       <LandingJsonLd />
+      <img
+        src="/sunray.png"
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-[-2rem] z-0 h-[42rem] w-[42rem] -translate-x-1/2 object-contain opacity-[0.2] blur-[0.5px] contrast-125 saturate-125"
+        style={{
+          filter: "drop-shadow(0 0 38px rgba(250, 198, 92, 0.45))",
+        }}
+      />
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10 opacity-[0.04]"
