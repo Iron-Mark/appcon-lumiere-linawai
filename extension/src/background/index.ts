@@ -4,14 +4,39 @@
  */
 import { fetchLinawJson } from "../linaw-origin";
 
-// Configure side panel behavior so clicking the action icon opens the side panel
-if (typeof chrome !== "undefined" && chrome.sidePanel?.setPanelBehavior) {
-  chrome.sidePanel
-    .setPanelBehavior({ openPanelOnActionClick: true })
-    .catch((error: unknown) => {
-      console.error("Failed to set side panel behavior:", error);
-    });
+/**
+ * Enable "click the toolbar icon opens the side panel".
+ * On a fresh unpacked load Chrome can reject the first call with "No SW"
+ * (worker not fully registered yet). That rejection is transient, so retry
+ * quietly a few times. Anything logged with console.error lands on
+ * chrome://extensions as a red Errors badge, so failures here stay silent —
+ * the action.onClicked fallback below keeps the icon useful until the
+ * behavior sticks.
+ */
+const PANEL_BEHAVIOR_RETRIES = 3;
+const PANEL_BEHAVIOR_RETRY_MS = 1500;
+
+function ensurePanelBehavior(attempt = 1): void {
+  if (typeof chrome === "undefined" || !chrome.sidePanel?.setPanelBehavior) {
+    return;
+  }
+  try {
+    chrome.sidePanel
+      .setPanelBehavior({ openPanelOnActionClick: true })
+      .catch(() => {
+        if (attempt < PANEL_BEHAVIOR_RETRIES) {
+          setTimeout(
+            () => ensurePanelBehavior(attempt + 1),
+            PANEL_BEHAVIOR_RETRY_MS,
+          );
+        }
+      });
+  } catch {
+    // sidePanel unsupported here — the action fallback below covers it.
+  }
 }
+
+ensurePanelBehavior();
 
 // Fallback action click handler in case side panel behavior is not supported
 if (typeof chrome !== "undefined" && chrome.action?.onClicked) {
