@@ -1,12 +1,10 @@
-# LINAW
-
-Layered Intelligence for Narrative Adaptation & Watching
+# LINAW — Layered Intelligence for Narrative Adaptation & Watching
 
 ![Linaw AI logo](public/linaw-logo-transparent.png)
 
-### Clarify the format. Preserve the meaning.
+**Tagline:** Clarify the format. Preserve the meaning.
 
-Linaw is a browser extension (with a companion web app) that sits on top of content people already have open — a Google Classroom module, a school announcement, a memo, a PDF — and lets each reader choose how they receive it: Full, Key Points, Plain Language, or Listen. Every adapted version is then checked against the original for meaning drift — specifically the details most likely to break silently: dates, conditions, exceptions, and who-does-what-when. If something looks lost or changed, Linaw warns the reader instead of silently presenting an incomplete version as complete.
+**Project description:** Linaw is a browser extension (with a companion web app) that sits on top of content people already have open — a Google Classroom module, a school announcement, a memo, a PDF — and lets each reader choose how they receive it: Full, Key Points, Plain Language, or Listen. Every adapted version is then checked against the original for meaning drift — specifically the details most likely to break silently: dates, conditions, exceptions, and who-does-what-when. If something looks lost or changed, Linaw warns the reader instead of silently presenting an incomplete version as complete.
 
 Adaptive Information Communication System: one notice, rewritten into the format each reader absorbs, then cross-examined. Gemini generation, Meaning Maps, fact alignment, actor-value binding, and DeBERTa NLI keep the intended meaning intact.
 
